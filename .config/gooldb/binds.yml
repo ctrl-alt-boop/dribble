@@ -1,0 +1,95 @@
+# Default keybindings for GoolDB TUI
+# Special keys: <esc>, <tab>, <enter>, <space>, <up>, <down>, <left>, <right>
+# <f1>-<f12>, <ctrl+char> (e.g. <ctrl+c>), <alt+char> (e.g. <alt+a>), <alt+<special_key>> (e.g. <alt+<space>>)
+# Regular characters: "a", "b", ":", etc.
+# View names: SidePanelView, DataTableView, TableCellView, CommandBarView. Empty or missing view means global.
+
+keybindings:
+  # Global
+  - action: "cycle_view"
+    key: "<tab>"
+  - action: "refresh_view"
+    key: "c"
+  - action: "quit"
+    key: "<ctrl+c>"
+  - action: "commandbar_open"
+    key: ":"
+  - action: "queryoptions_open"
+    key: "f"
+    # view: "" is implicit for global
+
+  # SidePanelView
+  - action: "sidepanel_select"
+    key: "<enter>"
+    view: "SidePanelView" # Must match views.SidePanelViewName
+  - action: "sidepanel_back"
+    key: "<esc>"
+    view: "SidePanelView"
+  - action: "sidepanel_up"
+    key: "<up>"
+    view: "SidePanelView"
+  - action: "sidepanel_down"
+    key: "<down>"
+    view: "SidePanelView"
+  - action: "sidepanel_up_alt" # k
+    key: "k"
+    view: "SidePanelView"
+  - action: "sidepanel_down_alt" # j
+    key: "j"
+    view: "SidePanelView"
+  
+  # DataTableView
+  - action: "dataview_up"
+    key: "<up>"
+    view: "DataTableView" # Must match views.DataTableViewName
+  - action: "dataview_down"
+    key: "<down>"
+    view: "DataTableView"
+  - action: "dataview_left"
+    key: "<left>"
+    view: "DataTableView"
+  - action: "dataview_right"
+    key: "<right>"
+    view: "DataTableView"
+  - action: "dataview_up_alt" # k
+    key: "k"
+    view: "DataTableView"
+  - action: "dataview_down_alt" # j
+    key: "j"
+    view: "DataTableView"
+  - action: "dataview_left_alt" # h
+    key: "h"
+    view: "DataTableView"
+  - action: "dataview_right_alt" # l
+    key: "l"
+    view: "DataTableView"
+
+  # TableCellView (popup for cell data)
+  - action: "tablecell_open"
+    key: "<enter>"
+    view: "DataTableView"
+  - action: "tablecell_close"
+    key: "<esc>"
+    view: "TableCellView" # Must match views.TableCellViewName
+  - action: "tablecell_scroll_up"
+    key: "<up>"
+    view: "TableCellView"
+  - action: "tablecell_scroll_down"
+    key: "<down>"
+    view: "TableCellView"
+
+  # CommandBarView
+  - action: "commandbar_close"
+    key: "<esc>"
+    view: "CommandBarView" # Must match views.CommandBarViewName
+  - action: "commandbar_enter"
+    key: "<enter>"
+    view: "CommandBarView"
+
+  # QueryOptionsView
+  - action: "queryoptions_close"
+    key: "<esc>"
+    view: "QueryOptionsView" # Must match views.QueryOptionsViewName
+  - action: "queryoptions_enter"
+    key: "<enter>"
+    view: "QueryOptionsView"
