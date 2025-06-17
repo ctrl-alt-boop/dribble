@@ -9,6 +9,7 @@ import (
 	"github.com/ctrl-alt-boop/gooldb/dribble/io"
 	"github.com/ctrl-alt-boop/gooldb/dribble/ui"
 	"github.com/ctrl-alt-boop/gooldb/internal/app/gooldb"
+	"github.com/ctrl-alt-boop/gooldb/pkg/connection"
 )
 
 type PanelSelectMsg struct {
@@ -24,39 +25,32 @@ const (
 	TableList    PanelMode = "tableList"
 )
 
-type selection struct {
-	index     int
-	cachePath string
-}
-
 type Panel struct {
-	list          *ui.List
-	width, height int
-	goolDb        *gooldb.GoolDb
+	list *ui.List
 
-	mode PanelMode
+	Width, Height           int
+	InnerWidth, InnerHeight int
 
+	showDetails bool
+
+	goolDb *gooldb.GoolDb
+
+	mode      PanelMode
 	isLoading bool
+	spinner   spinner.Model
 
-	spinner spinner.Model
-
-	selectHistory []selection
+	selectIndexHistory []int
 }
 
 func NewPanel(gool *gooldb.GoolDb) *Panel {
-
 	return &Panel{
-		list:          ui.NewList(),
-		goolDb:        gool,
-		mode:          ServerList,
-		spinner:       spinner.New(spinner.WithSpinner(ui.MovingBlock)),
-		selectHistory: make([]selection, 0),
+		list:               ui.NewList(),
+		goolDb:             gool,
+		mode:               ServerList,
+		spinner:            spinner.New(spinner.WithSpinner(ui.MovingBlock)),
+		selectIndexHistory: make([]int, 0),
+		showDetails:        config.Cfg.Ui.ShowDetails,
 	}
-}
-
-func (p *Panel) UpdateSize(termWidth, termHeight int) {
-	p.width, p.height = termWidth/ui.PanelWidthRatio-ui.BorderThicknessDouble, termHeight-5
-	p.list.SetSize(p.width, p.height)
 }
 
 func (p *Panel) SetMode(mode PanelMode) {
@@ -71,22 +65,20 @@ func (p *Panel) OnSelect() tea.Cmd {
 	var cmd tea.Cmd
 	switch p.mode {
 	case ServerList:
-		selection, ok := p.list.SelectedItem().(ui.ConnectionItem)
+		selection, ok := p.list.SelectedItem().(*ui.ConnectionItem)
 		if ok {
-			logger.Infof("Selected: %+v", selection)
 			cmd = func() tea.Msg {
 				return SelectServerMsg(string(selection.Name))
 			}
 		}
 	case DatabaseList:
-		selection, ok := p.list.SelectedItem().(ui.ListItem)
+		selection, ok := p.list.SelectedItem().(*ui.ConnectionItem)
 		if ok {
 			p.isLoading = true
 			cmd = func() tea.Msg {
-				return SelectDatabaseMsg(string(selection))
+				return SelectDatabaseMsg(string(selection.Name))
 			}
 		}
-
 	case TableList:
 		selection, ok := p.list.SelectedItem().(ui.ListItem)
 		if ok {
@@ -121,17 +113,17 @@ func (p *Panel) Select() tea.Msg {
 }
 
 func (p *Panel) Init() tea.Cmd {
-	var connectionItems []ui.ConnectionItem
-	for name, settings := range config.SavedConfigs {
-		connectionItems = append(connectionItems, ui.ConnectionItem{
-			Name:     name,
-			Settings: settings,
-		})
-	}
-	for name, settings := range p.goolDb.GetDriverDefaults() {
-		connectionItems = append(connectionItems, ui.ConnectionItem{
-			Name:     name,
-			Settings: settings,
+	var connectionItems []*ui.ConnectionItem
+	connectionItems = append(connectionItems, ui.GetSavedConfigsSorted()...)
+
+	for name, settings := range config.GetDriverDefaults() {
+		connectionItems = append(connectionItems, &ui.ConnectionItem{
+			Name: name,
+			Settings: connection.NewSettings(connection.AsType(connection.Driver),
+				connection.WithDriver(settings.DriverName),
+				connection.WithHost(settings.Ip, settings.Port),
+				connection.WithUser(settings.Username),
+				connection.WithPassword(settings.Password)),
 		})
 	}
 	p.list.SetConnectionItems(connectionItems)
@@ -139,10 +131,7 @@ func (p *Panel) Init() tea.Cmd {
 }
 
 func (p *Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	logger.Infof("Got message: %+v", msg)
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		p.UpdateSize(msg.Width, msg.Height)
 
 	case tea.KeyMsg:
 		switch {
@@ -152,10 +141,14 @@ func (p *Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			p.list.CursorDown()
 		case key.Matches(msg, config.Keys.Select):
 			return p, p.OnSelect()
+		case key.Matches(msg, config.Keys.Back):
+			return p, nil
+		case key.Matches(msg, config.Keys.Details):
+			p.showDetails = !p.showDetails
+			return p, nil
 		}
 
 	case io.GoolDbEventMsg:
-		logger.Infof("Got GoolDbEventMsg: %+v", msg)
 		p.isLoading = false
 		p.spinner = spinner.New(spinner.WithSpinner(ui.MovingBlock))
 		if msg.Err != nil {
@@ -166,7 +159,8 @@ func (p *Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case gooldb.DatabaseListFetched:
 			args, ok := msg.Args.(gooldb.DatabaseListFetchData)
 			if ok {
-				p.list.SetStringItems(args.Databases)
+				items := ui.SettingsToConnectionItems(args.Databases)
+				p.list.SetConnectionItems(items)
 				p.SetMode(DatabaseList)
 			}
 		case gooldb.DBTableListFetched:
@@ -186,31 +180,37 @@ func (p *Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, nil
 }
 
+func (p *Panel) UpdateSize(width, height int) {
+	// p.width, p.height = width/ui.PanelWidthRatio-ui.BorderThicknessDouble, height-5
+	p.Width, p.Height = width, height
+	p.InnerWidth = p.Width - ui.PanelStyle.GetHorizontalFrameSize()
+	p.InnerHeight = p.Height - ui.PanelStyle.GetVerticalFrameSize()
+}
+
 func (p *Panel) View() string {
-	panelBorder := lipgloss.Border{
-		Top:         "─",
-		Bottom:      "─",
-		Left:        "│",
-		Right:       "│",
-		TopLeft:     "┌",
-		TopRight:    "┬",
-		BottomLeft:  "├",
-		BottomRight: "┴",
-	}
-
-	panelStyle := lipgloss.NewStyle().
-		Height(p.height).
-		Width(p.width).
-		Border(panelBorder, true, false, false, true).
-		Align(lipgloss.Left, lipgloss.Top)
-
 	if p.isLoading {
-		return panelStyle.
-			Height(p.height).
-			AlignHorizontal(lipgloss.Center).
-			AlignVertical(lipgloss.Top).
-			Render(p.spinner.View())
+		return lipgloss.Place(
+			p.InnerWidth,
+			p.InnerHeight,
+			lipgloss.Center,
+			lipgloss.Position(0.2),
+			p.spinner.View(),
+		)
 	}
 
-	return panelStyle.Render(p.list.View())
+	details, ok := p.list.SelectedItem().(ui.ConnectionItem)
+	var detailsView string
+	if p.showDetails && ok {
+		detailsView = lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).BorderTop(true).
+			Padding(1, 0).
+			MaxHeight(9).Width(p.InnerWidth).
+			Render(details.Inspect())
+	}
+
+	p.list.SetSize(p.InnerWidth, p.InnerHeight-lipgloss.Height(detailsView))
+
+	joined := lipgloss.JoinVertical(lipgloss.Left, p.list.View(), detailsView)
+
+	return ui.PanelStyle.Width(p.InnerWidth).Height(p.InnerHeight).Render(joined)
 }

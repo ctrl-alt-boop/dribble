@@ -2,6 +2,7 @@ package dribble
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ctrl-alt-boop/gooldb/dribble/ui"
 )
 
 func (m AppModel) View() string {
@@ -24,12 +25,12 @@ func (m AppModel) View() string {
 		"─", lipgloss.WithWhitespaceChars("─"))
 
 	rightSeparatorCorner := "┤"
-	if m.workspace.IsTableSet() {
-		rightSeparatorCorner = "┬"
-	}
+	// if m.workspace.IsTableSet() && m.workspace.ViewportWidth() > m.workspace.Width {
+	// 	rightSeparatorCorner = "┬"
+	// }
 
 	separator := lipgloss.JoinHorizontal(
-		lipgloss.Left,
+		lipgloss.Top,
 		"├",
 		panelBorder,
 		"┴",
@@ -37,31 +38,35 @@ func (m AppModel) View() string {
 		rightSeparatorCorner,
 	)
 
-	workspaceStyle := m.workspace.Style()
+	workspaceRender := ui.WorkspaceStyle.
+		Width(m.workspace.ContentWidth).Height(m.workspace.ContentHeight).
+		Render(workspaceView)
 
 	popupView := m.popupHandler.View()
 	if popupView != "" {
-		workspaceView = popupView
-		workspaceStyle = workspaceStyle.Align(lipgloss.Center, lipgloss.Center)
-		// return lipgloss.Place(m.Width, m.Height,
-		// 	lipgloss.Center, lipgloss.Center,
+		// workspaceRender = ui.PlaceOverlayTest( // Actually not sure if this works just as good
+		// 	lipgloss.Center,
+		// 	lipgloss.Center,
 		// 	popupView,
-		// 	lipgloss.WithWhitespaceChars(" "), lipgloss.WithWhitespaceBackground(lipgloss.Color("123")))
-	} else {
-		workspaceStyle = workspaceStyle.Align(lipgloss.Left, lipgloss.Top)
+		// 	workspaceRender)
+		workspaceRender = ui.PlaceOverlay(
+			lipgloss.Center,
+			lipgloss.Center,
+			popupView,
+			workspaceRender)
 	}
 
 	render := lipgloss.JoinVertical(
-		lipgloss.Top,
+		lipgloss.Left,
 		lipgloss.JoinHorizontal(
-			lipgloss.Bottom,
+			lipgloss.Top,
 			panelView,
-			workspaceStyle.Render(workspaceView),
+			workspaceRender,
 		),
 		separator,
 		promptBarView,
 		helpFooterView,
 	)
 
-	return lipgloss.Place(m.Width, m.Height, lipgloss.Center, lipgloss.Center, render)
+	return lipgloss.Place(m.Width, m.Height, lipgloss.Left, lipgloss.Top, render)
 }

@@ -11,11 +11,11 @@ var supportedDrivers []string = []string{
 	database.DriverSQLite,
 }
 
-func (gool *GoolDb) GetSupportedDrivers() []string {
+func GetSupportedDrivers() []string {
 	return supportedDrivers
 }
 
-func (gool *GoolDb) GetDriverDefaults() map[string]*connection.Settings {
+func GetDriverDefaults() map[string]*connection.Settings {
 	return map[string]*connection.Settings{
 		database.DriverPostgreSQL: &postgresDefault,
 		database.DriverMySql:      &mysqlDefault,
@@ -24,6 +24,7 @@ func (gool *GoolDb) GetDriverDefaults() map[string]*connection.Settings {
 }
 
 var postgresDefault = connection.Settings{
+	Type:       connection.Driver,
 	DriverName: "postgres",
 	Ip:         "127.0.0.1",
 	Port:       5432,
@@ -33,11 +34,13 @@ var postgresDefault = connection.Settings{
 }
 
 var mysqlDefault = connection.Settings{
+	Type:       connection.Driver,
 	DriverName: "mysql",
 	Ip:         "127.0.0.1",
 	Port:       3306,
 }
 
 var sqliteDefault = connection.Settings{
+	Type:       connection.Driver,
 	DriverName: "sqlite",
 }

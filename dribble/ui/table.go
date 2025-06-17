@@ -9,11 +9,11 @@ import (
 
 var logger = logging.NewLogger("ui.log")
 
-type Table struct {
+type ListTable struct {
 	table []*List
 }
 
-func (t *Table) SetHeight(height int) {
+func (t *ListTable) SetHeight(height int) {
 	if t.table == nil {
 		return
 	}
@@ -22,11 +22,11 @@ func (t *Table) SetHeight(height int) {
 	}
 }
 
-func NewTable() *Table {
-	return &Table{}
+func NewTable() *ListTable {
+	return &ListTable{}
 }
 
-func (t *Table) SetTable(table *data.Table) {
+func (t *ListTable) SetTable(table *data.Table) {
 	lists := make([]*List, table.NumColumns())
 	for i := range lists {
 		lists[i] = NewList()
@@ -50,7 +50,7 @@ func (t *Table) SetTable(table *data.Table) {
 	t.table = lists
 }
 
-func (t *Table) View() string {
+func (t *ListTable) View() string {
 	if t.table == nil {
 		return ""
 	}
@@ -62,11 +62,11 @@ func (t *Table) View() string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, views...)
 }
 
-func (t *Table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (t *ListTable) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	return t, nil
 }
 
-func (t *Table) Init() tea.Cmd {
+func (t *ListTable) Init() tea.Cmd {
 	return nil
 }

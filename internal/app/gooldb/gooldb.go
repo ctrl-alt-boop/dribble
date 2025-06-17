@@ -8,6 +8,8 @@ import (
 	"github.com/ctrl-alt-boop/gooldb/pkg/logging"
 )
 
+const Version = "0.0.1"
+
 var sqlLogger = logging.NewLogger("sql.log")
 
 var logger *logging.Logger
