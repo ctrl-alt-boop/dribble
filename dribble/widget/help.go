@@ -4,8 +4,8 @@ import (
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/ctrl-alt-boop/gooldb/dribble/config"
+	"github.com/ctrl-alt-boop/gooldb/dribble/ui"
 )
 
 type Help struct {
@@ -27,6 +27,15 @@ func NewHelp() *Help {
 	}
 }
 
+func (h *Help) FocusChanged(focus Kind) {
+	switch focus {
+	case KindPanel:
+		h.Keys.FullHelpFunc = fullHelpPanelFunc
+	case KindWorkspace:
+		h.Keys.FullHelpFunc = fullHelpWorkspaceFunc
+	}
+}
+
 func (h *Help) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -41,14 +50,10 @@ func (h *Help) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (h *Help) UpdateSize(width int, _ int) {
-	h.help.Width = width
+	h.help.Width = width - ui.HelpStyle.GetHorizontalFrameSize()
 }
 
 func (h *Help) View() string {
-	helpStyle := lipgloss.NewStyle().
-		Width(h.help.Width).
-		Height(1).
-		Align(lipgloss.Left, lipgloss.Center).
-		MarginLeft(1)
-	return helpStyle.Render(h.help.View(h.Keys))
+
+	return ui.HelpStyle.Width(h.help.Width).Height(1).Render(h.help.View(h.Keys))
 }

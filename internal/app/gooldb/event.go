@@ -1,6 +1,7 @@
 package gooldb
 
 import (
+	"github.com/ctrl-alt-boop/gooldb/pkg/connection"
 	"github.com/ctrl-alt-boop/gooldb/pkg/data"
 )
 
@@ -46,7 +47,7 @@ type (
 
 	DatabaseListFetchData struct {
 		Driver    string
-		Databases []string
+		Databases []*connection.Settings
 	}
 
 	DBTableListFetchData struct {

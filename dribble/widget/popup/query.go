@@ -9,8 +9,19 @@ type QueryOptions struct {
 	Query *query.Statement
 }
 
-// SetSize implements PopupModel.
-func (q *QueryOptions) SetSize(width int, height int) {
+func newQueryOptions(query *query.Statement) *QueryOptions {
+	return &QueryOptions{
+		Query: query,
+	}
+}
+
+// GetContentHeight implements PopupModel.
+func (q *QueryOptions) GetContentHeight() int {
+	panic("unimplemented")
+}
+
+// GetContentWidth implements PopupModel.
+func (q *QueryOptions) GetContentWidth() int {
 	panic("unimplemented")
 }
 
@@ -32,6 +43,16 @@ func (q *QueryOptions) Init() tea.Cmd {
 // Update implements tea.Model.
 func (q *QueryOptions) Update(tea.Msg) (tea.Model, tea.Cmd) {
 	return q, nil
+}
+
+// GetContentSize implements PopupModel.
+func (q *QueryOptions) GetContentSize() (int, int) {
+	panic("unimplemented")
+}
+
+// SetMaxSize implements PopupModel.
+func (q *QueryOptions) SetMaxSize(width int, height int) {
+	panic("unimplemented")
 }
 
 // View implements tea.Model.

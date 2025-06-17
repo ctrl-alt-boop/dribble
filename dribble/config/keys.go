@@ -30,15 +30,18 @@ const (
 )
 
 type KeyMap struct {
+	FullHelpFunc func() [][]key.Binding
+
 	Nav       key.Binding // Used as combined navigation keys for help
 	CycleView key.Binding
 
-	Up     key.Binding
-	Down   key.Binding
-	Left   key.Binding
-	Right  key.Binding
-	Select key.Binding
-	Back   key.Binding
+	Up      key.Binding
+	Down    key.Binding
+	Left    key.Binding
+	Right   key.Binding
+	Select  key.Binding
+	Back    key.Binding
+	Details key.Binding
 
 	Help key.Binding
 	Quit key.Binding
@@ -49,6 +52,9 @@ func (keys KeyMap) ShortHelp() []key.Binding {
 }
 
 func (keys KeyMap) FullHelp() [][]key.Binding {
+	if keys.FullHelpFunc != nil {
+		return keys.FullHelpFunc()
+	}
 	return [][]key.Binding{
 		{keys.Help},
 		{keys.Quit},
@@ -70,6 +76,10 @@ func createKeyMap() KeyMap {
 		CycleView: key.NewBinding(
 			key.WithKeys("tab"),
 			key.WithHelp(SymbolTab, "cycle view"),
+		),
+		Details: key.NewBinding(
+			key.WithKeys("i"),
+			key.WithHelp("i", "toggle details"),
 		),
 		Left: key.NewBinding(
 			key.WithKeys("left", "h"),

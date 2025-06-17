@@ -57,7 +57,8 @@ func (l *List) SetStringItems(items []string) {
 	l.Model.SetItems(listItems)
 }
 
-func (l *List) SetConnectionItems(items []ConnectionItem) {
+func (l *List) SetConnectionItems(items []*ConnectionItem) {
+
 	listItems := make([]list.Item, len(items))
 	for i, item := range items {
 		listItems[i] = item

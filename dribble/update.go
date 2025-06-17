@@ -14,13 +14,15 @@ import (
 func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
-
-	connectMsg, ok := msg.(io.ConnectMsg)
-	if ok {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.Width, m.Height = msg.Width, msg.Height
+		m.updateDimensions(msg)
+	case io.ConnectMsg:
 		m.popupHandler.Close()
+		m.ChangeFocus(widget.KindPanel)
 		return m, tea.Batch(
-			widget.ChangeFocus(widget.KindPanel),
-			m.Connect(connectMsg),
+			m.Connect(msg),
 		)
 	}
 
@@ -28,10 +30,12 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg := msg.(type) {
 		case widget.PopupConfirmMsg:
 			m.popupHandler.Close()
-			return m, m.popupConfirm(msg)
+			m.ChangeFocus(m.prevFocus)
+			return m, tea.Batch(m.popupConfirm(msg))
 		case widget.PopupCancelMsg:
 			m.popupHandler.Close()
-			return m, widget.ChangeFocus(widget.KindPanel)
+			m.ChangeFocus(m.prevFocus)
+			return m, nil
 		default:
 			_, cmd = m.popupHandler.Update(msg)
 			cmds = append(cmds, cmd)
@@ -41,23 +45,8 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// AppModel messages
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.Width = msg.Width
-		m.Height = msg.Height
-		_, cmd = m.panel.Update(msg)
-		cmds = append(cmds, cmd)
-		_, cmd = m.workspace.Update(msg)
-		cmds = append(cmds, cmd)
-		_, cmd = m.prompt.Update(msg)
-		cmds = append(cmds, cmd)
-		_, cmd = m.help.Update(msg)
-		cmds = append(cmds, cmd)
-		_, cmd = m.popupHandler.Update(msg)
-		cmds = append(cmds, cmd)
-		return m, tea.Batch(cmds...)
-
 	case widget.RequestFocus:
-		m.inFocus = widget.Kind(msg)
+		m.ChangeFocus(widget.Kind(msg))
 		return m, nil
 
 	case io.GoolDbEventMsg:
@@ -88,6 +77,11 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case widget.SelectTableMsg:
 		return m, m.SelectTable(msg)
 
+	case widget.CellDataMsg:
+		m.popupHandler.Popup(popup.KindTableCell, msg.Value)
+		m.ChangeFocus(widget.KindPopupHandler)
+		return m, nil
+
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, config.Keys.Quit):
@@ -99,13 +93,26 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
+		case msg.String() == "w":
+			m.testData.y -= 5
+			return m, nil
+		case msg.String() == "a":
+			m.testData.x -= 5
+			return m, nil
+		case msg.String() == "s":
+			m.testData.y += 5
+			return m, nil
+		case msg.String() == "d":
+			m.testData.x += 5
+			return m, nil
 		case key.Matches(msg, config.Keys.CycleView):
 			switch m.inFocus {
 			case widget.KindPanel:
-				m.inFocus = widget.KindWorkspace
+				m.ChangeFocus(widget.KindWorkspace)
 			case widget.KindWorkspace:
-				m.inFocus = widget.KindPanel
+				m.ChangeFocus(widget.KindPanel)
 			}
+			m.help.FocusChanged(m.inFocus)
 			return m, tea.Batch(cmds...)
 		case m.inFocus == widget.KindPanel:
 			_, cmd = m.panel.Update(msg)
@@ -138,6 +145,26 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m AppModel) updateDimensions(msg tea.WindowSizeMsg) {
+	widgetDimensions := widget.GetWidgetDimensions(msg.Width, msg.Height)
+
+	panelDimensions := widgetDimensions[widget.KindPanel]
+	m.panel.UpdateSize(panelDimensions.Width, panelDimensions.Height)
+
+	workspaceDimensions := widgetDimensions[widget.KindWorkspace]
+	m.workspace.UpdateSize(workspaceDimensions.Width, workspaceDimensions.Height)
+
+	helpDimensions := widgetDimensions[widget.KindHelp]
+	m.help.UpdateSize(helpDimensions.Width, helpDimensions.Height)
+
+	promptDimensions := widgetDimensions[widget.KindPrompt]
+	m.prompt.UpdateSize(promptDimensions.Width, promptDimensions.Height)
+
+	// popupDimensions := widgetDimensions[widget.KindPopupHandler]
+	popupDimensions := widgetDimensions[widget.KindWorkspace] // Temporarily use workspace dimensions
+	m.popupHandler.UpdateSize(popupDimensions.Width, popupDimensions.Height)
+}
+
 func (m AppModel) onPanelSelect(msg widget.PanelSelectMsg) []tea.Cmd {
 	var cmds []tea.Cmd
 
@@ -148,7 +175,7 @@ func (m AppModel) onPanelSelect(msg widget.PanelSelectMsg) []tea.Cmd {
 			return cmds
 		}
 		cmds = append(cmds, m.popupHandler.Popup(popup.KindConnect, msg.Selected))
-		cmds = append(cmds, widget.ChangeFocus(widget.KindPopupHandler))
+		m.ChangeFocus(widget.KindPopupHandler)
 	case widget.DatabaseList:
 		cmds = append(cmds, func() tea.Msg { return widget.SelectDatabaseMsg(msg.Selected) })
 	case widget.TableList:
@@ -156,6 +183,11 @@ func (m AppModel) onPanelSelect(msg widget.PanelSelectMsg) []tea.Cmd {
 	}
 
 	return cmds
+}
+
+func (m *AppModel) ChangeFocus(widget widget.Kind) {
+	m.prevFocus = m.inFocus
+	m.inFocus = widget
 }
 
 func (m AppModel) popupConfirm(msg widget.PopupConfirmMsg) tea.Cmd {
@@ -185,7 +217,7 @@ func (m AppModel) SelectServer(msg widget.SelectServerMsg) tea.Cmd {
 		logger.Infof("Config not saved: %s", string(msg))
 		var cmds []tea.Cmd
 		cmds = append(cmds, m.popupHandler.Popup(popup.KindConnect, string(msg)))
-		cmds = append(cmds, widget.ChangeFocus(widget.KindPopupHandler))
+		m.ChangeFocus(widget.KindPopupHandler)
 		return tea.Batch(cmds...)
 	}
 	logger.Infof("Config found: %+v", saved)

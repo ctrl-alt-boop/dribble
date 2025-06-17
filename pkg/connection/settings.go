@@ -6,7 +6,19 @@ import (
 	"text/template"
 )
 
+type Type string
+
+const (
+	TypeUnknown Type = "(none)"
+	Driver      Type = "Driver"
+	Server      Type = "Server"
+	Database    Type = "Database"
+	Table       Type = "Table"
+)
+
 type Settings struct {
+	SettingsName       string
+	Type               Type
 	DriverName         string
 	Ip                 string
 	Port               int
@@ -18,6 +30,8 @@ type Settings struct {
 
 func (s Settings) Copy(opts ...Option) *Settings {
 	newSettings := &Settings{
+		SettingsName:       s.SettingsName,
+		Type:               s.Type,
 		DriverName:         s.DriverName,
 		Ip:                 s.Ip,
 		Port:               s.Port,
@@ -38,6 +52,8 @@ func (s Settings) Copy(opts ...Option) *Settings {
 
 func NewSettings(options ...Option) *Settings {
 	settings := &Settings{
+		SettingsName:       "",
+		Type:               TypeUnknown,
 		DriverName:         "",
 		Ip:                 "localhost",
 		Port:               0,
@@ -57,8 +73,9 @@ func NewSettings(options ...Option) *Settings {
 const stringTemplate = `{{.DriverName}}
 {{.Username}}:********
 {{.Ip}}:{{.Port}}
+{{- if .DbName}}
 {{.DbName}}
-`
+{{- end -}}`
 
 func (s Settings) AsString() string {
 	var buf bytes.Buffer
@@ -67,6 +84,19 @@ func (s Settings) AsString() string {
 }
 
 type Option func(*Settings)
+
+func AsType(connectionType Type) Option {
+	return func(settings *Settings) {
+		settings.Type = connectionType
+	}
+}
+
+func AsTableSelect(table string) Option {
+	return func(settings *Settings) {
+		settings.Type = Table
+		settings.AdditionalSettings["select"] = "SELECT * FROM " + table
+	}
+}
 
 func WithDriver(name string) Option {
 	return func(settings *Settings) {

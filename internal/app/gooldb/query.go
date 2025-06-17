@@ -16,7 +16,13 @@ func (gool *GoolDb) FetchDatabaseList() {
 		gool.onEvent(DatabaseListFetchError, nil, err)
 		return
 	}
-	gool.onEvent(DatabaseListFetched, DatabaseListFetchData{Driver: gool.databaseContext.DriverName, Databases: list}, nil)
+	var settingsList []*connection.Settings
+	for _, name := range list {
+		dbSettings := gool.settings.Copy(connection.WithDb(name))
+		settingsList = append(settingsList, dbSettings)
+	}
+
+	gool.onEvent(DatabaseListFetched, DatabaseListFetchData{Driver: gool.databaseContext.DriverName, Databases: settingsList}, nil)
 }
 
 func (gool *GoolDb) FetchTableList(databaseName string) {
