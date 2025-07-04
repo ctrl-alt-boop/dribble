@@ -1,0 +1,26 @@
+SELECT {{if .AsDistinct}}DISTINCT{{end}}
+{{- range $i, $field := .Fields -}}
+    {{if $i}}, {{end}}{{$field}}
+{{- end}}
+FROM {{.Table}}
+{{- range .Joins}}
+    {{.Type}} JOIN {{.Table}} ON {{.On}}
+{{- end}}
+{{- if .WhereClause}}
+WHERE {{.WhereClause}}
+{{- end}}
+{{- if .GroupByClause}}
+GROUP BY {{range $i, $field := .GroupByClause}}{{if $i}}, {{end}}{{$field}}{{end}}
+{{- end}}
+{{- if .HavingClause}}
+HAVING {{.HavingClause}}
+{{- end}}
+{{- if .OrderByClause}}
+ORDER BY {{range $i, $field := .OrderByClause}}{{if $i}}, {{end}}{{$field}}{{if .DescClause}} DESC{{end}}{{end}}
+{{- end}}
+{{- if .LimitClause}}
+LIMIT {{.LimitClause}}
+{{- end}}
+{{- if .OffsetClause}}
+OFFSET {{.OffsetClause}}
+{{- end}}
