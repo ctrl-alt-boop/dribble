@@ -1,2 +1,2 @@
-# gool_db
+# dribble
 Go tool for database querying

@@ -1,4 +1,4 @@
-# Default keybindings for GoolDB TUI
+# Default keybindings for Dribbler TUI
 # Special keys: <esc>, <tab>, <enter>, <space>, <up>, <down>, <left>, <right>
 # <f1>-<f12>, <ctrl+char> (e.g. <ctrl+c>), <alt+char> (e.g. <alt+a>), <alt+<special_key>> (e.g. <alt+<space>>)
 # Regular characters: "a", "b", ":", etc.
