@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/ctrl-alt-boop/dribble"
-	"github.com/ctrl-alt-boop/dribble/internal/connection"
+	"github.com/ctrl-alt-boop/dribble/database"
 )
 
 type Connection struct {
-	Type               connection.Type
+	Type               database.TargetType
 	DriverName         string
 	Ip                 string
 	Port               int
@@ -21,29 +21,29 @@ func (c Connection) String() string {
 	return fmt.Sprintf("%s://%s:%d", c.DriverName, c.Ip, c.Port)
 }
 
-var SavedConfigs map[string]*connection.Settings = map[string]*connection.Settings{
-	"postgres_win": connection.NewSettings(
-		connection.AsType(connection.Server),
-		connection.WithDriver("postgres"),
-		connection.WithHost("172.24.208.1", 5432),
-		connection.WithUser("valmatics"),
-		connection.WithPassword("valmatics"),
-		connection.WithSetting("sslmode", "disable"),
+var SavedConfigs map[string]*database.Target = map[string]*database.Target{
+	"postgres_win": database.NewTarget("postgres_win",
+		database.AsType(database.DBServer),
+		database.WithDriver("postgres"),
+		database.WithHost("172.24.208.1", 5432),
+		database.WithUser("valmatics"),
+		database.WithPassword("valmatics"),
+		database.WithSetting("sslmode", "disable"),
 	),
-	"postgres_local": connection.NewSettings(
-		connection.AsType(connection.Server),
-		connection.WithDriver("postgres"),
-		connection.WithHost("localhost", 5432),
-		connection.WithUser("postgres_user"),
-		connection.WithPassword("postgres_user"),
-		connection.WithSetting("sslmode", "disable"),
+	"postgres_local": database.NewTarget("postgres_local",
+		database.AsType(database.DBServer),
+		database.WithDriver("postgres"),
+		database.WithHost("localhost", 5432),
+		database.WithUser("postgres_user"),
+		database.WithPassword("postgres_user"),
+		database.WithSetting("sslmode", "disable"),
 	),
-	"mysql_local": connection.NewSettings(
-		connection.AsType(connection.Server),
-		connection.WithDriver("mysql"),
-		connection.WithHost("localhost", 3306),
-		connection.WithUser("mysql_user"),
-		connection.WithPassword("mysql_user"),
+	"mysql_local": database.NewTarget("mysql_local",
+		database.AsType(database.DBServer),
+		database.WithDriver("mysql"),
+		database.WithHost("localhost", 3306),
+		database.WithUser("mysql_user"),
+		database.WithPassword("mysql_user"),
 	),
 }
 
@@ -52,7 +52,7 @@ func GetDriverDefaults() map[string]Connection {
 	driverDefaults := make(map[string]Connection)
 	for name, settings := range defaults {
 		driverDefaults[name] = Connection{
-			Type:               connection.Driver,
+			Type:               database.DBDriver,
 			DriverName:         name,
 			Ip:                 settings.Ip,
 			Port:               settings.Port,

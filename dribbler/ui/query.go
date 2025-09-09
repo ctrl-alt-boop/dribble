@@ -2,20 +2,20 @@ package ui
 
 import (
 	"github.com/charmbracelet/huh"
-	"github.com/ctrl-alt-boop/dribble/playbook/database"
+	"github.com/ctrl-alt-boop/dribble/database"
 )
 
 type QueryForm struct {
 	huh.Form
 
-	statement *database.Statement
+	intent *database.QueryIntent
 }
 
-func CreateQueryForm(method database.SqlMethod, table string) *QueryForm {
+func CreateQueryForm(method database.QueryType, target string) *QueryForm {
 	return &QueryForm{
-		statement: &database.Statement{
-			Method: method,
-			Table:  table,
+		intent: &database.QueryIntent{
+			Type:       method,
+			TargetName: target,
 		},
 	}
 }

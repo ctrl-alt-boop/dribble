@@ -2,10 +2,10 @@ package popup
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/ctrl-alt-boop/dribble/dribble/ui"
-	"github.com/ctrl-alt-boop/dribble/internal/app/dribble"
-	"github.com/ctrl-alt-boop/dribble/playbook/database"
-	"github.com/ctrl-alt-boop/dribble/playbook/logging"
+	"github.com/ctrl-alt-boop/dribble"
+	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribbler/logging"
+	"github.com/ctrl-alt-boop/dribbler/ui"
 )
 
 var logger = logging.GlobalLogger()
@@ -106,9 +106,9 @@ func (p *PopupHandler) Popup(popupType Kind, args ...any) tea.Cmd {
 		p.currentPopup = newConnect(driverName)
 	case KindQueryBuilder:
 		switch arg := args[0].(type) {
-		case database.Query:
+		case database.QueryIntent:
 			p.currentPopup = newQueryBuilder(nil) // TODO: query builder way
-		case database.SqlMethod:
+		case database.QueryType:
 			p.currentPopup = newTableQueryBuilder(arg, args[1].(string))
 		}
 	case KindTableCell:

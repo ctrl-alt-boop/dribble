@@ -2,7 +2,7 @@ package io
 
 import (
 	"github.com/ctrl-alt-boop/dribble"
-	"github.com/ctrl-alt-boop/dribble/internal/connection"
+	"github.com/ctrl-alt-boop/dribble/database"
 )
 
 type (
@@ -13,6 +13,6 @@ type (
 	}
 
 	ConnectMsg struct {
-		Settings *connection.Settings
+		Target *database.Target
 	}
 )

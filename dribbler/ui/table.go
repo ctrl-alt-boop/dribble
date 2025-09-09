@@ -3,8 +3,8 @@ package ui
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ctrl-alt-boop/dribble/playbook/data"
-	"github.com/ctrl-alt-boop/dribble/playbook/logging"
+	"github.com/ctrl-alt-boop/dribble/result"
+	"github.com/ctrl-alt-boop/dribbler/logging"
 )
 
 var logger = logging.GlobalLogger()
@@ -26,7 +26,7 @@ func NewTable() *ListTable {
 	return &ListTable{}
 }
 
-func (t *ListTable) SetTable(table *data.Table) {
+func (t *ListTable) SetTable(table *result.Table) {
 	lists := make([]*List, table.NumColumns())
 	for i := range lists {
 		lists[i] = NewList()

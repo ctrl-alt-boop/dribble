@@ -7,14 +7,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ctrl-alt-boop/dribble/dribble/config"
-	"github.com/ctrl-alt-boop/dribble/dribble/ui"
-	"github.com/ctrl-alt-boop/dribble/dribble/widget"
-	"github.com/ctrl-alt-boop/dribble/playbook/database"
+	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/ui"
+	"github.com/ctrl-alt-boop/dribbler/widget"
 )
 
 type QueryBuilder struct {
-	Query *database.Statement
+	Query *database.QueryIntent
 
 	QueryForm *huh.Form
 	CancelCmd tea.Cmd
@@ -28,16 +28,16 @@ func newEmptyQueryBuilder() *QueryBuilder {
 	}
 }
 
-func newTableQueryBuilder(method database.SqlMethod, tableName string) *QueryBuilder {
+func newTableQueryBuilder(method database.QueryType, tableName string) *QueryBuilder {
 	q := newEmptyQueryBuilder()
-	q.Query = &database.Statement{
-		Method: method,
-		Table:  tableName,
+	q.Query = &database.QueryIntent{
+		Type:       method,
+		TargetName: tableName,
 	}
 	return q
 }
 
-func newQueryBuilder(query *database.Query) *QueryBuilder {
+func newQueryBuilder(query *database.QueryStyle) *QueryBuilder {
 	q := newEmptyQueryBuilder()
 	// q.Query = query
 	return q
@@ -46,23 +46,23 @@ func newQueryBuilder(query *database.Query) *QueryBuilder {
 // Init implements tea.Model.
 func (q *QueryBuilder) Init() tea.Cmd {
 	if q.Query == nil {
-		q.Query = &database.Statement{
-			Table: "table",
+		q.Query = &database.QueryIntent{
+			TargetName: "table",
 		}
 	}
-	formTitle := fmt.Sprintf("New %s query", q.Query.Table)
+	formTitle := fmt.Sprintf("New %s query", q.Query.TargetName)
 	q.QueryForm = huh.NewForm(
 		huh.NewGroup(
 			huh.NewNote().Title(formTitle),
 		),
 		huh.NewGroup(
-			huh.NewSelect[database.SqlMethod]().Title("Method:").
-				Options(huh.NewOptions(database.SqlMethods...)...).
-				Value(&q.Query.Method),
+			huh.NewSelect[database.QueryType]().Title("Method:").
+				Options(huh.NewOptions(database.QueryTypes...)...).
+				Value(&q.Query.Type),
 		),
 		huh.NewGroup(
 			huh.NewInput().Title("Table:").
-				Value(&q.Query.Table),
+				Value(&q.Query.TargetName),
 		),
 	)
 
