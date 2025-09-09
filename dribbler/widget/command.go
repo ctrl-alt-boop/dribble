@@ -2,7 +2,7 @@ package widget
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/ctrl-alt-boop/dribble/playbook/database"
+	"github.com/ctrl-alt-boop/dribble/database"
 )
 
 type (
@@ -31,7 +31,7 @@ type (
 	}
 
 	OpenQueryBuilderMsg struct {
-		Method database.SqlMethod
+		Method database.QueryType
 		Table  string
 	}
 
@@ -45,7 +45,7 @@ type (
 	}
 
 	QueryBuilderConfirmMsg struct {
-		Query *database.Statement
+		Query *database.QueryIntent
 	}
 )
 

@@ -13,6 +13,14 @@ const (
 	// Meta?
 )
 
+var QueryTypes = []QueryType{
+	ReadQuery,
+	CreateQuery,
+	UpdateQuery,
+	DeleteQuery,
+	ExecuteQuery,
+}
+
 type DialectProperties string
 
 const (

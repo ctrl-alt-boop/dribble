@@ -7,13 +7,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/list"
 	"github.com/charmbracelet/lipgloss/tree"
-	"github.com/ctrl-alt-boop/dribble/dribble/config"
-	"github.com/ctrl-alt-boop/dribble/playbook/connection"
+	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribbler/config"
 )
 
 type (
 	ConnectionItem struct {
-		*connection.Settings
+		*database.Target
 		Name string
 	}
 )
@@ -21,14 +21,14 @@ type (
 func (item ConnectionItem) FilterValue() string { return "" }
 func (item ConnectionItem) Title() string       { return item.Name }
 func (item ConnectionItem) Description() string { return "" }
-func (item ConnectionItem) Inspect() string     { return item.AsString() }
+func (item ConnectionItem) Inspect() string     { return item.Name }
 
 func GetSavedConfigsSorted() []*ConnectionItem {
 	items := make([]*ConnectionItem, 0, len(config.SavedConfigs))
 	for name, settings := range config.SavedConfigs {
 		items = append(items, &ConnectionItem{
-			Name:     name,
-			Settings: settings,
+			Name:   name,
+			Target: settings,
 		})
 	}
 
@@ -40,32 +40,32 @@ func GetSavedConfigsSorted() []*ConnectionItem {
 	return items
 }
 
-func SettingsToConnectionItems(settings []*connection.Settings) []*ConnectionItem {
+func SettingsToConnectionItems(targets []*database.Target) []*ConnectionItem {
 	listString := ""
-	for _, setting := range settings {
-		listString += setting.AsString() + "\n"
+	for _, target := range targets {
+		listString += target.Name + "\n"
 	}
 	logger.Infof("SettingsToConnectionItems: %+v", listString)
-	items := make([]*ConnectionItem, 0, len(settings))
-	for _, setting := range settings {
-		if setting.SettingsName == "" {
-			setting.SettingsName = setting.DBName
+	items := make([]*ConnectionItem, 0, len(targets))
+	for _, target := range targets {
+		if target.Name == "" {
+			target.Name = target.DBName
 		}
 		items = append(items, &ConnectionItem{
-			Name:     setting.SettingsName,
-			Settings: setting,
+			Name:   target.Name,
+			Target: target,
 		})
 	}
 	return items
 }
 
 func CreateNestedList() *list.List {
-	types := map[connection.Type]*list.List{
-		connection.Driver:      list.New(),
-		connection.Server:      list.New(),
-		connection.Database:    list.New(),
-		connection.Table:       list.New(),
-		connection.TypeUnknown: list.New(),
+	types := map[database.TargetType]*list.List{
+		database.DBDriver: list.New(),
+		database.DBServer: list.New(),
+		database.Database: list.New(),
+		database.DBTable:  list.New(),
+		database.Unknown:  list.New(),
 	}
 	configs := GetSavedConfigsSorted()
 	for _, item := range configs {
@@ -87,7 +87,7 @@ type (
 
 	TreeNode struct {
 		Item     *ConnectionItem
-		Type     connection.Type
+		Type     database.TargetType
 		Name     string
 		children TreeNodeChildren
 		hidden   bool
@@ -123,16 +123,16 @@ func NewCategoryNode(categoryName string, children TreeNodeChildren) *TreeNode {
 	}
 }
 
-func NewConnectionNode(nodeType connection.Type, connectionItem *ConnectionItem) *TreeNode {
+func NewConnectionNode(nodeType database.TargetType, connectionItem *ConnectionItem) *TreeNode {
 	var name string
 	switch nodeType {
-	case connection.Driver:
+	case database.DBDriver:
 		name = connectionItem.DriverName
-	case connection.Server:
+	case database.DBServer:
 		name = connectionItem.Ip
-	case connection.Database:
+	case database.Database:
 		name = connectionItem.DBName
-	case connection.Table:
+	case database.DBTable:
 		name = "{table}"
 	default:
 		name = "ERR"
@@ -175,7 +175,7 @@ func (t *TreeNode) String() string {
 	if t.Item == nil {
 		return t.Name
 	}
-	return t.Item.AsString()
+	return t.Item.Name
 	// return t.Name
 }
 

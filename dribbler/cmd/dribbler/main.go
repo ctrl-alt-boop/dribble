@@ -11,13 +11,13 @@ import (
 
 func main() {
 	// defer logging.CloseGlobalLogger()
-	var ip string = "localhost"
-	if len(os.Args) > 1 {
-		ip = os.Args[1]
-	}
+	// var ip string = "localhost"
+	// if len(os.Args) > 1 {
+	// 	ip = os.Args[1]
+	// }
 
 	// logging.GlobalLogger().Infof("DribbleAPI Create")
-	dribble := dribble.NewClient(ip)
+	dribble := dribble.NewClient()
 
 	dribbleTUI := dribbler.InitialModel(dribble)
 	p := tea.NewProgram(dribbleTUI, tea.WithAltScreen())

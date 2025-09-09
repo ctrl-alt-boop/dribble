@@ -3,12 +3,12 @@ package dribbler
 import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/ctrl-alt-boop/dribble/dribble/config"
-	"github.com/ctrl-alt-boop/dribble/dribble/io"
-	"github.com/ctrl-alt-boop/dribble/dribble/widget"
-	"github.com/ctrl-alt-boop/dribble/dribble/widget/popup"
-	"github.com/ctrl-alt-boop/dribble/internal/app/dribble"
-	"github.com/ctrl-alt-boop/dribble/playbook/connection"
+	"github.com/ctrl-alt-boop/dribble"
+	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/io"
+	"github.com/ctrl-alt-boop/dribbler/widget"
+	"github.com/ctrl-alt-boop/dribbler/widget/popup"
 )
 
 func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -61,7 +61,7 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case dribble.ConnectError:
 		case dribble.Connected:
 			cmd = func() tea.Msg {
-				m.dribble.FetchDatabaseList()
+				// m.dribble.FetchDatabaseList() //FIXME
 				return nil
 			}
 			return m, cmd
@@ -171,7 +171,7 @@ func (m AppModel) onPanelSelect(msg widget.PanelSelectMsg) []tea.Cmd {
 	switch msg.CurrentMode {
 	case widget.ServerList:
 		if config, ok := config.SavedConfigs[msg.Selected]; ok {
-			cmds = append(cmds, func() tea.Msg { return io.ConnectMsg{Settings: config} })
+			cmds = append(cmds, func() tea.Msg { return io.ConnectMsg{Target: config} })
 			return cmds
 		}
 		cmds = append(cmds, m.popupHandler.Popup(popup.KindConnect, msg.Selected))
@@ -191,19 +191,19 @@ func (m *AppModel) ChangeFocus(widget widget.Kind) {
 }
 
 func (m AppModel) connectPopupConfirm(msg widget.ConnectPopupConfirmMsg) tea.Cmd {
-	settings := connection.NewSettings(
-		connection.WithDriver(msg.DriverName),
-		connection.WithHost(msg.Ip, msg.Port),
-		connection.WithUser(msg.Username),
-		connection.WithPassword(msg.Password),
+	settings := database.NewTarget("",
+		database.WithDriver(msg.DriverName),
+		database.WithHost(msg.Ip, msg.Port),
+		database.WithUser(msg.Username),
+		database.WithPassword(msg.Password),
 	)
 
-	return func() tea.Msg { return io.ConnectMsg{Settings: settings} }
+	return func() tea.Msg { return io.ConnectMsg{Target: settings} }
 }
 
 func (m AppModel) Connect(msg io.ConnectMsg) tea.Cmd {
 	return func() tea.Msg {
-		m.dribble.Connect(msg.Settings)
+		// m.dribble.Connect(msg.Target) //FIXME
 		return nil
 	}
 }
@@ -218,28 +218,28 @@ func (m AppModel) SelectServer(msg widget.SelectServerMsg) tea.Cmd {
 	}
 	logger.Infof("Config found: %+v", saved)
 	return func() tea.Msg {
-		m.dribble.Connect(saved)
+		// m.dribble.Connect(saved) //FIXME
 		return nil
 	}
 }
 
 func (m AppModel) SelectDatabase(msg widget.SelectDatabaseMsg) tea.Cmd {
 	return func() tea.Msg {
-		m.dribble.FetchTableList(string(msg))
+		// m.dribble.FetchTableList(string(msg)) //FIXME
 		return nil
 	}
 }
 
 func (m AppModel) SelectTable(msg widget.SelectTableMsg) tea.Cmd {
 	return func() tea.Msg {
-		m.dribble.FetchTable(string(msg))
+		// m.dribble.FetchTable(string(msg)) //FIXME
 		return nil
 	}
 }
 
 func (m AppModel) SelectTableColumns(msg widget.SelectTableColumnsMsg) tea.Cmd {
 	return func() tea.Msg {
-		m.dribble.FetchTableColumns(string(msg))
+		// m.dribble.FetchTableColumns(string(msg)) //FIXME
 		return nil
 	}
 }

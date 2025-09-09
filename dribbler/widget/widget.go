@@ -3,8 +3,9 @@ package widget
 import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/ctrl-alt-boop/dribble/dribble/config"
-	"github.com/ctrl-alt-boop/dribble/playbook/logging"
+
+	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/logging"
 )
 
 var logger = logging.GlobalLogger()

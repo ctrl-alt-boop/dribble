@@ -9,9 +9,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ctrl-alt-boop/dribble/dribble/config"
-	"github.com/ctrl-alt-boop/dribble/dribble/ui"
-	"github.com/ctrl-alt-boop/dribble/dribble/widget"
+	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/ui"
+	"github.com/ctrl-alt-boop/dribbler/widget"
 )
 
 type Connect struct {

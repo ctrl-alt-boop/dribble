@@ -3,8 +3,8 @@ package widget
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/ctrl-alt-boop/dribble/dribble/ui"
-	"github.com/ctrl-alt-boop/dribble/internal/app/dribble"
+	"github.com/ctrl-alt-boop/dribble"
+	"github.com/ctrl-alt-boop/dribbler/ui"
 )
 
 type Prompt struct {

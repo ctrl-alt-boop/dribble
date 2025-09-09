@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/ctrl-alt-boop/dribble/dribble/widget"
+	"github.com/ctrl-alt-boop/dribbler/widget"
 )
 
 var _ PopupModel = Details{}

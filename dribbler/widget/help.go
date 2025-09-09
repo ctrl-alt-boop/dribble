@@ -4,8 +4,8 @@ import (
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/ctrl-alt-boop/dribble/dribble/config"
-	"github.com/ctrl-alt-boop/dribble/dribble/ui"
+	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/ui"
 )
 
 type Help struct {

@@ -4,15 +4,15 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss/list"
 	"github.com/charmbracelet/lipgloss/tree"
+
 	"github.com/ctrl-alt-boop/dribble"
-	"github.com/ctrl-alt-boop/dribble/dribble/config"
-	"github.com/ctrl-alt-boop/dribble/dribble/io"
-	"github.com/ctrl-alt-boop/dribble/dribble/ui"
-	"github.com/ctrl-alt-boop/dribble/dribble/widget"
-	"github.com/ctrl-alt-boop/dribble/dribble/widget/popup"
-	"github.com/ctrl-alt-boop/dribble/internal/app/dribble"
-	"github.com/ctrl-alt-boop/dribble/playbook/connection"
-	"github.com/ctrl-alt-boop/dribble/playbook/logging"
+	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/io"
+	"github.com/ctrl-alt-boop/dribbler/logging"
+	"github.com/ctrl-alt-boop/dribbler/ui"
+	"github.com/ctrl-alt-boop/dribbler/widget"
+	"github.com/ctrl-alt-boop/dribbler/widget/popup"
 )
 
 var logger = logging.GlobalLogger()
@@ -33,7 +33,7 @@ type AppModel struct {
 	programSend func(msg tea.Msg)
 }
 
-func InitialModel(dribbleClient *dribble.DB) AppModel {
+func InitialModel(dribbleClient *dribble.Client) AppModel {
 	config.LoadConfig()
 
 	// testTree()
@@ -86,7 +86,7 @@ func testTree() {
 	var treeItems []*ui.TreeNode
 	connItems := ui.GetSavedConfigsSorted()
 	for _, item := range connItems {
-		treeItem := ui.NewConnectionNode(connection.Server, item)
+		treeItem := ui.NewConnectionNode(database.DBServer, item)
 		treeItems = append(treeItems, treeItem)
 	}
 

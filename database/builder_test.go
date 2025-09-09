@@ -44,29 +44,29 @@ func (m *mockDriver) Ping(ctx context.Context) error {
 }
 
 // Subtle: this method shadows the method (SQLDriver).Query of mockDriver.SQLDriver.
-func (m *mockDriver) Query(query *database.QueryIntent) string {
+func (m *mockDriver) Query(query *database.QueryIntent) (any, error) {
 	switch query.QueryStyle {
 	case database.SQL:
-		return fmt.Sprintf("%+v", query.SQLQuery)
+		return fmt.Sprintf("%+v", query.SQLQuery), nil
 	case database.NoSQL:
-		return fmt.Sprintf("%+v", query.NoSQLQuery)
+		return fmt.Sprintf("%+v", query.NoSQLQuery), nil
 	}
 
-	return fmt.Sprintf("%+v", query)
+	return fmt.Sprintf("%+v", query), nil
 }
 
 // Subtle: this method shadows the method (SQLDriver).QueryContext of mockDriver.SQLDriver.
-func (m *mockDriver) QueryContext(ctx context.Context, query *database.QueryIntent) string {
-	return fmt.Sprintf("%+v", query.SQLQuery)
+func (m *mockDriver) QueryContext(ctx context.Context, query *database.QueryIntent) (any, error) {
+	return fmt.Sprintf("%+v", query.SQLQuery), nil
 }
 
 func TestQueryBuilding(t *testing.T) {
 	var driver database.Driver = &mockDriver{}
 	q := database.Select("ads").From("table").Where(database.Eq("ads", "ads")).ToQuery()
-	qString := driver.Query(q)
+	qString, _ := driver.Query(q)
 	t.Log(qString)
 
 	q = database.Find().Cond(database.Eq("ads", "ads")).ToQuery()
-	qString = driver.Query(q)
+	qString, _ = driver.Query(q)
 	t.Log(qString)
 }

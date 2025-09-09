@@ -6,12 +6,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ctrl-alt-boop/dribble"
-	"github.com/ctrl-alt-boop/dribble/dribble/config"
-	"github.com/ctrl-alt-boop/dribble/dribble/io"
-	"github.com/ctrl-alt-boop/dribble/dribble/ui"
-	db "github.com/ctrl-alt-boop/dribble/internal/app/dribble"
-	"github.com/ctrl-alt-boop/dribble/playbook/connection"
-	"github.com/ctrl-alt-boop/dribble/playbook/database"
+
+	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/io"
+	"github.com/ctrl-alt-boop/dribbler/ui"
 )
 
 type PanelSelectMsg struct {
@@ -133,11 +132,12 @@ func (p *Panel) Init() tea.Cmd {
 	for name, settings := range config.GetDriverDefaults() {
 		connectionItems = append(connectionItems, &ui.ConnectionItem{
 			Name: name,
-			Settings: connection.NewSettings(connection.AsType(connection.Driver),
-				connection.WithDriver(settings.DriverName),
-				connection.WithHost(settings.Ip, settings.Port),
-				connection.WithUser(settings.Username),
-				connection.WithPassword(settings.Password)),
+			Target: database.NewTarget("",
+				database.AsType(database.DBDriver),
+				database.WithDriver(settings.DriverName),
+				database.WithHost(settings.Ip, settings.Port),
+				database.WithUser(settings.Username),
+				database.WithPassword(settings.Password)),
 		})
 	}
 	p.list.SetConnectionItems(connectionItems)
@@ -167,14 +167,14 @@ func (p *Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if selection, ok := p.list.SelectedItem().(ui.ListItem); ok {
 				return p, func() tea.Msg {
 					return OpenQueryBuilderMsg{
-						Method: database.MethodSelect,
+						Method: database.ReadQuery,
 						Table:  string(selection),
 					}
 				}
 			}
 		case key.Matches(msg, config.Keys.NewEmpty):
 			return p, func() tea.Msg {
-				return OpenQueryBuilderMsg{Method: database.MethodSelect, Table: ""}
+				return OpenQueryBuilderMsg{Method: database.ReadQuery, Table: ""}
 			}
 		}
 
@@ -187,14 +187,14 @@ func (p *Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		switch msg.Type {
 		case dribble.DatabaseListFetched:
-			args, ok := msg.Args.(db.DatabaseListFetchData)
+			args, ok := msg.Args.(dribble.DatabaseListFetchData)
 			if ok {
 				items := ui.SettingsToConnectionItems(args.Databases)
 				p.list.SetConnectionItems(items)
 				p.SetMode(DatabaseList)
 			}
 		case dribble.DBTableListFetched:
-			args, ok := msg.Args.(db.TableListFetchData)
+			args, ok := msg.Args.(dribble.TableListFetchData)
 			if ok {
 				p.list.SetStringItems(args.Tables)
 				p.SetMode(TableList)

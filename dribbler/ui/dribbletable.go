@@ -2,8 +2,9 @@ package ui
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ctrl-alt-boop/dribble/dribble/util"
-	"github.com/ctrl-alt-boop/dribble/playbook/data"
+
+	"github.com/ctrl-alt-boop/dribble/result"
+	"github.com/ctrl-alt-boop/dribbler/util"
 )
 
 const defaultCellWidth = 36 // Guid length, including the '-'s
@@ -182,7 +183,7 @@ func NewDribbleTable() *DribbleTable {
 	}
 }
 
-func (t *DribbleTable) SetTable(dataTable data.Table) {
+func (t *DribbleTable) SetTable(dataTable result.Table) {
 
 	tableColumns := t.getColumnsAsTableColumns(dataTable)
 	t.Columns = tableColumns
@@ -212,7 +213,7 @@ func (t *DribbleTable) IsTableEmpty() bool {
 	return len(t.Rows) == 0
 }
 
-func (t *DribbleTable) getColumnsAsTableColumns(dataTable data.Table) Columns {
+func (t *DribbleTable) getColumnsAsTableColumns(dataTable result.Table) Columns {
 	columnNames := dataTable.ColumnNames()
 	columnWidths := t.getColumnWidths(dataTable)
 	columns := util.Zip(columnNames, columnWidths)
@@ -223,7 +224,7 @@ func (t *DribbleTable) getColumnsAsTableColumns(dataTable data.Table) Columns {
 	return tableColumns
 }
 
-func (t *DribbleTable) getRowsAsTableRows(dataTable data.Table) Rows {
+func (t *DribbleTable) getRowsAsTableRows(dataTable result.Table) Rows {
 	var tableRows Rows
 	for i := range dataTable.Rows() {
 		row := dataTable.GetRowStrings(i)
@@ -232,7 +233,7 @@ func (t *DribbleTable) getRowsAsTableRows(dataTable data.Table) Rows {
 	return tableRows
 }
 
-func (t *DribbleTable) getColumnWidths(dataTable data.Table) []int {
+func (t *DribbleTable) getColumnWidths(dataTable result.Table) []int {
 	columnWidths := make([]int, dataTable.NumColumns())
 	for i := range dataTable.Rows() {
 		row := dataTable.GetRowStrings(i)

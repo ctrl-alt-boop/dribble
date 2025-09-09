@@ -2,7 +2,7 @@ package dribbler
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ctrl-alt-boop/dribble/dribble/ui"
+	"github.com/ctrl-alt-boop/dribbler/ui"
 )
 
 func (m AppModel) View() string {

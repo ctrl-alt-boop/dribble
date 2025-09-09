@@ -7,11 +7,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ctrl-alt-boop/dribble"
-	"github.com/ctrl-alt-boop/dribble/dribble/config"
-	"github.com/ctrl-alt-boop/dribble/dribble/io"
-	"github.com/ctrl-alt-boop/dribble/dribble/ui"
-	db "github.com/ctrl-alt-boop/dribble/internal/app/dribble"
-	"github.com/ctrl-alt-boop/dribble/playbook/data"
+
+	"github.com/ctrl-alt-boop/dribble/result"
+	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/io"
+	"github.com/ctrl-alt-boop/dribbler/ui"
 )
 
 type Workspace struct {
@@ -67,9 +67,9 @@ func (d *Workspace) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		d.isLoading = false
 		switch msg.Type {
 		case dribble.TableFetched:
-			args, ok := msg.Args.(db.TableFetchData)
+			args, ok := msg.Args.(dribble.TableFetchData)
 			if ok {
-				return d, tea.Batch(d.SetTable(args.Table), RequestFocusChange(KindWorkspace))
+				return d, tea.Batch(d.SetTable(*args.Table), RequestFocusChange(KindWorkspace))
 			}
 		}
 	}
@@ -81,7 +81,7 @@ func (d *Workspace) SelectCell() tea.Msg {
 	return OpenCellDataMsg{Value: d.table.GetSelected()}
 }
 
-func (d *Workspace) SetTable(table data.Table) tea.Cmd {
+func (d *Workspace) SetTable(table result.Table) tea.Cmd {
 	d.table.SetTable(table)
 	d.viewport.SetXOffset(0)
 	d.viewport.SetYOffset(0)
