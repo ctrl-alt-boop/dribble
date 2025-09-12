@@ -8,12 +8,12 @@ import (
 type QueryForm struct {
 	huh.Form
 
-	intent *database.QueryIntent
+	intent *database.Intent
 }
 
-func CreateQueryForm(method database.QueryType, target string) *QueryForm {
+func CreateQueryForm(method database.OperationType, target string) *QueryForm {
 	return &QueryForm{
-		intent: &database.QueryIntent{
+		intent: &database.Intent{
 			Type:       method,
 			TargetName: target,
 		},

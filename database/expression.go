@@ -5,16 +5,6 @@ import (
 	"strings"
 )
 
-type ResultType int
-
-const (
-	Result ResultType = iota - 1
-	ResultScalar
-	ResultList
-	ResultTable
-	ResultSet
-)
-
 var _ Expr = &compExpr{}
 var _ Expr = &logicExpr{}
 var _ Expr = &notExpr{}

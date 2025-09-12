@@ -14,7 +14,7 @@ import (
 )
 
 type QueryBuilder struct {
-	Query *database.QueryIntent
+	Query *database.Intent
 
 	QueryForm *huh.Form
 	CancelCmd tea.Cmd
@@ -28,16 +28,16 @@ func newEmptyQueryBuilder() *QueryBuilder {
 	}
 }
 
-func newTableQueryBuilder(method database.QueryType, tableName string) *QueryBuilder {
+func newTableQueryBuilder(method database.OperationType, tableName string) *QueryBuilder {
 	q := newEmptyQueryBuilder()
-	q.Query = &database.QueryIntent{
+	q.Query = &database.Intent{
 		Type:       method,
 		TargetName: tableName,
 	}
 	return q
 }
 
-func newQueryBuilder(query *database.QueryStyle) *QueryBuilder {
+func newQueryBuilder(query *database.DatabaseType) *QueryBuilder {
 	q := newEmptyQueryBuilder()
 	// q.Query = query
 	return q
@@ -46,7 +46,7 @@ func newQueryBuilder(query *database.QueryStyle) *QueryBuilder {
 // Init implements tea.Model.
 func (q *QueryBuilder) Init() tea.Cmd {
 	if q.Query == nil {
-		q.Query = &database.QueryIntent{
+		q.Query = &database.Intent{
 			TargetName: "table",
 		}
 	}
@@ -56,8 +56,8 @@ func (q *QueryBuilder) Init() tea.Cmd {
 			huh.NewNote().Title(formTitle),
 		),
 		huh.NewGroup(
-			huh.NewSelect[database.QueryType]().Title("Method:").
-				Options(huh.NewOptions(database.QueryTypes...)...).
+			huh.NewSelect[database.OperationType]().Title("Method:").
+				Options(huh.NewOptions(database.OperationTypes...)...).
 				Value(&q.Query.Type),
 		),
 		huh.NewGroup(

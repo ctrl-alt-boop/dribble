@@ -49,10 +49,10 @@ func (s Target) Copy(opts ...TargetOption) *Target {
 	return newTarget
 }
 
-func NewTarget(name string, options ...TargetOption) *Target {
+func NewTarget(name string, targetType TargetType, options ...TargetOption) *Target {
 	settings := &Target{
 		Name:               name,
-		Type:               None,
+		Type:               targetType,
 		DriverName:         "",
 		Ip:                 "localhost",
 		Port:               0,
@@ -71,16 +71,17 @@ func NewTarget(name string, options ...TargetOption) *Target {
 
 type TargetOption func(*Target)
 
-func AsType(connectionType TargetType) TargetOption {
-	return func(target *Target) {
-		target.Type = connectionType
-	}
-}
-
 func AsTableSelect(table string) TargetOption {
 	return func(target *Target) {
 		target.Type = DBTable
 		target.AdditionalSettings["select"] = "SELECT * FROM " + table
+	}
+}
+
+func AsQuery(query string) TargetOption {
+	return func(target *Target) {
+		target.Type = DBTable
+		target.AdditionalSettings["query"] = query
 	}
 }
 

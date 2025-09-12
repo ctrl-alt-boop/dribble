@@ -6,6 +6,7 @@ import (
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/internal/database/nosql"
 	"github.com/ctrl-alt-boop/dribble/internal/database/sql"
+	"github.com/ctrl-alt-boop/dribble/internal/database/sql/postgres"
 )
 
 type DriverName = string
@@ -25,7 +26,7 @@ var supportedDrivers []string = []string{
 
 var (
 	_ database.Driver = &sql.MySql{}
-	_ database.Driver = &sql.Postgres{}
+	_ database.Driver = &postgres.Postgres{}
 	_ database.Driver = &sql.SQLite3{}
 )
 
@@ -34,7 +35,7 @@ func CreateDriverFromTarget(target *database.Target) (database.Driver, error) {
 	case DriverMySql:
 		return sql.NewMySqlDriver(target)
 	case DriverPostgreSQL:
-		return sql.NewPostgresDriver(target)
+		return postgres.NewPostgresDriver(target)
 	case DriverSQLite:
 		return sql.NewSQLite3Driver(target)
 	case DriverMongoDB:

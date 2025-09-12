@@ -21,6 +21,15 @@ const (
 
 	DriverLoadError //EventType = "DriverLoadError"
 
+	TargetOpened    //EventType = "TargetOpened"
+	TargetOpenError //EventType = "TargetOpenError"
+
+	TargetClosed     //EventType = "TargetClosed"
+	TargetCloseError //EventType = "TargetCloseError"
+
+	TargetUpdated     //EventType = "TargetUpdated"
+	TargetUpdateError //EventType = "TargetUpdateError"
+
 	DBOpened    //EventType = "DatabaseConnectSuccess"
 	DBOpenError //EventType = "DatabaseConnectError"
 

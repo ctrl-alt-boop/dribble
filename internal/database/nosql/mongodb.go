@@ -11,11 +11,8 @@ import (
 var _ database.Driver = &MongoDB{}
 
 type MongoDB struct {
-	Client *mongo.Client
+	client *mongo.Client
 	target *database.Target
-
-	FetchLimit       int
-	FetchLimitOffset int
 }
 
 func NewMongoDBDriver(target *database.Target) (*MongoDB, error) {
@@ -30,7 +27,7 @@ func NewMongoDBDriver(target *database.Target) (*MongoDB, error) {
 }
 
 func (m *MongoDB) Close(ctx context.Context) error {
-	return m.Client.Disconnect(ctx)
+	return m.client.Disconnect(ctx)
 }
 
 func (m *MongoDB) Open(ctx context.Context) error {
@@ -38,23 +35,23 @@ func (m *MongoDB) Open(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	m.Client = client
+	m.client = client
 	return nil
 }
 
 func (m *MongoDB) Ping(ctx context.Context) error {
-	return m.Client.Ping(ctx, nil)
+	return m.client.Ping(ctx, nil)
 }
 
 func (m *MongoDB) Dialect() database.Dialect {
 	return m
 }
 
-func (m *MongoDB) Query(query *database.QueryIntent) (any, error) {
-	return m.QueryContext(context.Background(), query)
+func (m *MongoDB) Query(ctx context.Context, query *database.Intent) (any, error) {
+	panic("unimplemented")
 }
 
-func (m *MongoDB) QueryContext(ctx context.Context, query *database.QueryIntent) (any, error) {
+func (m *MongoDB) ExecutePrefab(ctx context.Context, prefabType database.PrefabType, args ...any) (any, error) {
 	panic("unimplemented")
 }
 
@@ -67,20 +64,20 @@ func (m *MongoDB) Target() *database.Target {
 }
 
 // Capabilities implements database.Dialect.
-func (m *MongoDB) Capabilities() []database.DialectProperties {
+func (m *MongoDB) Capabilities() []database.Capabilities {
 	return nil
 }
 
 // GetTemplate implements database.Dialect.
-func (m *MongoDB) GetTemplate(queryType database.QueryType) string {
+func (m *MongoDB) GetTemplate(queryType database.OperationType) string {
 	switch queryType {
-	case database.ReadQuery:
+	case database.Read:
 		return "" // MongoDBSelectTemplate
-	case database.CreateQuery:
+	case database.Create:
 		return ""
-	case database.UpdateQuery:
+	case database.Update:
 		return ""
-	case database.DeleteQuery:
+	case database.Delete:
 		return ""
 	default:
 		return ""

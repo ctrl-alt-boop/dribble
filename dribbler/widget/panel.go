@@ -167,14 +167,14 @@ func (p *Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if selection, ok := p.list.SelectedItem().(ui.ListItem); ok {
 				return p, func() tea.Msg {
 					return OpenQueryBuilderMsg{
-						Method: database.ReadQuery,
+						Method: database.Read,
 						Table:  string(selection),
 					}
 				}
 			}
 		case key.Matches(msg, config.Keys.NewEmpty):
 			return p, func() tea.Msg {
-				return OpenQueryBuilderMsg{Method: database.ReadQuery, Table: ""}
+				return OpenQueryBuilderMsg{Method: database.Read, Table: ""}
 			}
 		}
 

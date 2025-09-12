@@ -98,7 +98,7 @@ func SQLStyleSelect() database.SQLStyleSelectBuilder {
 // func (c *Client) Query(queryStatment Query) {
 // 	var err error
 
-// 	queryString, params, err := queryStatment.ToSql(c.executers.Driver)
+// 	queryString, params, err := queryStatment.ToSql(c.executors.Driver)
 // 	if err != nil {
 // 		// logger.Warn(err)
 // 		c.onEvent(QueryExecuteError, nil, err)
@@ -114,13 +114,13 @@ func SQLStyleSelect() database.SQLStyleSelectBuilder {
 
 // 	switch dimension {
 // 	case query.Result: // its fine
-// 		res, err = c.executers.Execute(queryString, params...)
+// 		res, err = c.executors.Execute(queryString, params...)
 // 	case query.ResultScalar:
 // 		fallthrough
 // 	case query.ResultList:
 // 		fallthrough
 // 	case query.ResultTable:
-// 		columns, rows, err = c.executers.Query(queryString, params...)
+// 		columns, rows, err = c.executors.Query(queryString, params...)
 // 	}
 
 // 	if err != nil {

@@ -15,24 +15,30 @@ func _() {
 	_ = x[Disconnected-4]
 	_ = x[DisconnectError-5]
 	_ = x[DriverLoadError-6]
-	_ = x[DBOpened-7]
-	_ = x[DBOpenError-8]
-	_ = x[DatabaseListFetched-9]
-	_ = x[DatabaseListFetchError-10]
-	_ = x[DBTableListFetched-11]
-	_ = x[DBTableListFetchError-12]
-	_ = x[TableSelected-13]
-	_ = x[TableSelectError-14]
-	_ = x[TableFetched-15]
-	_ = x[TableFetchError-16]
-	_ = x[TableCountFetched-17]
-	_ = x[QueryExecuted-18]
-	_ = x[QueryExecuteError-19]
+	_ = x[TargetOpened-7]
+	_ = x[TargetOpenError-8]
+	_ = x[TargetClosed-9]
+	_ = x[TargetCloseError-10]
+	_ = x[TargetUpdated-11]
+	_ = x[TargetUpdateError-12]
+	_ = x[DBOpened-13]
+	_ = x[DBOpenError-14]
+	_ = x[DatabaseListFetched-15]
+	_ = x[DatabaseListFetchError-16]
+	_ = x[DBTableListFetched-17]
+	_ = x[DBTableListFetchError-18]
+	_ = x[TableSelected-19]
+	_ = x[TableSelectError-20]
+	_ = x[TableFetched-21]
+	_ = x[TableFetchError-22]
+	_ = x[TableCountFetched-23]
+	_ = x[QueryExecuted-24]
+	_ = x[QueryExecuteError-25]
 }
 
-const _EventType_name = "ConnectedConnectErrorReconnectedReconnectErrorDisconnectedDisconnectErrorDriverLoadErrorDBOpenedDBOpenErrorDatabaseListFetchedDatabaseListFetchErrorDBTableListFetchedDBTableListFetchErrorTableSelectedTableSelectErrorTableFetchedTableFetchErrorTableCountFetchedQueryExecutedQueryExecuteError"
+const _EventType_name = "ConnectedConnectErrorReconnectedReconnectErrorDisconnectedDisconnectErrorDriverLoadErrorTargetOpenedTargetOpenErrorTargetClosedTargetCloseErrorTargetUpdatedTargetUpdateErrorDBOpenedDBOpenErrorDatabaseListFetchedDatabaseListFetchErrorDBTableListFetchedDBTableListFetchErrorTableSelectedTableSelectErrorTableFetchedTableFetchErrorTableCountFetchedQueryExecutedQueryExecuteError"
 
-var _EventType_index = [...]uint16{0, 9, 21, 32, 46, 58, 73, 88, 96, 107, 126, 148, 166, 187, 200, 216, 228, 243, 260, 273, 290}
+var _EventType_index = [...]uint16{0, 9, 21, 32, 46, 58, 73, 88, 100, 115, 127, 143, 156, 173, 181, 192, 211, 233, 251, 272, 285, 301, 313, 328, 345, 358, 375}
 
 func (i EventType) String() string {
 	if i >= EventType(len(_EventType_index)-1) {

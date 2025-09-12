@@ -15,11 +15,11 @@ type (
 	// 	Delete() QueryIntentBuilder
 	// }
 
-	// Build a query in the sytle of a SQL query
+	// Build a query in the style of a SQL query
 	SQLStyleIntent struct {
 	}
 
-	// Build a query in the sytle of a NoSQL query
+	// Build a query in the style of a NoSQL query
 	NoSQLStyleIntent struct {
 	}
 	NoSQLStyleIntentBuilder struct {

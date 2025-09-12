@@ -31,7 +31,7 @@ type (
 	}
 
 	OpenQueryBuilderMsg struct {
-		Method database.QueryType
+		Method database.OperationType
 		Table  string
 	}
 
@@ -45,7 +45,7 @@ type (
 	}
 
 	QueryBuilderConfirmMsg struct {
-		Query *database.QueryIntent
+		Query *database.Intent
 	}
 )
 
