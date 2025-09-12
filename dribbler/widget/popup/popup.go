@@ -106,9 +106,9 @@ func (p *PopupHandler) Popup(popupType Kind, args ...any) tea.Cmd {
 		p.currentPopup = newConnect(driverName)
 	case KindQueryBuilder:
 		switch arg := args[0].(type) {
-		case database.QueryIntent:
+		case database.Intent:
 			p.currentPopup = newQueryBuilder(nil) // TODO: query builder way
-		case database.QueryType:
+		case database.OperationType:
 			p.currentPopup = newTableQueryBuilder(arg, args[1].(string))
 		}
 	case KindTableCell:

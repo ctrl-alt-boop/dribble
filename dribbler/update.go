@@ -1,6 +1,8 @@
 package dribbler
 
 import (
+	"context"
+
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/ctrl-alt-boop/dribble"
@@ -61,7 +63,7 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case dribble.ConnectError:
 		case dribble.Connected:
 			cmd = func() tea.Msg {
-				// m.dribble.FetchDatabaseList() //FIXME
+				// m.dribbleClient.FetchDatabaseNames()
 				return nil
 			}
 			return m, cmd
@@ -203,7 +205,11 @@ func (m AppModel) connectPopupConfirm(msg widget.ConnectPopupConfirmMsg) tea.Cmd
 
 func (m AppModel) Connect(msg io.ConnectMsg) tea.Cmd {
 	return func() tea.Msg {
-		// m.dribble.Connect(msg.Target) //FIXME
+		err := m.dribbleClient.OpenTarget(context.TODO(), msg.Target)
+		if err != nil {
+			logger.Error(err)
+			return io.NewDribbleError(err)
+		}
 		return nil
 	}
 }
@@ -218,7 +224,7 @@ func (m AppModel) SelectServer(msg widget.SelectServerMsg) tea.Cmd {
 	}
 	logger.Infof("Config found: %+v", saved)
 	return func() tea.Msg {
-		// m.dribble.Connect(saved) //FIXME
+		m.dribbleClient.OpenTarget(context.TODO(), saved)
 		return nil
 	}
 }

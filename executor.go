@@ -9,7 +9,7 @@ import (
 
 var DefaultFetchLimit = 10
 
-type QueryExecuter struct {
+type QueryExecutor struct {
 	database.Driver
 	DriverName DriverName
 
@@ -18,13 +18,16 @@ type QueryExecuter struct {
 	onQueryExecuted func(query string, err error)
 }
 
-func createQueryExecuter(target *database.Target) (*QueryExecuter, error) {
+func createQueryExecutor(ctx context.Context, target *database.Target) (*QueryExecutor, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	driver, err := CreateDriverFromTarget(target)
 	if err != nil {
-		return nil, fmt.Errorf("error creating handler for driver: %w", err)
+		return nil, fmt.Errorf("error creating driver for executor: %w", err)
 	}
 
-	connection := &QueryExecuter{
+	executor := &QueryExecutor{
 		Driver:     driver,
 		DriverName: target.DriverName,
 
@@ -32,31 +35,34 @@ func createQueryExecuter(target *database.Target) (*QueryExecuter, error) {
 
 		onQueryExecuted: func(query string, err error) {},
 	}
-	err = connection.Open(context.Background())
+	err = executor.Open(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("error opening connection: %w", err)
+		return nil, fmt.Errorf("error opening target: %w", err)
 	}
 
-	return connection, nil
+	return executor, nil
 }
 
-func (e *QueryExecuter) OnQueryExecuted(f func(query string, err error)) {
+func (e *QueryExecutor) OnQueryExecuted(f func(query string, err error)) {
 	e.onQueryExecuted = f
 }
 
-func (e *QueryExecuter) VerifyConnection() error {
-	err := e.Ping(context.Background())
+func (e *QueryExecutor) VerifyConnection(ctx context.Context) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	err := e.Ping(ctx)
 	if err != nil {
 		return fmt.Errorf("error trying to ping database: %w", err)
 	}
 	return nil
 }
 
-// func (e *QueryExecuter) Query(query *database.QueryIntent) (any, error) {
+// func (e *QueryExecutor) Query(query *database.QueryIntent) (any, error) {
 // 	return e.QueryContext(context.Background(), query)
 // }
 
-// func (e *QueryExecuter) QueryContext(ctx context.Context, query *database.QueryIntent) (any, error) {
+// func (e *QueryExecutor) QueryContext(ctx context.Context, query *database.QueryIntent) (any, error) {
 
 // 	return e.dialect.GetTemplate(query.Type)
 // }
@@ -79,17 +85,6 @@ func (e *QueryExecuter) VerifyConnection() error {
 // 	}
 
 // 	return databases, nil
-// }
-
-// func (c *Connection) FetchDatabaseName() (string, error) {
-// 	var dbName string
-// 	queryString := c.Driver.DatabaseNameQuery()
-// 	err := c.DB.QueryRow(queryString).Scan(&dbName)
-// 	c.onQueryExecuted(queryString, err)
-// 	if err != nil {
-// 		return "", fmt.Errorf("error fetching database name: %w", err)
-// 	}
-// 	return dbName, nil
 // }
 
 // func (c *Connection) FetchTableNames() ([]string, error) {

@@ -3,6 +3,8 @@ package result
 import (
 	"database/sql"
 	"reflect"
+
+	"github.com/ctrl-alt-boop/dribble/database"
 )
 
 type (
@@ -30,11 +32,20 @@ type (
 
 const (
 	KindNone Kind = iota - 1
+	KindRow
 	KindScalar
 	KindList
 	KindTable
 	KindSet
 )
+
+var DefaultOperationResults = map[database.OperationType]Kind{
+	database.Read:    KindTable,
+	database.Create:  KindScalar,
+	database.Update:  KindScalar,
+	database.Delete:  KindScalar,
+	database.Execute: KindScalar,
+}
 
 // func RowsToList(rows *sql.Rows) (List, error) {
 // 	return List{}, nil

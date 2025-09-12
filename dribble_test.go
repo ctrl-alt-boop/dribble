@@ -2,13 +2,20 @@ package dribble_test
 
 import (
 	"context"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/ctrl-alt-boop/dribble"
 	"github.com/ctrl-alt-boop/dribble/database"
 )
 
 type MockDriver struct {
+}
+
+// ExecutePrefab implements database.Driver.
+func (m *MockDriver) ExecutePrefab(ctx context.Context, prefabType database.PrefabType, args ...any) (any, error) {
+	panic("unimplemented")
 }
 
 // Close implements database.Driver.
@@ -31,13 +38,8 @@ func (m *MockDriver) Ping(ctx context.Context) error {
 	return nil
 }
 
-// Query implements database.Driver.
-func (m *MockDriver) Query(query *database.QueryIntent) (any, error) {
-	return nil, nil
-}
-
 // QueryContext implements database.Driver.
-func (m *MockDriver) QueryContext(ctx context.Context, query *database.QueryIntent) (any, error) {
+func (m *MockDriver) Query(ctx context.Context, query *database.Intent) (any, error) {
 	return nil, nil
 }
 
@@ -59,8 +61,25 @@ func TestQueryBuilding(t *testing.T) {
 }
 
 func TestClient(t *testing.T) {
+	ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer ctxCancel()
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	client := dribble.NewClient()
-	err := client.CreateExecuter(context.Background(), database.NewTarget(
+	client.OnEvent(func(eventType dribble.EventType, args any, err error) {
+		defer wg.Done()
+
+		if err != nil {
+			t.Errorf("error: %s", err)
+		}
+		t.Logf("event: %s", eventType)
+		t.Logf("args: %+v", args)
+		t.Logf("err: %+v", err)
+	})
+
+	err := client.OpenTarget(ctx, database.NewTarget(
 		"test",
 		database.WithDriver("postgres"),
 		database.WithDB("valmatics"),
@@ -76,11 +95,21 @@ func TestClient(t *testing.T) {
 	q := database.SelectAll().From("pg_database").ToQueryOn("test")
 	t.Logf("%+v", q.SQLQuery)
 
-	res, err := client.Query(q)
+	err = client.Query(ctx, q)
 	if err != nil {
-
 		t.Fatal(err)
 	}
 
-	t.Logf("res: %+v", res)
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+
+	case <-ctx.Done():
+		t.Fatal(ctx.Err())
+	}
 }

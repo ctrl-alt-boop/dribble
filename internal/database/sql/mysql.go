@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"plugin"
 
 	"github.com/ctrl-alt-boop/dribble/database"
 	_ "github.com/go-sql-driver/mysql"
@@ -13,11 +12,8 @@ import (
 var _ database.Driver = &MySql{}
 
 type MySql struct {
-	DB     *sql.DB
+	Executor
 	target *database.Target
-
-	FetchLimit       int
-	FetchLimitOffset int
 }
 
 func NewMySqlDriver(target *database.Target) (*MySql, error) {
@@ -32,19 +28,6 @@ func NewMySqlDriver(target *database.Target) (*MySql, error) {
 	// 	return nil, err
 	// }
 	return driver, nil
-}
-
-func (m MySql) Load() error {
-	plug, err := plugin.Open("./plugins/mysql.so")
-	if err != nil {
-		return err
-	}
-
-	_, err = plug.Lookup("Loaded")
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (m *MySql) Close(_ context.Context) error {
@@ -91,11 +74,11 @@ func (m *MySql) Dialect() database.Dialect {
 	return m
 }
 
-func (m *MySql) Query(query *database.QueryIntent) (any, error) {
-	return m.QueryContext(context.Background(), query)
+func (m *MySql) Query(ctx context.Context, query *database.Intent) (any, error) {
+	panic("unimplemented")
 }
 
-func (m *MySql) QueryContext(ctx context.Context, query *database.QueryIntent) (any, error) {
+func (m *MySql) ExecutePrefab(ctx context.Context, prefabType database.PrefabType, args ...any) (any, error) {
 	panic("unimplemented")
 }
 
@@ -116,20 +99,20 @@ func (d *MySql) QuoteRune() rune {
 }
 
 // Capabilities implements database.Dialect.
-func (m *MySql) Capabilities() []database.DialectProperties {
-	return []database.DialectProperties{}
+func (m *MySql) Capabilities() []database.Capabilities {
+	return []database.Capabilities{}
 }
 
 // GetTemplate implements database.Dialect.
-func (m *MySql) GetTemplate(queryType database.QueryType) string {
+func (m *MySql) GetTemplate(queryType database.OperationType) string {
 	switch queryType {
-	case database.ReadQuery:
+	case database.Read:
 		return DefaultSQLSelectTemplate
-	case database.CreateQuery:
+	case database.Create:
 		return "" // DefaultSQLInsertTemplate
-	case database.UpdateQuery:
+	case database.Update:
 		return "" // DefaultSQLUpdateTemplate
-	case database.DeleteQuery:
+	case database.Delete:
 		return "" // DefaultSQLDeleteTemplate
 	default:
 		return ""

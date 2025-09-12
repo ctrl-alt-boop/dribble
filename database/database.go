@@ -1,117 +1,114 @@
 package database
 
-import "context"
+import (
+	"context"
+)
 
-type QueryType int
+type OperationType int
 
 const (
-	ReadQuery QueryType = iota
-	CreateQuery
-	UpdateQuery
-	DeleteQuery
-	ExecuteQuery
+	Read OperationType = iota
+	Create
+	Update
+	Delete
+	Execute
 	// Meta?
 )
 
-var QueryTypes = []QueryType{
-	ReadQuery,
-	CreateQuery,
-	UpdateQuery,
-	DeleteQuery,
-	ExecuteQuery,
+var OperationTypes = []OperationType{
+	Read,
+	Create,
+	Update,
+	Delete,
+	Execute,
 }
 
-type DialectProperties string
+type PrefabType int
 
 const (
-	SupportsJson  DialectProperties = "json"
-	SupportsJsonB DialectProperties = "jsonb"
-	IsFile        DialectProperties = "file"
+	PrefabCurrentDatabase PrefabType = iota
+	PrefabDatabases
+	PrefabTables
+	PrefabColumns
 )
 
-type QueryStyle int
+type Capabilities string
 
 const (
-	SQL QueryStyle = iota
+	SupportsJson  Capabilities = "json"
+	SupportsJsonB Capabilities = "jsonb"
+	IsFile        Capabilities = "file"
+)
+
+type DatabaseType int
+
+const (
+	SQL DatabaseType = iota
 	NoSQL
 )
 
 type (
 	Dialect interface {
-		GetTemplate(queryType QueryType) string
-		Capabilities() []DialectProperties
+		GetTemplate(operationType OperationType) string
+		GetPrefab(prefabType PrefabType) (string, bool)
+
+		Capabilities() []Capabilities
 
 		RenderPlaceholder(index int) string
+		IncreamentPlaceholder() string
+
 		RenderTypeCast() string
 		RenderCurrentTimestamp() string
 		RenderValue(value any) string
-		Quote(value string) string
 		QuoteRune() rune
+		Quote(value string) string
 
 		ResolveType(dbType string, value []byte) (any, error)
 	}
 
 	Driver interface {
+		Dialect() Dialect
+
+		ConnectionString(target *Target) string
+		RenderIntent(intent *Intent) (string, error)
+
+		// Open(ctx context.Context) error
+		// Ping(ctx context.Context) error
+		// Close(ctx context.Context) error
+
+		// Execute(ctx context.Context, intent *Intent) (any, error)
+		// ExecutePrefab(ctx context.Context, prefabType PrefabType, args ...any) (any, error)
+	}
+
+	Executor interface {
 		SetTarget(target *Target)
 		Target() *Target
-		Dialect() Dialect
+
+		SetDriver(driver Driver)
+		Driver() Driver
 
 		Open(ctx context.Context) error
 		Ping(ctx context.Context) error
 		Close(ctx context.Context) error
 
-		Query(query *QueryIntent) (any, error)
-		QueryContext(ctx context.Context, query *QueryIntent) (any, error)
+		Execute(ctx context.Context, intent *Intent) error
+		ExecutePrefab(ctx context.Context, prefabType PrefabType, args ...any) error
+		ExecuteAndHandle(ctx context.Context, intent *Intent, handler func(result any, err error)) error
+
+		// OnBefore(f func(intent *Intent))
+		// OnAfter(f func(query string, err error))
+		OnResult(f func(result any, err error))
 	}
 
-	QueryIntent struct {
-		Type       QueryType
-		QueryStyle QueryStyle
+	Intent struct {
+		Target     *Target
 		TargetName string
-		SQLQuery   *SQLSelectQuery
-		NoSQLQuery *NoSQLSelectQuery
+
+		Type      OperationType
+		Operation any
 
 		Args []any
 	}
-)
 
-type JoinType string
-
-const (
-	JoinTypeInner JoinType = "INNER"
-	JoinTypeLeft  JoinType = "LEFT"
-	JoinTypeRight JoinType = "RIGHT"
-	JoinTypeFull  JoinType = "FULL"
-)
-
-type (
-	NoSQLSelectQuery struct {
-		Collection string
-
-		ConditionsClause string
-		Conditions       Exprs
-		args             []any
-
-		LimitClause  *int
-		OffsetClause *int
-	}
-	SQLSelectQuery struct {
-		AsDistinct bool
-		IsCount    bool
-
-		Fields []string
-		Table  string
-
-		Joins []joinClause
-
-		WhereClause string
-		args        []any
-
-		GroupByClause []string
-		HavingClause  string
-		OrderByClause []orderByClause
-
-		LimitClause  *int
-		OffsetClause *int
-	}
+	IntentBatch []*Intent
 )
