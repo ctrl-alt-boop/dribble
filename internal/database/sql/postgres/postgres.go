@@ -13,6 +13,7 @@ import (
 )
 
 var _ database.Driver = &Postgres{}
+var _ database.Dialect = &Postgres{}
 
 type Postgres struct{}
 
@@ -24,8 +25,8 @@ func NewPostgresDriver(target *database.Target) (*Postgres, error) {
 // Capabilities implements database.Dialect.
 func (p *Postgres) Capabilities() []database.Capabilities {
 	return []database.Capabilities{
-		database.SupportsJson,
-		database.SupportsJsonB,
+		database.SupportsJSON,
+		database.SupportsJSONB,
 	}
 }
 
@@ -62,7 +63,8 @@ func (p *Postgres) RenderIntent(intent *database.Intent) (string, error) {
 	switch operation.(type) {
 	case sql.SelectQuery:
 		queryStringTemplate = p.GetTemplate(intent.Type)
-
+	case string:
+		queryStringTemplate = p.GetTemplate(intent.Type)
 	default:
 		return "", fmt.Errorf("intent type %d not supported for postgres", intent.Type)
 	}

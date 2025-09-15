@@ -98,7 +98,7 @@ func loadConfig() (*Config, *viper.Viper, error) {
 	// Connections
 	v.SetDefault("connections.servers", map[string]struct{}{})
 	v.SetDefault("connections.databases", map[string]struct{}{})
-	v.SetDefault("Connections.DriverDefaults", GetDriverDefaults())
+	v.SetDefault("Connections.DriverDefaults", dribble.GetDriverDefaults())
 	// v.SetDefault("Connections.Saved", map[string]struct{}{})
 
 	// Ui

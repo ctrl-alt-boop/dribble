@@ -69,7 +69,7 @@ func (c *Client) PingTarget(ctx context.Context, targetName string) error {
 		return ctx.Err()
 	}
 	if targetName == "" {
-		return ErrNoTargetName
+		return ErrNoTarget
 	}
 	executor, ok := c.executors[targetName]
 	if !ok {
@@ -87,7 +87,7 @@ func (c *Client) UpdateTarget(ctx context.Context, targetName string, opts ...da
 		return ctx.Err()
 	}
 	if targetName == "" {
-		return ErrNoTargetName
+		return ErrNoTarget
 	}
 	c.CloseTarget(ctx, targetName)
 
@@ -134,32 +134,40 @@ func (c *Client) CloseTarget(ctx context.Context, targetName ...string) error {
 	return nil
 }
 
-var ErrNoTargetName = errors.New("no target name provided")
+func (c *Client) GetExecutor(targetName string) (database.Executor, error) {
+	executor, ok := c.executors[targetName]
+	if !ok {
+		return nil, fmt.Errorf("executor not found: %s", targetName)
+	}
+	return executor, nil
+}
 
-func (c *Client) Execute(ctx context.Context, query *database.Intent) error {
+var ErrNoTarget = errors.New("no target provided")
+
+func (c *Client) Execute(ctx context.Context, intent *database.Intent) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	if query.TargetName == "" {
-		return ErrNoTargetName
+	if intent.Target == nil {
+		return ErrNoTarget
 	}
-	executor, ok := c.executors[query.TargetName]
+	executor, ok := c.executors[intent.Target.Name]
 	if !ok {
-		return fmt.Errorf("executor not found: %s", query.TargetName)
+		return fmt.Errorf("executor not found: %s", intent.Target.Name)
 	}
-	err := c.executors[query.TargetName].Ping(ctx)
+	err := c.executors[intent.Target.Name].Ping(ctx)
 	if err != nil {
 		return fmt.Errorf("executor connection error: %w", err)
 	}
 
 	go func() {
-		err := executor.Execute(ctx, query)
+		err := executor.Execute(ctx, intent)
 		if err != nil {
-			c.onEvent(QueryExecuteError, query, err)
+			c.onEvent(QueryExecuteError, intent, err)
 			return
 		}
 
-		c.onEvent(QueryExecuted, query, nil)
+		c.onEvent(QueryExecuted, intent, nil)
 	}()
 
 	return nil
@@ -167,7 +175,7 @@ func (c *Client) Execute(ctx context.Context, query *database.Intent) error {
 
 func (c *Client) FetchDatabaseNames(ctx context.Context, targetName string) error {
 	if targetName == "" {
-		return ErrNoTargetName
+		return ErrNoTarget
 	}
 	executor, ok := c.executors[targetName]
 	if !ok {
@@ -187,9 +195,9 @@ func (c *Client) FetchDatabaseNames(ctx context.Context, targetName string) erro
 	return nil
 }
 
-func (c *Client) FetchTableNames(ctx context.Context, targetName string) error {
+func (c *Client) FetchTableNames(ctx context.Context, targetName string) error { // FIXME: redo this
 	if targetName == "" {
-		return ErrNoTargetName
+		return ErrNoTarget
 	}
 	executor, ok := c.executors[targetName]
 	if !ok {
@@ -208,9 +216,9 @@ func (c *Client) FetchTableNames(ctx context.Context, targetName string) error {
 	return nil
 }
 
-func (c *Client) FetchColumnNames(ctx context.Context, targetName string) error {
+func (c *Client) FetchColumnNames(ctx context.Context, targetName string) error { // FIXME: redo this
 	if targetName == "" {
-		return ErrNoTargetName
+		return ErrNoTarget
 	}
 	executor, ok := c.executors[targetName]
 	if !ok {

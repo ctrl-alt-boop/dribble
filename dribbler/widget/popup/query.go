@@ -31,8 +31,7 @@ func newEmptyQueryBuilder() *QueryBuilder {
 func newTableQueryBuilder(method database.OperationType, tableName string) *QueryBuilder {
 	q := newEmptyQueryBuilder()
 	q.Query = &database.Intent{
-		Type:       method,
-		TargetName: tableName,
+		Type: method,
 	}
 	return q
 }
@@ -46,11 +45,9 @@ func newQueryBuilder(query *database.DatabaseType) *QueryBuilder {
 // Init implements tea.Model.
 func (q *QueryBuilder) Init() tea.Cmd {
 	if q.Query == nil {
-		q.Query = &database.Intent{
-			TargetName: "table",
-		}
+		q.Query = &database.Intent{}
 	}
-	formTitle := fmt.Sprintf("New %s query", q.Query.TargetName)
+	formTitle := fmt.Sprintf("New %s query", q.Query.Target.Name)
 	q.QueryForm = huh.NewForm(
 		huh.NewGroup(
 			huh.NewNote().Title(formTitle),
@@ -62,7 +59,7 @@ func (q *QueryBuilder) Init() tea.Cmd {
 		),
 		huh.NewGroup(
 			huh.NewInput().Title("Table:").
-				Value(&q.Query.TargetName),
+				Value(&q.Query.Target.Name),
 		),
 	)
 

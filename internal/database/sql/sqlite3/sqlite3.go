@@ -6,6 +6,7 @@ import (
 )
 
 var _ database.Driver = &SQLite3{}
+var _ database.Dialect = &SQLite3{}
 
 type SQLite3 struct{}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"reflect"
 
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/internal/database/sql/mysql"
@@ -198,10 +199,18 @@ func (e *Executor) Execute(ctx context.Context, intent *database.Intent) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
+
+	if intent.Target != e.target {
+		return fmt.Errorf("intent target does not match executor target")
+	}
+
 	err := e.db.PingContext(ctx)
 	if err != nil {
 		return err
 	}
+
+	e.onBefore(intent, nil)
+	defer e.onAfter(intent, nil)
 
 	intentString, err := e.driver.RenderIntent(intent)
 	if err != nil {
@@ -215,15 +224,23 @@ func (e *Executor) Execute(ctx context.Context, intent *database.Intent) error {
 	return nil
 }
 
-// ExecuteAndHandle implements database.Executor.
-func (e *Executor) ExecuteAndHandle(ctx context.Context, intent *database.Intent, handler func(result any, err error)) error {
+// ExecuteWithHandler implements database.Executor.
+func (e *Executor) ExecuteWithHandler(ctx context.Context, intent *database.Intent, handler func(result any, err error)) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
+
+	if intent.Target != e.target {
+		return fmt.Errorf("intent target does not match executor target")
+	}
+
 	err := e.db.PingContext(ctx)
 	if err != nil {
 		return err
 	}
+
+	e.onBefore(intent, nil)
+	defer e.onAfter(intent, nil)
 
 	intentString, err := e.driver.RenderIntent(intent)
 	if err != nil {
@@ -237,18 +254,64 @@ func (e *Executor) ExecuteAndHandle(ctx context.Context, intent *database.Intent
 	return nil
 }
 
-// ExecutePrefab implements database.Executor.
-func (e *Executor) ExecutePrefab(ctx context.Context, prefabType database.PrefabType, args ...any) error {
-	prefab, ok := e.driver.Dialect().GetPrefab(prefabType)
-	if !ok {
-		return fmt.Errorf("prefab type not found")
+// ExecuteWithChannel implements database.Executor.
+func (e *Executor) ExecuteWithChannel(ctx context.Context, intent *database.Intent, eventChannel chan any) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
 
-	go func() {
-		e.onResult(e.execute(ctx, result.DefaultOperationResults[database.Read], prefab, args...))
+	if intent.Target != e.target {
+		return fmt.Errorf("intent target does not match executor target")
+	}
+
+	err := e.db.PingContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	e.onBefore(intent, nil)
+	defer e.onAfter(intent, nil)
+
+	intentString, err := e.driver.RenderIntent(intent)
+	if err != nil {
+		return err
+	}
+
+	go func() { // FIXME, How should channel things work?
+		result, err := e.execute(ctx, result.DefaultOperationResults[intent.Type], intentString, intent.Args...)
+		if err != nil {
+			eventChannel <- err
+			return
+		}
+		eventChannel <- result
 	}()
 
 	return nil
+}
+
+// ExecutePrefab implements database.Executor.
+func (e *Executor) ExecutePrefab(ctx context.Context, prefabType database.PrefabType, args ...any) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
+	prefab, ok := e.driver.Dialect().GetPrefab(prefabType)
+	if !ok {
+		return fmt.Errorf("prefab type not found for driver: %s", e.target.DriverName)
+	}
+
+	if prefabType == database.PrefabTables {
+		prefab = fmt.Sprintf(prefab, args[0])
+	}
+	intent := &database.Intent{
+		Target:    e.target,
+		Type:      database.Read,
+		QueryType: reflect.TypeOf(prefab),
+		Operation: prefab,
+		Args:      args,
+	}
+
+	return e.Execute(ctx, intent)
 }
 
 // Ping implements database.Executor.
@@ -336,6 +399,16 @@ func (e *Executor) OnAfter(f func(intent *database.Intent, err error)) {
 // OnResult implements database.Executor.
 func (e *Executor) OnResult(f func(result any, err error)) {
 	e.onResult = f
+}
+
+// SetEventChannel implements database.Executor.
+func (e *Executor) SetEventChannel(...chan any) {
+	panic("unimplemented")
+}
+
+// EventChannel implements database.Executor.
+func (e *Executor) EventChannel() []chan any {
+	panic("unimplemented")
 }
 
 const DefaultSQLSelectTemplate = `SELECT {{if .AsDistinct}}DISTINCT{{end}}

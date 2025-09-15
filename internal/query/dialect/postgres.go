@@ -23,8 +23,8 @@ func (r *Postgres) QuoteRune() rune {
 // Capabilities implements database.Dialect.
 func (r *Postgres) Capabilities() []database.Capabilities {
 	return []database.Capabilities{
-		database.SupportsJson,
-		database.SupportsJsonB,
+		database.SupportsJSON,
+		database.SupportsJSONB,
 	}
 }
 

@@ -52,6 +52,7 @@ func Select(fields ...string) *From {
 		fields:   fields,
 	}
 }
+
 func DistinctSelect(fields ...string) *From {
 	return &From{
 		distinct: true,
@@ -209,9 +210,9 @@ func (s *SelectBuilder) Offset(offset int) *SelectBuilder {
 	return s
 }
 
-// TODO: Ofcourse this needs implementation for the other operation types
+// TODO: Of course this needs implementation for the other operation types
 func (s *SelectBuilder) ToIntent() *database.Intent {
-	intent := &SelectQuery{
+	operation := &SelectQuery{
 		AsDistinct:    s.asDistinct,
 		IsCount:       s.isCount,
 		Fields:        s.fields,
@@ -227,15 +228,15 @@ func (s *SelectBuilder) ToIntent() *database.Intent {
 	}
 	return &database.Intent{
 		Type:      database.Read,
-		QueryType: reflect.TypeOf(intent),
-		Operation: intent,
+		QueryType: reflect.TypeOf(operation),
+		Operation: operation,
 		Args:      s.params,
 	}
 }
 
-// TODO: Ofcourse this needs implementation for the other operation types
-func (s *SelectBuilder) ToIntentOn(target *database.Target) *database.Intent { // Should this be targetName string?
-	intent := &SelectQuery{
+// TODO: Of course this needs implementation for the other operation types
+func (s *SelectBuilder) ToIntentOn(target *database.Target) *database.Intent {
+	operation := &SelectQuery{
 		AsDistinct:    s.asDistinct,
 		IsCount:       s.isCount,
 		Fields:        s.fields,
@@ -250,12 +251,20 @@ func (s *SelectBuilder) ToIntentOn(target *database.Target) *database.Intent { /
 		OffsetClause:  s.offsetClause,
 	}
 	return &database.Intent{
-		Target:     target,
-		TargetName: target.Name,
-		Type:       database.Read,
-		QueryType:  reflect.TypeOf(intent),
-		Operation:  intent,
-		Args:       s.params,
+		Target:    target,
+		Type:      database.Read,
+		QueryType: reflect.TypeOf(operation),
+		Operation: operation,
+		Args:      s.params,
+	}
+}
+
+func FromString(query string, args ...any) *database.Intent {
+	return &database.Intent{
+		Type:      database.Read,
+		QueryType: reflect.TypeOf(query),
+		Operation: query,
+		Args:      args,
 	}
 }
 

@@ -14,8 +14,7 @@ type QueryForm struct {
 func CreateQueryForm(method database.OperationType, target string) *QueryForm {
 	return &QueryForm{
 		intent: &database.Intent{
-			Type:       method,
-			TargetName: target,
+			Type: method,
 		},
 	}
 }

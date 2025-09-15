@@ -36,10 +36,11 @@ const (
 type Capabilities string
 
 const (
-	SupportsJson  Capabilities = "json"
-	SupportsJsonB Capabilities = "jsonb"
-	IsFile        Capabilities = "file"
-	SupportsSQL   Capabilities = "sql"
+	SupportsJSON    Capabilities = "json"
+	SupportsJSONB   Capabilities = "jsonb"
+	IsFile          Capabilities = "file"
+	SupportsSQLLike Capabilities = "sql"
+	SupportsBSON    Capabilities = "json"
 )
 
 type DatabaseType int
@@ -78,6 +79,7 @@ type (
 	NoSQLClient interface {
 		Dialect() Dialect
 		Open(ctx context.Context, target *Target) error
+		Ping(ctx context.Context) error
 		Close(ctx context.Context) error
 
 		Read(any)
@@ -101,16 +103,22 @@ type (
 
 		Execute(ctx context.Context, intent *Intent) error
 		ExecutePrefab(ctx context.Context, prefabType PrefabType, args ...any) error
-		ExecuteAndHandle(ctx context.Context, intent *Intent, handler func(result any, err error)) error
+		ExecuteWithHandler(ctx context.Context, intent *Intent, handler func(result any, err error)) error
+		ExecuteWithChannel(ctx context.Context, intent *Intent, eventChannel chan any) error
 
 		OnBefore(f func(intent *Intent, err error))
 		OnAfter(f func(intent *Intent, err error))
 		OnResult(f func(result any, err error))
+
+		// TODO: if possible
+		// One channel parameter = all events to channel,
+		// multiple channel parameters = events of type to channel
+		SetEventChannel(eventChannel ...chan any)
+		EventChannel() []chan any
 	}
 
 	Intent struct {
-		Target     *Target
-		TargetName string
+		Target *Target
 
 		Type OperationType
 

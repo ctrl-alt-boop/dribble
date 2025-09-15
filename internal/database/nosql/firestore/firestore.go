@@ -9,6 +9,7 @@ import (
 
 var _ database.Driver = &Firestore{}
 var _ database.NoSQLClient = &Firestore{}
+var _ database.Dialect = &Firestore{}
 
 type Firestore struct {
 	client *firestore.Client
@@ -20,17 +21,17 @@ func NewFirestoreDriver(target *database.Target) (*Firestore, error) {
 }
 
 // Capabilities implements database.Dialect.
-func (m *Firestore) Capabilities() []database.Capabilities {
+func (f *Firestore) Capabilities() []database.Capabilities {
 	return []database.Capabilities{
-		database.SupportsSQL,
+		database.SupportsSQLLike,
 	}
 }
 
 // Open implements database.NoSQLClient.
-func (m *Firestore) Open(ctx context.Context, target *database.Target) error { // I'll use target.Name for the time being
+func (f *Firestore) Open(ctx context.Context, target *database.Target) error { // I'll use target.Name for the time being
 	var client *firestore.Client
 	var err error
-	if target.DBName == "" {
+	if target.DBName != "" {
 		client, err = firestore.NewClientWithDatabase(ctx, target.Name, target.DBName)
 	} else {
 		client, err = firestore.NewClient(ctx, target.Name)
@@ -38,58 +39,63 @@ func (m *Firestore) Open(ctx context.Context, target *database.Target) error { /
 	if err != nil {
 		return err
 	}
-	m.client = client
+	f.client = client
+	return nil
+}
+
+// Ping implements database.NoSQLClient.
+func (f *Firestore) Ping(ctx context.Context) error {
 	return nil
 }
 
 // Close implements database.NoSQLClient.
-func (m *Firestore) Close(_ context.Context) error {
-	return m.client.Close()
+func (f *Firestore) Close(_ context.Context) error {
+	return f.client.Close()
 }
 
 // Read implements database.NoSQLClient.
-func (m *Firestore) Read(any) {
+func (f *Firestore) Read(any) {
 	panic("unimplemented")
 }
 
 // ReadMany implements database.NoSQLClient.
-func (m *Firestore) ReadMany(any) {
+func (f *Firestore) ReadMany(any) {
 	panic("unimplemented")
 }
 
 // Create implements database.NoSQLClient.
-func (m *Firestore) Create(any) {
+func (f *Firestore) Create(any) {
 	panic("unimplemented")
 }
 
 // Update implements database.NoSQLClient.
-func (m *Firestore) Update(any) {
+func (f *Firestore) Update(any) {
 	panic("unimplemented")
 }
 
 // Delete implements database.NoSQLClient.
-func (m *Firestore) Delete(any) {
+func (f *Firestore) Delete(any) {
 	panic("unimplemented")
 }
 
 // ConnectionString implements database.Driver.
-func (m *Firestore) ConnectionString(target *database.Target) string {
+func (f *Firestore) ConnectionString(target *database.Target) string {
 	if target.DBName != "" {
 		return target.Name + "/" + target.DBName
 	}
 	return target.Name
 }
 
-func (m *Firestore) Dialect() database.Dialect {
+func (f *Firestore) Dialect() database.Dialect {
 	panic("unimplemented")
 }
 
 // RenderIntent implements database.Driver.
-func (m *Firestore) RenderIntent(intent *database.Intent) (string, error) {
+func (f *Firestore) RenderIntent(intent *database.Intent) (string, error) {
 	panic("unimplemented")
 }
 
 // ResolveType implements database.Dialect.
-func (m *Firestore) ResolveType(dbType string, value []byte) (any, error) {
+func (f *Firestore) ResolveType(dbType string, value []byte) (any, error) {
 	panic("unimplemented")
 }

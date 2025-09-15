@@ -62,6 +62,23 @@ func (n *FindBuilder) ToIntent() *database.Intent { // TODO: Ofcourse this needs
 	}
 }
 
+func (n *FindBuilder) ToIntentOn(target *database.Target) *database.Intent { // TODO: Ofcourse this needs implementation for the other operation types
+	intent := &FindQuery{
+		Collection:   n.collection,
+		Conditions:   n.conditions,
+		args:         n.args,
+		LimitClause:  n.limitClause,
+		OffsetClause: n.offsetClause,
+	}
+	return &database.Intent{
+		Target:    target,
+		Type:      database.Read,
+		QueryType: reflect.TypeOf(intent),
+		Operation: intent,
+		Args:      n.args,
+	}
+}
+
 func (n *FindBuilder) Parameters() []any {
 	return n.args
 }

@@ -95,8 +95,13 @@ func (e *Executor) Execute(ctx context.Context, intent *database.Intent) error {
 }
 
 // ExecuteAndHandle implements database.Executor.
-func (e *Executor) ExecuteAndHandle(ctx context.Context, intent *database.Intent, handler func(result any, err error)) error {
+func (e *Executor) ExecuteWithHandler(ctx context.Context, intent *database.Intent, handler func(result any, err error)) error {
 	panic("unimplemented")
+}
+
+// ExecuteWithChannel implements database.Executor.
+func (e *Executor) ExecuteWithChannel(ctx context.Context, intent *database.Intent, eventChannel chan any) error {
+	return nil
 }
 
 // ExecutePrefab implements database.Executor.
@@ -137,4 +142,14 @@ func (e *Executor) OnAfter(f func(intent *database.Intent, err error)) {
 // OnResult implements database.Executor.
 func (e *Executor) OnResult(f func(result any, err error)) {
 	e.onResult = f
+}
+
+// SetEventChannel implements database.Executor.
+func (e *Executor) SetEventChannel(...chan any) {
+	panic("unimplemented")
+}
+
+// EventChannel implements database.Executor.
+func (e *Executor) EventChannel() []chan any {
+	panic("unimplemented")
 }

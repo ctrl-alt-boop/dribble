@@ -67,13 +67,17 @@ func TestClient(t *testing.T) {
 	}
 	t.Logf("%+v", client)
 
-	q := sql.SelectAll().From("pg_database").ToIntentOn(testTarget)
+	q := sql.SelectAll().From("pg_database")
+	toIntentOn := q.ToIntentOn(testTarget)
 	t.Logf("%+v", q)
 
-	err = client.Execute(ctx, q)
+	err = client.Execute(ctx, toIntentOn)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	testExecutor, _ := client.GetExecutor("test")
+	testExecutor.Execute(ctx, q.ToIntent())
 
 	done := make(chan struct{})
 	go func() {

@@ -11,6 +11,7 @@ import (
 
 var _ database.Driver = &MongoDB{}
 var _ database.NoSQLClient = &MongoDB{}
+var _ database.Dialect = &MongoDB{}
 
 type MongoDB struct {
 	client *mongo.Client
@@ -23,7 +24,9 @@ func NewMongoDBDriver(target *database.Target) (*MongoDB, error) {
 
 // Capabilities implements database.Dialect.
 func (m *MongoDB) Capabilities() []database.Capabilities {
-	return []database.Capabilities{}
+	return []database.Capabilities{
+		database.SupportsBSON,
+	}
 }
 
 // Open implements database.NoSQLClient.
@@ -33,6 +36,15 @@ func (m *MongoDB) Open(ctx context.Context, target *database.Target) error {
 		return err
 	}
 	m.client = client
+	return nil
+}
+
+// Ping implements database.NoSQLClient.
+func (m *MongoDB) Ping(ctx context.Context) error {
+	err := m.client.Ping(ctx, nil)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -193,7 +193,7 @@ func (m *AppModel) ChangeFocus(widget widget.Kind) {
 }
 
 func (m AppModel) connectPopupConfirm(msg widget.ConnectPopupConfirmMsg) tea.Cmd {
-	settings := database.NewTarget("",
+	settings := database.NewTarget("", database.DBDriver,
 		database.WithDriver(msg.DriverName),
 		database.WithHost(msg.Ip, msg.Port),
 		database.WithUser(msg.Username),

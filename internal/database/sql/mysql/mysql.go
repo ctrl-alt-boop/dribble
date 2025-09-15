@@ -8,6 +8,7 @@ import (
 )
 
 var _ database.Driver = &MySQL{}
+var _ database.Dialect = &MySQL{}
 
 type MySQL struct{}
 

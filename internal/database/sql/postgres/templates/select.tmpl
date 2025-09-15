@@ -2,7 +2,9 @@ SELECT {{if .AsDistinct}}DISTINCT{{end}}
 {{- range $i, $field := .Fields -}}
     {{if $i}}, {{end}}{{$field}}
 {{- end}}
+{{- if .Table}}
 FROM {{.Table}}
+{{- end}}
 {{- range .Joins}}
     {{.Type}} JOIN {{.Table}} ON {{.On}}
 {{- end}}

@@ -31,6 +31,9 @@ type AppModel struct {
 	prevFocus widget.Kind
 
 	programSend func(msg tea.Msg)
+
+	NavigationTree [][][][]string // Temporary navigation tree servers/databases/tables/columns
+
 }
 
 func InitialModel(dribbleClient *dribble.Client) AppModel {
@@ -39,12 +42,13 @@ func InitialModel(dribbleClient *dribble.Client) AppModel {
 	// testTree()
 
 	return AppModel{
-		dribbleClient: dribbleClient,
-		panel:         widget.NewPanel(dribbleClient),
-		prompt:        widget.NewPromptBar(dribbleClient),
-		workspace:     widget.NewWorkspace(dribbleClient),
-		help:          widget.NewHelp(),
-		popupHandler:  popup.NewHandler(dribbleClient),
+		dribbleClient:  dribbleClient,
+		panel:          widget.NewPanel(dribbleClient),
+		prompt:         widget.NewPromptBar(dribbleClient),
+		workspace:      widget.NewWorkspace(dribbleClient),
+		help:           widget.NewHelp(),
+		popupHandler:   popup.NewHandler(dribbleClient),
+		NavigationTree: [][][][]string{},
 	}
 }
 

@@ -132,8 +132,7 @@ func (p *Panel) Init() tea.Cmd {
 	for name, settings := range config.GetDriverDefaults() {
 		connectionItems = append(connectionItems, &ui.ConnectionItem{
 			Name: name,
-			Target: database.NewTarget("",
-				database.AsType(database.DBDriver),
+			Target: database.NewTarget("", database.DBDriver,
 				database.WithDriver(settings.DriverName),
 				database.WithHost(settings.Ip, settings.Port),
 				database.WithUser(settings.Username),
