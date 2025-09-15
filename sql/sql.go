@@ -1,6 +1,10 @@
 package sql
 
-import "github.com/ctrl-alt-boop/dribble/database"
+import (
+	"reflect"
+
+	"github.com/ctrl-alt-boop/dribble/database"
+)
 
 type SelectQuery struct {
 	AsDistinct bool
@@ -167,8 +171,8 @@ func (s *SelectBuilder) ShouldReturn() int {
 	return len(s.fields)
 }
 
-func (s *SelectBuilder) Where(expr ...database.Expr) *SelectBuilder {
-	s.whereClause, s.params = database.Exprs(expr).ToSql()
+func (s *SelectBuilder) Where(expr ...Expr) *SelectBuilder {
+	s.whereClause, s.params = Exprs(expr).ToSQL()
 	return s
 }
 
@@ -205,51 +209,54 @@ func (s *SelectBuilder) Offset(offset int) *SelectBuilder {
 	return s
 }
 
-func (s *SelectBuilder) ToIntent() *database.Intent { // FIXME
-	return nil
-	// return &database.QueryIntent{
-	// 	Type:       database.ReadQuery,
-	// 	QueryStyle: database.SQL,
-	// 	SQLQuery: &SQLSelectQuery{
-	// 		AsDistinct:    s.asDistinct,
-	// 		IsCount:       s.isCount,
-	// 		Fields:        s.fields,
-	// 		Table:         s.table,
-	// 		Joins:         s.joins,
-	// 		WhereClause:   s.whereClause,
-	// 		args:          s.params,
-	// 		GroupByClause: s.groupByClause,
-	// 		HavingClause:  s.havingClause,
-	// 		OrderByClause: s.orderByClause,
-	// 		LimitClause:   s.limitClause,
-	// 		OffsetClause:  s.offsetClause,
-	// 	},
-	// 	Args: s.params,
-	// }
+// TODO: Ofcourse this needs implementation for the other operation types
+func (s *SelectBuilder) ToIntent() *database.Intent {
+	intent := &SelectQuery{
+		AsDistinct:    s.asDistinct,
+		IsCount:       s.isCount,
+		Fields:        s.fields,
+		Table:         s.table,
+		Joins:         s.joins,
+		WhereClause:   s.whereClause,
+		args:          s.params,
+		GroupByClause: s.groupByClause,
+		HavingClause:  s.havingClause,
+		OrderByClause: s.orderByClause,
+		LimitClause:   s.limitClause,
+		OffsetClause:  s.offsetClause,
+	}
+	return &database.Intent{
+		Type:      database.Read,
+		QueryType: reflect.TypeOf(intent),
+		Operation: intent,
+		Args:      s.params,
+	}
 }
 
-func (s *SelectBuilder) ToQueryOn(targetName string) *database.Intent { // FIXME
-	return nil
-	// return &database.QueryIntent{
-	// 	Type:       database.ReadQuery,
-	// 	QueryStyle: database.SQL,
-	// 	TargetName: targetName,
-	// 	SQLQuery: &SQLSelectQuery{
-	// 		AsDistinct:    s.asDistinct,
-	// 		IsCount:       s.isCount,
-	// 		Fields:        s.fields,
-	// 		Table:         s.table,
-	// 		Joins:         s.joins,
-	// 		WhereClause:   s.whereClause,
-	// 		args:          s.params,
-	// 		GroupByClause: s.groupByClause,
-	// 		HavingClause:  s.havingClause,
-	// 		OrderByClause: s.orderByClause,
-	// 		LimitClause:   s.limitClause,
-	// 		OffsetClause:  s.offsetClause,
-	// 	},
-	// 	Args: s.params,
-	// }
+// TODO: Ofcourse this needs implementation for the other operation types
+func (s *SelectBuilder) ToIntentOn(target *database.Target) *database.Intent { // Should this be targetName string?
+	intent := &SelectQuery{
+		AsDistinct:    s.asDistinct,
+		IsCount:       s.isCount,
+		Fields:        s.fields,
+		Table:         s.table,
+		Joins:         s.joins,
+		WhereClause:   s.whereClause,
+		args:          s.params,
+		GroupByClause: s.groupByClause,
+		HavingClause:  s.havingClause,
+		OrderByClause: s.orderByClause,
+		LimitClause:   s.limitClause,
+		OffsetClause:  s.offsetClause,
+	}
+	return &database.Intent{
+		Target:     target,
+		TargetName: target.Name,
+		Type:       database.Read,
+		QueryType:  reflect.TypeOf(intent),
+		Operation:  intent,
+		Args:       s.params,
+	}
 }
 
 func (s *SelectBuilder) Parameters() []any {

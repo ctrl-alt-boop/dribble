@@ -3,8 +3,8 @@ package query
 // //go:embed templates/b_select.tmpl
 // var selectBuilderTemplate string
 
-// func  ToSql() (queryString string, params []any, err error) {
-// 	render, params, err := s.ToSqlFormatted(dialect)
+// func  ToSQL() (queryString string, params []any, err error) {
+// 	render, params, err := s.ToSQLFormatted(dialect)
 // 	if err != nil {
 // 		return "", nil, err
 // 	}
@@ -12,7 +12,7 @@ package query
 // 	return strings.TrimSpace(replacer.Replace(render)), params, err
 // }
 
-// func ToSqlFormatted() (queryString string, params []any, err error) {
+// func ToSQLFormatted() (queryString string, params []any, err error) {
 // 	// selectTemplate := dialect.SelectTemplate()
 // 	tmpl, err := template.New("select").Parse(selectBuilderTemplate)
 // 	if err != nil {

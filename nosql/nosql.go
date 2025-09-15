@@ -1,12 +1,16 @@
 package nosql
 
-import "github.com/ctrl-alt-boop/dribble/database"
+import (
+	"reflect"
+
+	"github.com/ctrl-alt-boop/dribble/database"
+)
 
 type FindQuery struct {
 	Collection string
 
 	ConditionsClause string
-	Conditions       database.Exprs
+	Conditions       Exprs
 	args             []any
 
 	LimitClause  *int
@@ -16,7 +20,7 @@ type FindQuery struct {
 type FindBuilder struct {
 	collection string
 
-	conditions database.Exprs
+	conditions Exprs
 	args       []any
 
 	limitClause  *int
@@ -27,7 +31,7 @@ func Find() *FindBuilder {
 	return &FindBuilder{}
 }
 
-func (n *FindBuilder) Cond(expr ...database.Expr) *FindBuilder {
+func (n *FindBuilder) Cond(expr ...Expr) *FindBuilder {
 	n.conditions = expr
 	return n
 }
@@ -42,20 +46,20 @@ func (n *FindBuilder) Offset(offset int) *FindBuilder {
 	return n
 }
 
-func (n *FindBuilder) ToIntent() *database.Intent {
-	return nil
-	// return &database.QueryIntent{
-	// 	Type:       ReadQuery,
-	// 	QueryStyle: NoSQL,
-	// 	NoSQLQuery: &NoSQLSelectQuery{
-	// 		Collection:   n.collection,
-	// 		Conditions:   n.conditions,
-	// 		args:         n.args,
-	// 		LimitClause:  n.limitClause,
-	// 		OffsetClause: n.offsetClause,
-	// 	},
-	// 	Args: n.args,
-	// }
+func (n *FindBuilder) ToIntent() *database.Intent { // TODO: Ofcourse this needs implementation for the other operation types
+	intent := &FindQuery{
+		Collection:   n.collection,
+		Conditions:   n.conditions,
+		args:         n.args,
+		LimitClause:  n.limitClause,
+		OffsetClause: n.offsetClause,
+	}
+	return &database.Intent{
+		Type:      database.Read,
+		QueryType: reflect.TypeOf(intent),
+		Operation: intent,
+		Args:      n.args,
+	}
 }
 
 func (n *FindBuilder) Parameters() []any {

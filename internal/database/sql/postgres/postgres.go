@@ -17,9 +17,6 @@ var _ database.Driver = &Postgres{}
 type Postgres struct{}
 
 func NewPostgresDriver(target *database.Target) (*Postgres, error) {
-	if target.DriverName != "postgres" {
-		return nil, fmt.Errorf("invalid driver name: %s", target.DriverName)
-	}
 	driver := &Postgres{}
 	return driver, nil
 }

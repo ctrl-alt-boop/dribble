@@ -1,15 +1,11 @@
 package dialect
 
 import (
-	_ "embed"
 	"fmt"
 
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/google/uuid"
 )
-
-//go:embed templates/select.tmpl
-var selectBuilderTemplate string
 
 type (
 	Postgres struct {

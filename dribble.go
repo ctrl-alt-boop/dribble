@@ -13,39 +13,72 @@ const Version = "0.0.1"
 type TargetName = string
 
 type Client struct {
-	executors     map[TargetName]*database.Executor
-	loadedDrivers []DriverName
+	executors map[TargetName]database.Executor
 
-	onEvent func(eventType EventType, args any, err error)
+	onEvent EventHandler
 }
 
 func NewClient() *Client {
 	return &Client{
-		onEvent: func(eventType EventType, args any, err error) {
-
-		},
-		executors:     make(map[TargetName]*database.Executor),
-		loadedDrivers: make([]DriverName, 0),
+		onEvent:   func(eventType EventType, args any, err error) {},
+		executors: make(map[TargetName]database.Executor),
 	}
 }
 
-func (c *Client) OnEvent(handler func(eventType EventType, args any, err error)) {
+func (c *Client) OnEvent(handler EventHandler) {
 	c.onEvent = handler
+}
+
+func createExecutor(ctx context.Context, target *database.Target) (database.Executor, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	executor, err := CreateExecutorFromTarget(target)
+	if err != nil {
+		return nil, fmt.Errorf("error creating executor: %w", err)
+	}
+
+	err = executor.Open(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error opening target: %w", err)
+	}
+
+	return executor, nil
 }
 
 func (c *Client) OpenTarget(ctx context.Context, target *database.Target) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	executor, err := createQueryExecutor(ctx, target)
+	executor, err := createExecutor(ctx, target)
 	if err != nil {
 		c.onEvent(TargetOpenError, target, err)
 		return fmt.Errorf("error creating executor: %w", err)
 	}
-	executor.OnQueryExecuted(c.onExecutorEvent)
+	executor.OnBefore(c.onExecuteEvent)
+	executor.OnAfter(c.onExecuteEvent)
+	executor.OnResult(c.onExecuteResult)
 	c.executors[target.Name] = executor
 
 	c.onEvent(TargetOpened, target, nil)
+	return nil
+}
+
+func (c *Client) PingTarget(ctx context.Context, targetName string) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if targetName == "" {
+		return ErrNoTargetName
+	}
+	executor, ok := c.executors[targetName]
+	if !ok {
+		return fmt.Errorf("executor not found: %s", targetName)
+	}
+	err := executor.Ping(ctx)
+	if err != nil {
+		return fmt.Errorf("error pinging target: %w", err)
+	}
 	return nil
 }
 
@@ -61,11 +94,15 @@ func (c *Client) UpdateTarget(ctx context.Context, targetName string, opts ...da
 	target := c.executors[targetName].Target().Copy(opts...)
 	c.executors[targetName].SetTarget(target)
 
-	err := c.executors[targetName].VerifyConnection(ctx)
-	if err != nil {
+	if err := c.executors[targetName].Open(ctx); err != nil {
 		c.onEvent(TargetUpdateError, targetName, err)
 		return fmt.Errorf("error updating target: %w", err)
 	}
+	if err := c.executors[targetName].Ping(ctx); err != nil {
+		c.onEvent(TargetUpdateError, targetName, err)
+		return fmt.Errorf("error updating target: %w", err)
+	}
+
 	c.onEvent(TargetUpdated, target, nil)
 	return nil
 }
@@ -99,7 +136,7 @@ func (c *Client) CloseTarget(ctx context.Context, targetName ...string) error {
 
 var ErrNoTargetName = errors.New("no target name provided")
 
-func (c *Client) Query(ctx context.Context, query *database.Intent) error {
+func (c *Client) Execute(ctx context.Context, query *database.Intent) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -108,17 +145,21 @@ func (c *Client) Query(ctx context.Context, query *database.Intent) error {
 	}
 	executor, ok := c.executors[query.TargetName]
 	if !ok {
-		return fmt.Errorf("target not open: %s", query.TargetName)
+		return fmt.Errorf("executor not found: %s", query.TargetName)
+	}
+	err := c.executors[query.TargetName].Ping(ctx)
+	if err != nil {
+		return fmt.Errorf("executor connection error: %w", err)
 	}
 
 	go func() {
-		data, err := executor.Query(ctx, query)
+		err := executor.Execute(ctx, query)
 		if err != nil {
 			c.onEvent(QueryExecuteError, query, err)
 			return
 		}
-		// TODO: Maybe something like a data verify
-		c.onEvent(QueryExecuted, data, nil)
+
+		c.onEvent(QueryExecuted, query, nil)
 	}()
 
 	return nil
@@ -134,13 +175,13 @@ func (c *Client) FetchDatabaseNames(ctx context.Context, targetName string) erro
 	}
 
 	go func() {
-		data, err := executor.ExecutePrefab(ctx, database.PrefabTypeDatabases)
+		err := executor.ExecutePrefab(ctx, database.PrefabDatabases)
 		if err != nil {
 			c.onEvent(DatabaseListFetchError, targetName, err)
 			return
 		}
-		// TODO: Maybe something like a data verify
-		c.onEvent(DatabaseListFetched, data, nil)
+
+		// c.onEvent(DatabaseListFetched, targetName, nil)
 	}()
 
 	return nil
@@ -156,13 +197,12 @@ func (c *Client) FetchTableNames(ctx context.Context, targetName string) error {
 	}
 
 	go func() {
-		data, err := executor.ExecutePrefab(ctx, database.PrefabTypeTables)
+		err := executor.ExecutePrefab(ctx, database.PrefabTables)
 		if err != nil {
 			c.onEvent(DBTableListFetchError, targetName, err)
 			return
 		}
-		// TODO: Maybe something like a data verify
-		c.onEvent(DBTableListFetched, data, nil)
+		// c.onEvent(DBTableListFetched, targetName, nil)
 	}()
 
 	return nil
@@ -178,22 +218,29 @@ func (c *Client) FetchColumnNames(ctx context.Context, targetName string) error 
 	}
 
 	go func() {
-		data, err := executor.ExecutePrefab(ctx, database.PrefabTypeColumns)
+		err := executor.ExecutePrefab(ctx, database.PrefabColumns)
 		if err != nil {
 			c.onEvent(DBTableListFetchError, targetName, err)
 			return
 		}
-		// TODO: Maybe something like a data verify
-		c.onEvent(DBTableListFetched, data, nil)
+		// c.onEvent(DBTableListFetched, targetName, nil)
 	}()
 
 	return nil
 }
 
-func (c *Client) onExecutorEvent(query string, err error) {
+func (c *Client) onExecuteEvent(intent *database.Intent, err error) {
 	if err != nil {
 		c.onEvent(QueryExecuteError, nil, err)
 		return
 	}
 	c.onEvent(QueryExecuted, nil, nil)
+}
+
+func (c *Client) onExecuteResult(result any, err error) {
+	if err != nil {
+		c.onEvent(QueryExecuteError, nil, err)
+		return
+	}
+	c.onEvent(QueryExecuted, result, nil)
 }

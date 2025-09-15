@@ -1,62 +1,51 @@
 package dribble
 
 import (
-	"context"
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/internal/database/nosql"
+	"github.com/ctrl-alt-boop/dribble/internal/database/sql"
 )
 
-var DefaultFetchLimit = 10
-
-type QueryExecutor struct {
-	database.Driver
-	DriverName DriverName
-
-	FetchLimit int
-
-	onQueryExecuted func(query string, err error)
+func CreateExecutorFromTarget(target *database.Target) (database.Executor, error) {
+	switch {
+	case slices.Contains(sql.SupportedDrivers, target.DriverName):
+		return sql.NewExecutor(target), nil
+	case slices.Contains(nosql.SupportedDrivers, target.DriverName):
+		return nosql.NewExecutor(target), nil
+	default:
+		return nil, fmt.Errorf("unknown or unsupported driver: %s", target.DriverName)
+	}
 }
 
-func createQueryExecutor(ctx context.Context, target *database.Target) (*QueryExecutor, error) {
-	if ctx.Err() != nil {
-		return nil, ctx.Err()
-	}
-	driver, err := CreateDriverFromTarget(target)
-	if err != nil {
-		return nil, fmt.Errorf("error creating driver for executor: %w", err)
-	}
-
-	executor := &QueryExecutor{
-		Driver:     driver,
-		DriverName: target.DriverName,
-
-		FetchLimit: DefaultFetchLimit,
-
-		onQueryExecuted: func(query string, err error) {},
-	}
-	err = executor.Open(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("error opening target: %w", err)
-	}
-
-	return executor, nil
+func GetSupportedDrivers() []string {
+	return append(sql.SupportedDrivers, nosql.SupportedDrivers...)
 }
 
-func (e *QueryExecutor) OnQueryExecuted(f func(query string, err error)) {
-	e.onQueryExecuted = f
+func GetDriverDefaults() map[string]*database.Target {
+	defaults := make(map[string]*database.Target)
+	maps.Copy(defaults, sql.Defaults)
+	maps.Copy(defaults, nosql.Defaults)
+	return defaults
 }
 
-func (e *QueryExecutor) VerifyConnection(ctx context.Context) error {
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-	err := e.Ping(ctx)
-	if err != nil {
-		return fmt.Errorf("error trying to ping database: %w", err)
-	}
-	return nil
-}
+// func (e *QueryExecutor) OnQueryExecuted(f func(query string, err error)) {
+// 	e.onQueryExecuted = f
+// }
+
+// func (e *QueryExecutor) VerifyConnection(ctx context.Context) error {
+// 	if ctx.Err() != nil {
+// 		return ctx.Err()
+// 	}
+// 	err := e.Ping(ctx)
+// 	if err != nil {
+// 		return fmt.Errorf("error trying to ping database: %w", err)
+// 	}
+// 	return nil
+// }
 
 // func (e *QueryExecutor) Query(query *database.QueryIntent) (any, error) {
 // 	return e.QueryContext(context.Background(), query)

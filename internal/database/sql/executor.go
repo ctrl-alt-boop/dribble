@@ -6,8 +6,45 @@ import (
 	"fmt"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/internal/database/sql/mysql"
+	"github.com/ctrl-alt-boop/dribble/internal/database/sql/postgres"
+	"github.com/ctrl-alt-boop/dribble/internal/database/sql/sqlite3"
 	"github.com/ctrl-alt-boop/dribble/result"
 )
+
+const (
+	PostgreSQL = "postgres"
+	MySQL      = "mysql"
+	SQLite     = "sqlite3"
+)
+
+var SupportedDrivers []string = []string{
+	PostgreSQL,
+	MySQL,
+	SQLite,
+}
+
+var Defaults = map[string]*database.Target{
+	PostgreSQL: {
+		Type:       database.DBDriver,
+		DriverName: PostgreSQL,
+		Ip:         "127.0.0.1",
+		Port:       5432,
+		AdditionalSettings: map[string]string{
+			"sslmode": "disable",
+		},
+	},
+	MySQL: {
+		Type:       database.DBDriver,
+		DriverName: MySQL,
+		Ip:         "127.0.0.1",
+		Port:       3306,
+	},
+	SQLite: {
+		Type:       database.DBDriver,
+		DriverName: SQLite,
+	},
+}
 
 const (
 	Select            = "SELECT"
@@ -85,20 +122,52 @@ const (
 	MethodCall    Method = "CALL"
 	MethodExec    Method = "EXEC"
 	MethodExecute Method = "EXECUTE"
+	MethodPragma  Method = "PRAGMA"
 )
 
 const DefaultSelectLimit int = 10 // Just a safeguard
 
 var SQLMethods = []Method{MethodSelect, MethodInsert, MethodUpdate, MethodDelete}
 
+func CreateDriverFromTarget(target *database.Target) (database.Driver, error) {
+	switch target.DriverName {
+	case MySQL:
+		return mysql.NewMySQLDriver(target)
+	case PostgreSQL:
+		return postgres.NewPostgresDriver(target)
+	case SQLite:
+		return sqlite3.NewSQLite3Driver(target)
+	default:
+		return nil, fmt.Errorf("unknown or unsupported driver: %s", target.DriverName)
+	}
+}
+
 var _ database.Executor = &Executor{}
 
+type (
+	IntentHandler func(intent *database.Intent, err error)
+	ResultHandler func(result any, err error)
+)
+
 type Executor struct {
-	DB     *sql.DB
+	db     *sql.DB
 	target *database.Target
 	driver database.Driver
 
-	onResult func(result any, err error)
+	onBefore IntentHandler
+	onAfter  IntentHandler
+	onResult ResultHandler
+}
+
+func NewExecutor(target *database.Target) *Executor {
+	driver, err := CreateDriverFromTarget(target)
+	if err != nil {
+		panic(err)
+	}
+	return &Executor{
+		target: target,
+		driver: driver,
+	}
 }
 
 func (e *Executor) Open(_ context.Context) error {
@@ -111,12 +180,12 @@ func (e *Executor) Open(_ context.Context) error {
 	if err != nil {
 		return err
 	}
-	e.DB = db
+	e.db = db
 	return nil
 }
 
 func (e *Executor) Close(_ context.Context) error {
-	return e.DB.Close()
+	return e.db.Close()
 }
 
 // Driver implements database.Executor.
@@ -129,7 +198,7 @@ func (e *Executor) Execute(ctx context.Context, intent *database.Intent) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	err := e.DB.PingContext(ctx)
+	err := e.db.PingContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -151,7 +220,7 @@ func (e *Executor) ExecuteAndHandle(ctx context.Context, intent *database.Intent
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	err := e.DB.PingContext(ctx)
+	err := e.db.PingContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -187,7 +256,7 @@ func (e *Executor) Ping(ctx context.Context) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	err := e.DB.PingContext(ctx)
+	err := e.db.PingContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -217,7 +286,7 @@ func (e *Executor) execute(ctx context.Context, kind result.Kind, query string, 
 	switch kind {
 	case result.KindScalar:
 		var scalar int
-		row := e.DB.QueryRowContext(ctx, query, queryArgs...)
+		row := e.db.QueryRowContext(ctx, query, queryArgs...)
 		err := row.Scan(&scalar)
 		if err != nil {
 			return nil, fmt.Errorf("error executing query: %w", err)
@@ -225,11 +294,11 @@ func (e *Executor) execute(ctx context.Context, kind result.Kind, query string, 
 		return scalar, nil
 
 	case result.KindRow:
-		row := e.DB.QueryRowContext(ctx, query, queryArgs...)
+		row := e.db.QueryRowContext(ctx, query, queryArgs...)
 		return row, nil
 
 	case result.KindList:
-		rows, err := e.DB.QueryContext(ctx, query, queryArgs...)
+		rows, err := e.db.QueryContext(ctx, query, queryArgs...)
 		if err != nil {
 			return nil, fmt.Errorf("error executing query: %w", err)
 		}
@@ -238,7 +307,7 @@ func (e *Executor) execute(ctx context.Context, kind result.Kind, query string, 
 		return result.RowsToList(rows), nil
 
 	case result.KindTable:
-		rows, err := e.DB.QueryContext(ctx, query, queryArgs...)
+		rows, err := e.db.QueryContext(ctx, query, queryArgs...)
 		if err != nil {
 			return nil, fmt.Errorf("error executing query: %w", err)
 		}
@@ -252,6 +321,16 @@ func (e *Executor) execute(ctx context.Context, kind result.Kind, query string, 
 	default:
 		return nil, fmt.Errorf("result kind not supported yet")
 	}
+}
+
+// OnResult implements database.Executor.
+func (e *Executor) OnBefore(f func(intent *database.Intent, err error)) {
+	e.onBefore = f
+}
+
+// OnResult implements database.Executor.
+func (e *Executor) OnAfter(f func(intent *database.Intent, err error)) {
+	e.onAfter = f
 }
 
 // OnResult implements database.Executor.

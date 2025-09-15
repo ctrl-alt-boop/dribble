@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"reflect"
 )
 
 type OperationType int
@@ -38,6 +39,7 @@ const (
 	SupportsJson  Capabilities = "json"
 	SupportsJsonB Capabilities = "jsonb"
 	IsFile        Capabilities = "file"
+	SupportsSQL   Capabilities = "sql"
 )
 
 type DatabaseType int
@@ -71,13 +73,19 @@ type (
 
 		ConnectionString(target *Target) string
 		RenderIntent(intent *Intent) (string, error)
+	}
 
-		// Open(ctx context.Context) error
-		// Ping(ctx context.Context) error
-		// Close(ctx context.Context) error
+	NoSQLClient interface {
+		Dialect() Dialect
+		Open(ctx context.Context, target *Target) error
+		Close(ctx context.Context) error
 
-		// Execute(ctx context.Context, intent *Intent) (any, error)
-		// ExecutePrefab(ctx context.Context, prefabType PrefabType, args ...any) (any, error)
+		Read(any)
+		ReadMany(any)
+		Create(any)
+		Update(any)
+		Delete(any)
+		// Execute()
 	}
 
 	Executor interface {
@@ -95,8 +103,8 @@ type (
 		ExecutePrefab(ctx context.Context, prefabType PrefabType, args ...any) error
 		ExecuteAndHandle(ctx context.Context, intent *Intent, handler func(result any, err error)) error
 
-		// OnBefore(f func(intent *Intent))
-		// OnAfter(f func(query string, err error))
+		OnBefore(f func(intent *Intent, err error))
+		OnAfter(f func(intent *Intent, err error))
 		OnResult(f func(result any, err error))
 	}
 
@@ -104,7 +112,9 @@ type (
 		Target     *Target
 		TargetName string
 
-		Type      OperationType
+		Type OperationType
+
+		QueryType reflect.Type
 		Operation any
 
 		Args []any

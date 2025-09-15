@@ -7,8 +7,8 @@ import (
 
 type (
 	Query interface {
-		ToSql(dialect database.Dialect) (queryString string, params []any, err error)
-		ToSqlFormatted(dialect database.Dialect) (queryString string, params []any, err error)
+		ToSQL(dialect database.Dialect) (queryString string, params []any, err error)
+		ToSQLFormatted(dialect database.Dialect) (queryString string, params []any, err error)
 		Parameters() []any
 
 		Method() sql.Method
@@ -28,9 +28,9 @@ type (
 	}
 )
 
-func SQLStyleSelect() database.SQLStyleSelectBuilder {
-	return database.SQLStyleSelectBuilder{}
-}
+// func SQLStyleSelect() sql.SelectBuilder {
+// 	return sql.SelectBuilder{}
+// }
 
 // func (c *Client) FetchDatabaseList() {
 // 	if c.connections == nil {
@@ -98,7 +98,7 @@ func SQLStyleSelect() database.SQLStyleSelectBuilder {
 // func (c *Client) Query(queryStatment Query) {
 // 	var err error
 
-// 	queryString, params, err := queryStatment.ToSql(c.executors.Driver)
+// 	queryString, params, err := queryStatment.ToSQL(c.executors.Driver)
 // 	if err != nil {
 // 		// logger.Warn(err)
 // 		c.onEvent(QueryExecuteError, nil, err)

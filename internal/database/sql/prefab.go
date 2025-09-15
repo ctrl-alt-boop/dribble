@@ -2,16 +2,16 @@ package sql
 
 var Prefabs *QueryPrefab = CreateQueryPrefabs()
 
-//"mongodb"
+//"mongo"
 
 type (
 	QueryPrefab struct {
 		Postgres  *Prefab
-		MySql     *Prefab
-		Sqlite3   *Prefab
-		Mssql     *Prefab
+		MySQL     *Prefab
+		SQLite3   *Prefab
+		MsSQL     *Prefab
 		Oracle    *Prefab
-		SqlServer *Prefab
+		SQLServer *Prefab
 	}
 
 	Prefab struct {
@@ -25,11 +25,11 @@ type (
 func CreateQueryPrefabs() *QueryPrefab {
 	return &QueryPrefab{
 		Postgres:  CreatePostgresPrefabs(),
-		MySql:     CreateMySqlPrefabs(),
-		Sqlite3:   CreateSqlitePrefabs(),
-		Mssql:     CreateMssqlPrefabs(),
+		MySQL:     CreateMySQLPrefabs(),
+		SQLite3:   CreateSQLitePrefabs(),
+		MsSQL:     CreateMsSQLPrefabs(),
 		Oracle:    CreateOraclePrefabs(),
-		SqlServer: CreateSqlServerPrefabs(),
+		SQLServer: CreateSQLServerPrefabs(),
 	}
 }
 
@@ -42,7 +42,7 @@ func CreatePostgresPrefabs() *Prefab {
 	}
 }
 
-func CreateMySqlPrefabs() *Prefab {
+func CreateMySQLPrefabs() *Prefab {
 	return &Prefab{
 		CurrentDatabase: "SELECT DATABASE()",
 		Databases:       "SHOW DATABASES",
@@ -51,7 +51,7 @@ func CreateMySqlPrefabs() *Prefab {
 	}
 }
 
-func CreateSqlitePrefabs() *Prefab {
+func CreateSQLitePrefabs() *Prefab {
 	return &Prefab{
 		CurrentDatabase: "PRAGMA database_list",
 		Databases:       "SELECT name FROM sqlite_master WHERE type='table'",
@@ -60,7 +60,7 @@ func CreateSqlitePrefabs() *Prefab {
 	}
 }
 
-func CreateMssqlPrefabs() *Prefab {
+func CreateMsSQLPrefabs() *Prefab {
 	return &Prefab{
 		CurrentDatabase: "SELECT db_name()",
 		Databases:       "SELECT name FROM sys.databases",
@@ -78,7 +78,7 @@ func CreateOraclePrefabs() *Prefab {
 	}
 }
 
-func CreateSqlServerPrefabs() *Prefab {
+func CreateSQLServerPrefabs() *Prefab {
 	return &Prefab{
 		CurrentDatabase: "SELECT db_name()",
 		Databases:       "SELECT name FROM sys.databases",

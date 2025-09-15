@@ -2,22 +2,22 @@ package database
 
 import "time"
 
-type SqlMethod string
+type SQLMethod string
 
-func (s SqlMethod) String() string {
+func (s SQLMethod) String() string {
 	return string(s)
 }
 
 const (
-	MethodSelect SqlMethod = "SELECT"
-	MethodInsert SqlMethod = "INSERT"
-	MethodUpdate SqlMethod = "UPDATE"
-	MethodDelete SqlMethod = "DELETE"
+	MethodSelect SQLMethod = "SELECT"
+	MethodInsert SQLMethod = "INSERT"
+	MethodUpdate SQLMethod = "UPDATE"
+	MethodDelete SQLMethod = "DELETE"
 )
 
 const DefaultSelectLimit int = 10 // Just a safeguard
 
-var SqlMethods = []SqlMethod{MethodSelect, MethodInsert, MethodUpdate, MethodDelete}
+var SQLMethods = []SQLMethod{MethodSelect, MethodInsert, MethodUpdate, MethodDelete}
 
 type Dialect interface {
 	SelectTemplate() string
@@ -38,7 +38,7 @@ type Dialect interface {
 }
 
 type Statement struct {
-	Method  SqlMethod
+	Method  SQLMethod
 	Table   string
 	Columns []string
 	Values  []any

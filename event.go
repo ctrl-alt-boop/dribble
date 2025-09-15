@@ -52,7 +52,7 @@ const (
 )
 
 type (
-	EventHandler func(any, error)
+	EventHandler func(eventType EventType, args any, err error)
 
 	DatabaseListFetchData struct {
 		Driver    string
@@ -82,10 +82,10 @@ type (
 		Query    Query
 	}
 
-	// QueryData struct {
-	// 	Query Query
-	// 	Value any
-	// 	List  []any
-	// 	Table *result.Table
-	// }
+	QueryResult struct {
+		Query Query
+		Value any
+		List  []any
+		Table *result.Table
+	}
 )

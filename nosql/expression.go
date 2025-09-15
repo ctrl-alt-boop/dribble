@@ -1,4 +1,4 @@
-package database
+package nosql
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ var Parameterized = false
 
 type (
 	Expr interface {
-		ToSql() (string, []any)
+		ToSQL() (string, []any)
 	}
 	Exprs []Expr
 
@@ -34,25 +34,25 @@ type (
 	}
 )
 
-func (e Exprs) ToSql() (string, []any) {
+func (e Exprs) ToSQL() (string, []any) {
 	parts := make([]string, 0, len(e))
 	var params []any
 	for _, expr := range e {
-		part, partParams := expr.ToSql()
+		part, partParams := expr.ToSQL()
 		parts = append(parts, part)
 		params = append(params, partParams...)
 	}
 	return strings.Join(parts, " AND "), params
 }
 
-func (n *notExpr) ToSql() (string, []any) {
+func (n *notExpr) ToSQL() (string, []any) {
 	if n.expr.wordOp {
 		return fmt.Sprintf("%s NOT %s ?", n.expr.column, n.expr.op), []any{n.expr.value}
 	}
 	return fmt.Sprintf("%s !%s ?", n.expr.column, n.expr.op), nil
 }
 
-func (c *compExpr) ToSql() (string, []any) {
+func (c *compExpr) ToSQL() (string, []any) {
 	if Parameterized {
 		return fmt.Sprintf("%s %s ?", c.column, c.op), []any{c.value}
 	}
@@ -71,11 +71,11 @@ func (c *compExpr) resolveValueType() string {
 	}
 }
 
-func (l *logicExpr) ToSql() (string, []any) {
+func (l *logicExpr) ToSQL() (string, []any) {
 	parts := make([]string, 0, len(l.exprs))
 	var params []any
 	for _, expr := range l.exprs {
-		part, partParams := expr.ToSql()
+		part, partParams := expr.ToSQL()
 		parts = append(parts, part)
 		params = append(params, partParams...)
 	}
