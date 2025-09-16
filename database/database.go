@@ -14,6 +14,8 @@ const (
 	Delete
 	Execute
 	// Meta?
+
+	NoOp OperationType = -1
 )
 
 var OperationTypes = []OperationType{
@@ -101,20 +103,10 @@ type (
 		Ping(ctx context.Context) error
 		Close(ctx context.Context) error
 
-		Execute(ctx context.Context, intent *Intent) error
-		ExecutePrefab(ctx context.Context, prefabType PrefabType, args ...any) error
-		ExecuteWithHandler(ctx context.Context, intent *Intent, handler func(result any, err error)) error
-		ExecuteWithChannel(ctx context.Context, intent *Intent, eventChannel chan any) error
-
-		OnBefore(f func(intent *Intent, err error))
-		OnAfter(f func(intent *Intent, err error))
-		OnResult(f func(result any, err error))
-
-		// TODO: if possible
-		// One channel parameter = all events to channel,
-		// multiple channel parameters = events of type to channel
-		SetEventChannel(eventChannel ...chan any)
-		EventChannel() []chan any
+		Execute(ctx context.Context, intent *Intent) (any, error)
+		ExecutePrefab(ctx context.Context, prefabType PrefabType, args ...any) (any, error)
+		ExecuteWithHandler(ctx context.Context, intent *Intent, handler func(result any, err error))
+		ExecuteWithChannel(ctx context.Context, intent *Intent, eventChannel chan any)
 	}
 
 	Intent struct {
@@ -122,11 +114,51 @@ type (
 
 		Type OperationType
 
-		QueryType reflect.Type
-		Operation any
+		OperationKind reflect.Kind
+		Operation     any
 
 		Args []any
 	}
 
 	IntentBatch []*Intent
 )
+
+func NewReadIntent(target *Target, operation any, args ...any) *Intent {
+	return &Intent{
+		Target:        target,
+		Type:          Read,
+		OperationKind: reflect.TypeOf(operation).Kind(),
+		Operation:     operation,
+		Args:          args,
+	}
+}
+
+func NewCreateIntent(target *Target, operation any, args ...any) *Intent {
+	return &Intent{
+		Target:        target,
+		Type:          Create,
+		OperationKind: reflect.TypeOf(operation).Kind(),
+		Operation:     operation,
+		Args:          args,
+	}
+}
+
+func NewUpdateIntent(target *Target, operation any, args ...any) *Intent {
+	return &Intent{
+		Target:        target,
+		Type:          Update,
+		OperationKind: reflect.TypeOf(operation).Kind(),
+		Operation:     operation,
+		Args:          args,
+	}
+}
+
+func NewDeleteIntent(target *Target, operation any, args ...any) *Intent {
+	return &Intent{
+		Target:        target,
+		Type:          Delete,
+		OperationKind: reflect.TypeOf(operation).Kind(),
+		Operation:     operation,
+		Args:          args,
+	}
+}

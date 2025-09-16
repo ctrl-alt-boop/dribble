@@ -1,7 +1,5 @@
 package query
 
-import "github.com/ctrl-alt-boop/dribble/internal/database/sql"
-
 type (
 	FunctionStatement struct {
 		Name           string
@@ -39,10 +37,6 @@ func (f FunctionStatement) String() string {
 	return functionString
 }
 
-func (f FunctionStatement) Method() sql.Method {
-	return sql.MethodSelect
-}
-
 func (f FunctionStatement) Parameters() []any {
 	return f.InputVariables
 }
@@ -69,8 +63,4 @@ func (p *ProcedureStatement) OutputNames(variables ...string) *ProcedureStatemen
 
 func (p ProcedureStatement) Parameters() []any {
 	return p.InputVariables
-}
-
-func (p ProcedureStatement) Method() sql.Method {
-	return sql.MethodExecute
 }

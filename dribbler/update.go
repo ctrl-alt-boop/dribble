@@ -17,97 +17,108 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	logger.Infof("msg type received: %T", msg)
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
+
+	// Handle messages that can be received at any time, regardless of focus or popups.
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		logger.Infof("key msg received: %v", msg.String())
 	case tea.WindowSizeMsg:
 		m.Width, m.Height = msg.Width, msg.Height
 		m.updateDimensions(msg)
-	case io.ConnectMsg:
-		m.popupHandler.Close()
-		m.ChangeFocus(widget.KindPanel)
-		return m, tea.Batch(
-			m.Connect(msg),
-		)
-	}
-
-	if m.popupHandler.IsOpen() {
-		switch msg := msg.(type) {
-		case widget.ConnectPopupConfirmMsg:
-			m.popupHandler.Close()
-			m.ChangeFocus(m.prevFocus)
-			return m, tea.Batch(m.connectPopupConfirm(msg))
-		case widget.PopupCancelMsg:
-			m.popupHandler.Close()
-			m.ChangeFocus(m.prevFocus)
-			_, cmd = m.popupHandler.Update(msg)
-			return m, cmd
-		default:
-			_, cmd = m.popupHandler.Update(msg)
-			cmds = append(cmds, cmd)
-			return m, tea.Batch(cmds...)
+	case tea.KeyMsg:
+		if key.Matches(msg, config.Keys.Quit) {
+			return m, tea.Quit
 		}
 	}
 
-	// AppModel messages
+	// If a popup is open, it's the primary message handler.
+	if m.popupHandler.IsOpen() {
+		return m.updatePopupOpened(msg)
+	}
+
+	// If no popup is open, handle main application logic.
+	m, cmd = m.updatePopupClosed(msg)
+	cmds = append(cmds, cmd)
+
+	// Update components that are always active (like help).
+	// Note: tea.KeyMsg is handled by the focused widget, but help also needs it to toggle.
+	_, cmd = m.help.Update(msg)
+	cmds = append(cmds, cmd)
+
+	return m, tea.Batch(cmds...)
+}
+
+// updatePopupOpened handles all message processing when a popup is active.
+func (m AppModel) updatePopupOpened(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case widget.RequestFocus:
-		m.ChangeFocus(widget.Kind(msg))
+	// Messages that close the popup
+	case widget.ConnectPopupConfirmMsg:
+		m.popupHandler.Close()
+		m.ChangeFocus(m.prevFocus)
+		return m, m.connectPopupConfirm(msg)
+	case widget.PopupCancelMsg:
+		m.popupHandler.Close()
+		m.ChangeFocus(m.prevFocus)
 		return m, nil
 
-	case io.DribbleEventMsg:
-		logger.Infof("DribbleEvent received: %+v", msg)
-		switch msg.Type {
-		case dribble.DriverLoadError:
+	// Delegate all other messages to the popup handler.
+	default:
+		var popupModel tea.Model
+		var cmd tea.Cmd
+		popupModel, cmd = m.popupHandler.Update(msg)
+		m.popupHandler = popupModel.(*popup.PopupHandler)
+		return m, cmd
+	}
+}
 
-		case dribble.ConnectError:
-		case dribble.Connected:
-			cmd = func() tea.Msg {
-				// m.dribbleClient.FetchDatabaseNames()
-				return nil
-			}
-			return m, cmd
+// updatePopupClosed handles all message processing when no popup is active.
+func (m AppModel) updatePopupClosed(msg tea.Msg) (AppModel, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
 
-		case dribble.DatabaseListFetchError:
-		case dribble.DatabaseListFetched:
-
-		case dribble.DisconnectError:
-		}
-
+	switch msg := msg.(type) {
+	// App-level messages & actions
+	case widget.RequestFocus:
+		m.ChangeFocus(widget.Kind(msg))
+	case io.ConnectMsg:
+		m.ChangeFocus(widget.KindPanel)
+		cmd = m.Connect(msg)
 	case widget.SelectServerMsg:
-		return m, m.SelectServer(msg)
-
+		cmd = m.SelectServer(msg)
 	case widget.SelectDatabaseMsg:
-		return m, m.SelectDatabase(msg)
-
+		cmd = m.SelectDatabase(msg)
 	case widget.SelectTableMsg:
-		return m, m.SelectTable(msg)
-
+		cmd = m.SelectTable(msg)
 	case widget.SelectTableColumnsMsg:
-		return m, m.SelectTableColumns(msg)
+		cmd = m.SelectTableColumns(msg)
 
+	// Messages that open popups
 	case widget.OpenCellDataMsg:
 		m.popupHandler.Popup(popup.KindTableCell, msg.Value)
 		m.ChangeFocus(widget.KindPopupHandler)
-		return m, nil
-
 	case widget.OpenQueryBuilderMsg:
 		m.popupHandler.Popup(popup.KindQueryBuilder, msg.Method, msg.Table)
 		m.ChangeFocus(widget.KindPopupHandler)
-		return m, nil
 
-	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, config.Keys.Quit):
-			return m, tea.Quit
+	// Dribble client events (broadcast)
+	case io.DribbleEventMsg:
+		logger.Infof("DribbleEvent received: %+v", msg)
+		// Propagate to interested children
+		var panelCmd, workspaceCmd tea.Cmd
+		_, panelCmd = m.panel.Update(msg)
+		_, workspaceCmd = m.workspace.Update(msg)
+		cmds = append(cmds, panelCmd, workspaceCmd)
+
+		// App-level handling of the event
+		switch msg.Type {
+		case dribble.SuccessConnect:
+			// cmd = func() tea.Msg { return nil }
+			// cmds = append(cmds, cmd)
+		case dribble.SuccessExecute:
+
 		}
-		// case message.CommandExecMsg:
-	}
 
-	switch msg := msg.(type) {
+	// Key presses
 	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, config.Keys.CycleView):
+		if key.Matches(msg, config.Keys.CycleView) {
 			switch m.inFocus {
 			case widget.KindPanel:
 				m.ChangeFocus(widget.KindWorkspace)
@@ -115,35 +126,20 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.ChangeFocus(widget.KindPanel)
 			}
 			m.help.FocusChanged(m.inFocus)
-			return m, tea.Batch(cmds...)
-		case m.inFocus == widget.KindPanel:
-			_, cmd = m.panel.Update(msg)
-			cmds = append(cmds, cmd)
-		case m.inFocus == widget.KindWorkspace:
-			_, cmd = m.workspace.Update(msg)
-			cmds = append(cmds, cmd)
-		case m.inFocus == widget.KindPrompt:
-			_, cmd = m.prompt.Update(msg)
-			cmds = append(cmds, cmd)
-		case m.inFocus == widget.KindPopupHandler:
-			_, cmd = m.popupHandler.Update(msg)
-			cmds = append(cmds, cmd)
+		} else {
+			// Dispatch to the focused widget.
+			switch m.inFocus {
+			case widget.KindPanel:
+				_, cmd = m.panel.Update(msg)
+			case widget.KindWorkspace:
+				_, cmd = m.workspace.Update(msg)
+			case widget.KindPrompt:
+				_, cmd = m.prompt.Update(msg)
+			}
 		}
-		_, cmd = m.help.Update(msg)
-		cmds = append(cmds, cmd)
-	case io.DribbleEventMsg:
-		_, cmd = m.panel.Update(msg)
-		cmds = append(cmds, cmd)
-		_, cmd = m.workspace.Update(msg)
-		cmds = append(cmds, cmd)
-		_, cmd = m.prompt.Update(msg)
-		cmds = append(cmds, cmd)
-		_, cmd = m.help.Update(msg)
-		cmds = append(cmds, cmd)
-		_, cmd = m.popupHandler.Update(msg)
-		cmds = append(cmds, cmd)
 	}
 
+	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 }
 
@@ -193,14 +189,13 @@ func (m *AppModel) ChangeFocus(widget widget.Kind) {
 }
 
 func (m AppModel) connectPopupConfirm(msg widget.ConnectPopupConfirmMsg) tea.Cmd {
-	settings := database.NewTarget("", database.DBDriver,
+	connectMsg := io.ConnectMsg{Target: database.NewTarget("", database.DBDriver,
 		database.WithDriver(msg.DriverName),
 		database.WithHost(msg.Ip, msg.Port),
 		database.WithUser(msg.Username),
 		database.WithPassword(msg.Password),
-	)
-
-	return func() tea.Msg { return io.ConnectMsg{Target: settings} }
+	)}
+	return func() tea.Msg { return connectMsg }
 }
 
 func (m AppModel) Connect(msg io.ConnectMsg) tea.Cmd {

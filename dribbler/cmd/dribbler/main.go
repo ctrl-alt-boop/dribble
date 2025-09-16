@@ -19,9 +19,9 @@ func main() {
 	// logging.GlobalLogger().Infof("DribbleAPI Create")
 	dribble := dribble.NewClient()
 
-	dribbleTUI := dribbler.InitialModel(dribble)
-	p := tea.NewProgram(dribbleTUI, tea.WithAltScreen())
-	dribbleTUI.SetProgramSend(p.Send)
+	dribbler := dribbler.InitialModel(dribble)
+	p := tea.NewProgram(dribbler, tea.WithAltScreen())
+	dribbler.SetProgramSend(p.Send)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Dribble error: %v\n", err)
 		os.Exit(1)

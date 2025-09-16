@@ -185,14 +185,14 @@ func (p *Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, nil
 		}
 		switch msg.Type {
-		case dribble.DatabaseListFetched:
+		case dribble.SuccessReadDatabaseList:
 			args, ok := msg.Args.(dribble.DatabaseListFetchData)
 			if ok {
 				items := ui.SettingsToConnectionItems(args.Databases)
 				p.list.SetConnectionItems(items)
 				p.SetMode(DatabaseList)
 			}
-		case dribble.DBTableListFetched:
+		case dribble.SuccessReadDBTableList:
 			args, ok := msg.Args.(dribble.TableListFetchData)
 			if ok {
 				p.list.SetStringItems(args.Tables)

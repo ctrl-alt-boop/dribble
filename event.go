@@ -5,54 +5,74 @@ import (
 	"github.com/ctrl-alt-boop/dribble/result"
 )
 
-//go:generate stringer -type=EventType
+//go:generate stringer -type=Success
+//go:generate stringer -type=Error
 
-type EventType uint
+type (
+	Status      uint
+	Success     Status
+	Error       Status
+	BatchStatus []Status
+)
 
 const (
-	Connected    EventType = iota //EventType = "ConnectionSuccess"
-	ConnectError                  //EventType = "ConnectionError"
+	SuccessConnect Success = iota
+	SuccessReconnect
+	SuccessDisconnect
+	SuccessTargetOpen
+	SuccessTargetUpdate
+	SuccessTargetClose
 
-	Reconnected    //EventType = "ReconnectSuccess"
-	ReconnectError //EventType = "ReconnectError"
+	SuccessReadDatabaseSchema
+	SuccessReadTableSchema
+	SuccessReadColumnSchema
 
-	Disconnected    //EventType = "DisconnectSuccess"
-	DisconnectError //EventType = "DisconnectError"
+	SuccessReadDatabaseProperties
+	SuccessReadTableProperties
+	SuccessReadColumnProperties
 
-	DriverLoadError //EventType = "DriverLoadError"
+	SuccessReadDatabaseList
+	SuccessReadDBTableList
+	SuccessReadDBColumnList
 
-	TargetOpened    //EventType = "TargetOpened"
-	TargetOpenError //EventType = "TargetOpenError"
+	SuccessReadCount
 
-	TargetClosed     //EventType = "TargetClosed"
-	TargetCloseError //EventType = "TargetCloseError"
+	SuccessReadTable
 
-	TargetUpdated     //EventType = "TargetUpdated"
-	TargetUpdateError //EventType = "TargetUpdateError"
+	SuccessExecute
+	SuccessBatchExecute
+)
 
-	DBOpened    //EventType = "DatabaseConnectSuccess"
-	DBOpenError //EventType = "DatabaseConnectError"
+const (
+	ErrorConnect Error = iota
+	ErrorReconnect
+	ErrorDisconnect
+	ErrorTargetOpen
+	ErrorTargetClose
+	ErrorTargetUpdate
 
-	DatabaseListFetched    //EventType = "DatabaseListFetchSuccess"
-	DatabaseListFetchError //EventType = "DatabaseListFetchError"
+	ErrorReadDatabaseSchema
+	ErrorReadTableSchema
+	ErrorReadColumnSchema
 
-	DBTableListFetched    //EventType = "TableListFetchSuccess"
-	DBTableListFetchError //EventType = "TableListFetchError"
+	ErrorReadDatabaseProperties
+	ErrorReadTableProperties
+	ErrorReadColumnProperties
 
-	TableSelected    //EventType = "TableSelectSuccess"
-	TableSelectError //EventType = "TableSelectError"
+	ErrorReadDatabaseList
+	ErrorReadDBTableList
+	ErrorReadDBColumnList
 
-	TableFetched    //EventType = "TableFetchSuccess"
-	TableFetchError //EventType = "TableFetchError"
+	ErrorReadCount
 
-	TableCountFetched
+	ErrorReadTable
 
-	QueryExecuted
-	QueryExecuteError
+	ErrorExecute
+	ErrorBatchExecute
 )
 
 type (
-	EventHandler func(eventType EventType, args any, err error)
+	EventHandler func(eventType Status, args any, err error)
 
 	DatabaseListFetchData struct {
 		Driver    string

@@ -66,7 +66,7 @@ func (d *Workspace) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case io.DribbleEventMsg:
 		d.isLoading = false
 		switch msg.Type {
-		case dribble.TableFetched:
+		case dribble.SuccessReadTable:
 			args, ok := msg.Args.(dribble.TableFetchData)
 			if ok {
 				return d, tea.Batch(d.SetTable(*args.Table), RequestFocusChange(KindWorkspace))

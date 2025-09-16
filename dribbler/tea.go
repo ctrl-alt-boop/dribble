@@ -55,7 +55,7 @@ func InitialModel(dribbleClient *dribble.Client) AppModel {
 func (m AppModel) SetProgramSend(send func(msg tea.Msg)) {
 	m.programSend = send
 
-	m.dribbleClient.OnEvent(func(eventType dribble.EventType, args any, err error) {
+	m.dribbleClient.OnEvent(func(eventType dribble.Response, args any, err error) {
 		event := io.DribbleEventMsg{
 			Type: eventType,
 			Args: args,

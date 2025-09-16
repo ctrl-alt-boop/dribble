@@ -90,22 +90,22 @@ func (e *Executor) Driver() database.Driver {
 }
 
 // Execute implements database.Executor.
-func (e *Executor) Execute(ctx context.Context, intent *database.Intent) error {
+func (e *Executor) Execute(ctx context.Context, intent *database.Intent) (any, error) {
+	panic("unimplemented")
+}
+
+// ExecutePrefab implements database.Executor.
+func (e *Executor) ExecutePrefab(ctx context.Context, prefabType database.PrefabType, args ...any) (any, error) {
 	panic("unimplemented")
 }
 
 // ExecuteAndHandle implements database.Executor.
-func (e *Executor) ExecuteWithHandler(ctx context.Context, intent *database.Intent, handler func(result any, err error)) error {
+func (e *Executor) ExecuteWithHandler(ctx context.Context, intent *database.Intent, handler func(result any, err error)) {
 	panic("unimplemented")
 }
 
 // ExecuteWithChannel implements database.Executor.
-func (e *Executor) ExecuteWithChannel(ctx context.Context, intent *database.Intent, eventChannel chan any) error {
-	return nil
-}
-
-// ExecutePrefab implements database.Executor.
-func (e *Executor) ExecutePrefab(ctx context.Context, prefabType database.PrefabType, args ...any) error {
+func (e *Executor) ExecuteWithChannel(ctx context.Context, intent *database.Intent, eventChannel chan any) {
 	panic("unimplemented")
 }
 

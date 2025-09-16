@@ -55,10 +55,10 @@ func (n *FindBuilder) ToIntent() *database.Intent { // TODO: Ofcourse this needs
 		OffsetClause: n.offsetClause,
 	}
 	return &database.Intent{
-		Type:      database.Read,
-		QueryType: reflect.TypeOf(intent),
-		Operation: intent,
-		Args:      n.args,
+		Type:          database.Read,
+		OperationKind: reflect.TypeOf(intent).Kind(),
+		Operation:     intent,
+		Args:          n.args,
 	}
 }
 
@@ -71,11 +71,11 @@ func (n *FindBuilder) ToIntentOn(target *database.Target) *database.Intent { // 
 		OffsetClause: n.offsetClause,
 	}
 	return &database.Intent{
-		Target:    target,
-		Type:      database.Read,
-		QueryType: reflect.TypeOf(intent),
-		Operation: intent,
-		Args:      n.args,
+		Target:        target,
+		Type:          database.Read,
+		OperationKind: reflect.TypeOf(intent).Kind(),
+		Operation:     intent,
+		Args:          n.args,
 	}
 }
 

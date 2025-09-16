@@ -44,7 +44,7 @@ func TestClient(t *testing.T) {
 	wg.Add(2)
 
 	client := dribble.NewClient()
-	client.OnEvent(func(eventType dribble.EventType, args any, err error) {
+	client.OnEvent(func(eventType dribble.Status, args any, err error) {
 		defer wg.Done()
 
 		if err != nil {
@@ -71,10 +71,11 @@ func TestClient(t *testing.T) {
 	toIntentOn := q.ToIntentOn(testTarget)
 	t.Logf("%+v", q)
 
-	err = client.Execute(ctx, toIntentOn)
+	result, err := client.Execute(ctx, toIntentOn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("result: %+v", result)
 
 	testExecutor, _ := client.GetExecutor("test")
 	testExecutor.Execute(ctx, q.ToIntent())

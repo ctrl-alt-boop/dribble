@@ -7,7 +7,7 @@ import (
 
 type (
 	DribbleEventMsg struct {
-		Type dribble.EventType
+		Type dribble.Response
 		Args any
 		Err  error
 	}

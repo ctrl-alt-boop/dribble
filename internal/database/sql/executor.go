@@ -3,8 +3,8 @@ package sql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/internal/database/sql/mysql"
@@ -47,89 +47,6 @@ var Defaults = map[string]*database.Target{
 	},
 }
 
-const (
-	Select            = "SELECT"
-	Insert            = "INSERT"
-	Update            = "UPDATE"
-	Delete            = "DELETE"
-	From              = "FROM"
-	Where             = "WHERE"
-	Set               = "SET"
-	Values            = "VALUES"
-	OrderBy           = "ORDER BY"
-	Asc               = "ASC"
-	Desc              = "DESC"
-	Limit             = "LIMIT"
-	Offset            = "OFFSET"
-	GroupBy           = "GROUP BY"
-	Having            = "HAVING"
-	Join              = "JOIN"
-	LeftJoin          = "LEFT JOIN"
-	RightJoin         = "RIGHT JOIN"
-	FullJoin          = "FULL JOIN"
-	CrossJoin         = "CROSS JOIN"
-	On                = "ON"
-	As                = "AS"
-	InnerJoin         = "INNER JOIN"
-	OuterJoin         = "OUTER JOIN"
-	Union             = "UNION"
-	Intersect         = "INTERSECT"
-	Except            = "EXCEPT"
-	UnionAll          = "UNION ALL"
-	IntersectAll      = "INTERSECT ALL"
-	ExceptAll         = "EXCEPT ALL"
-	Not               = "NOT"
-	In                = "IN"
-	Between           = "BETWEEN"
-	And               = "AND"
-	Or                = "OR"
-	IsNull            = "IS NULL"
-	IsNotNull         = "IS NOT NULL"
-	IsTrue            = "IS TRUE"
-	IsFalse           = "IS FALSE"
-	IsUnknown         = "IS UNKNOWN"
-	IsDistinctFrom    = "IS DISTINCT FROM"
-	IsNotDistinctFrom = "IS NOT DISTINCT FROM"
-	Like              = "LIKE"
-	NotLike           = "NOT LIKE"
-	Ilike             = "ILIKE"
-	NotIlike          = "NOT ILIKE"
-	Any               = "ANY"
-	All               = "ALL"
-	Exists            = "EXISTS"
-	Some              = "SOME"
-	Unique            = "UNIQUE"
-	PrimaryKey        = "PRIMARY KEY"
-	ForeignKey        = "FOREIGN KEY"
-	Check             = "CHECK"
-	Default           = "DEFAULT"
-	Null              = "NULL"
-	True              = "TRUE"
-	False             = "FALSE"
-	Unknown           = "UNKNOWN"
-)
-
-type Method string
-
-func (s Method) String() string {
-	return string(s)
-}
-
-const (
-	MethodSelect  Method = "SELECT"
-	MethodInsert  Method = "INSERT"
-	MethodUpdate  Method = "UPDATE"
-	MethodDelete  Method = "DELETE"
-	MethodCall    Method = "CALL"
-	MethodExec    Method = "EXEC"
-	MethodExecute Method = "EXECUTE"
-	MethodPragma  Method = "PRAGMA"
-)
-
-const DefaultSelectLimit int = 10 // Just a safeguard
-
-var SQLMethods = []Method{MethodSelect, MethodInsert, MethodUpdate, MethodDelete}
-
 func CreateDriverFromTarget(target *database.Target) (database.Driver, error) {
 	switch target.DriverName {
 	case MySQL:
@@ -154,10 +71,6 @@ type Executor struct {
 	db     *sql.DB
 	target *database.Target
 	driver database.Driver
-
-	onBefore IntentHandler
-	onAfter  IntentHandler
-	onResult ResultHandler
 }
 
 func NewExecutor(target *database.Target) *Executor {
@@ -194,124 +107,68 @@ func (e *Executor) Driver() database.Driver {
 	return e.driver
 }
 
+var ErrIntentTargetMismatch = errors.New("intent target does not match executor target")
+
 // Execute implements database.Executor.
-func (e *Executor) Execute(ctx context.Context, intent *database.Intent) error {
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-
+func (e *Executor) Execute(ctx context.Context, intent *database.Intent) (any, error) {
 	if intent.Target != e.target {
-		return fmt.Errorf("intent target does not match executor target")
+		return nil, ErrIntentTargetMismatch
 	}
 
-	err := e.db.PingContext(ctx)
-	if err != nil {
-		return err
+	if err := e.Ping(ctx); err != nil {
+		return nil, err
 	}
 
-	e.onBefore(intent, nil)
-	defer e.onAfter(intent, nil)
-
-	intentString, err := e.driver.RenderIntent(intent)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		e.onResult(e.execute(ctx, result.DefaultOperationResults[intent.Type], intentString, intent.Args...))
-	}()
-
-	return nil
-}
-
-// ExecuteWithHandler implements database.Executor.
-func (e *Executor) ExecuteWithHandler(ctx context.Context, intent *database.Intent, handler func(result any, err error)) error {
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-
-	if intent.Target != e.target {
-		return fmt.Errorf("intent target does not match executor target")
-	}
-
-	err := e.db.PingContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	e.onBefore(intent, nil)
-	defer e.onAfter(intent, nil)
-
-	intentString, err := e.driver.RenderIntent(intent)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		handler(e.execute(ctx, result.DefaultOperationResults[intent.Type], intentString, intent.Args...))
-	}()
-
-	return nil
-}
-
-// ExecuteWithChannel implements database.Executor.
-func (e *Executor) ExecuteWithChannel(ctx context.Context, intent *database.Intent, eventChannel chan any) error {
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-
-	if intent.Target != e.target {
-		return fmt.Errorf("intent target does not match executor target")
-	}
-
-	err := e.db.PingContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	e.onBefore(intent, nil)
-	defer e.onAfter(intent, nil)
-
-	intentString, err := e.driver.RenderIntent(intent)
-	if err != nil {
-		return err
-	}
-
-	go func() { // FIXME, How should channel things work?
-		result, err := e.execute(ctx, result.DefaultOperationResults[intent.Type], intentString, intent.Args...)
-		if err != nil {
-			eventChannel <- err
-			return
-		}
-		eventChannel <- result
-	}()
-
-	return nil
+	return e.execute(ctx, intent)
 }
 
 // ExecutePrefab implements database.Executor.
-func (e *Executor) ExecutePrefab(ctx context.Context, prefabType database.PrefabType, args ...any) error {
-	if ctx.Err() != nil {
-		return ctx.Err()
+func (e *Executor) ExecutePrefab(ctx context.Context, prefabType database.PrefabType, args ...any) (any, error) {
+	if err := e.Ping(ctx); err != nil {
+		return nil, err
 	}
 
 	prefab, ok := e.driver.Dialect().GetPrefab(prefabType)
 	if !ok {
-		return fmt.Errorf("prefab type not found for driver: %s", e.target.DriverName)
+		return nil, fmt.Errorf("prefab type not found for driver: %s", e.target.DriverName)
 	}
 
 	if prefabType == database.PrefabTables {
-		prefab = fmt.Sprintf(prefab, args[0])
+		prefab = fmt.Sprintf(prefab, args...)
 	}
-	intent := &database.Intent{
-		Target:    e.target,
-		Type:      database.Read,
-		QueryType: reflect.TypeOf(prefab),
-		Operation: prefab,
-		Args:      args,
+	intent := database.NewReadIntent(e.target, prefab, args...)
+
+	return e.execute(ctx, intent)
+}
+
+// ExecuteWithHandler implements database.Executor.
+func (e *Executor) ExecuteWithHandler(ctx context.Context, intent *database.Intent, handler func(result any, err error)) {
+	if intent.Target != e.target {
+		handler(nil, ErrIntentTargetMismatch)
 	}
 
-	return e.Execute(ctx, intent)
+	if err := e.Ping(ctx); err != nil {
+		handler(nil, err)
+	}
+
+	handler(e.execute(ctx, intent))
+}
+
+// ExecuteWithChannel implements database.Executor.
+func (e *Executor) ExecuteWithChannel(ctx context.Context, intent *database.Intent, eventChannel chan any) {
+	if intent.Target != e.target {
+		eventChannel <- ErrIntentTargetMismatch
+	}
+
+	if err := e.Ping(ctx); err != nil {
+		eventChannel <- err
+	}
+
+	result, err := e.execute(ctx, intent)
+	if err != nil {
+		eventChannel <- err
+	}
+	eventChannel <- result
 }
 
 // Ping implements database.Executor.
@@ -319,8 +176,7 @@ func (e *Executor) Ping(ctx context.Context) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	err := e.db.PingContext(ctx)
-	if err != nil {
+	if err := e.db.PingContext(ctx); err != nil {
 		return err
 	}
 	return nil
@@ -341,15 +197,19 @@ func (e *Executor) Target() *database.Target {
 	return e.target
 }
 
-func (e *Executor) execute(ctx context.Context, kind result.Kind, query string, queryArgs ...any) (any, error) {
+func (e *Executor) execute(ctx context.Context, intent *database.Intent) (any, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
-
+	queryString, err := e.driver.RenderIntent(intent)
+	if err != nil {
+		return nil, err
+	}
+	kind := result.DefaultOperationResults[intent.Type]
 	switch kind {
 	case result.KindScalar:
 		var scalar int
-		row := e.db.QueryRowContext(ctx, query, queryArgs...)
+		row := e.db.QueryRowContext(ctx, queryString, intent.Args...)
 		err := row.Scan(&scalar)
 		if err != nil {
 			return nil, fmt.Errorf("error executing query: %w", err)
@@ -357,11 +217,11 @@ func (e *Executor) execute(ctx context.Context, kind result.Kind, query string, 
 		return scalar, nil
 
 	case result.KindRow:
-		row := e.db.QueryRowContext(ctx, query, queryArgs...)
+		row := e.db.QueryRowContext(ctx, queryString, intent.Args...)
 		return row, nil
 
 	case result.KindList:
-		rows, err := e.db.QueryContext(ctx, query, queryArgs...)
+		rows, err := e.db.QueryContext(ctx, queryString, intent.Args...)
 		if err != nil {
 			return nil, fmt.Errorf("error executing query: %w", err)
 		}
@@ -370,7 +230,7 @@ func (e *Executor) execute(ctx context.Context, kind result.Kind, query string, 
 		return result.RowsToList(rows), nil
 
 	case result.KindTable:
-		rows, err := e.db.QueryContext(ctx, query, queryArgs...)
+		rows, err := e.db.QueryContext(ctx, queryString, intent.Args...)
 		if err != nil {
 			return nil, fmt.Errorf("error executing query: %w", err)
 		}
@@ -385,55 +245,3 @@ func (e *Executor) execute(ctx context.Context, kind result.Kind, query string, 
 		return nil, fmt.Errorf("result kind not supported yet")
 	}
 }
-
-// OnResult implements database.Executor.
-func (e *Executor) OnBefore(f func(intent *database.Intent, err error)) {
-	e.onBefore = f
-}
-
-// OnResult implements database.Executor.
-func (e *Executor) OnAfter(f func(intent *database.Intent, err error)) {
-	e.onAfter = f
-}
-
-// OnResult implements database.Executor.
-func (e *Executor) OnResult(f func(result any, err error)) {
-	e.onResult = f
-}
-
-// SetEventChannel implements database.Executor.
-func (e *Executor) SetEventChannel(...chan any) {
-	panic("unimplemented")
-}
-
-// EventChannel implements database.Executor.
-func (e *Executor) EventChannel() []chan any {
-	panic("unimplemented")
-}
-
-const DefaultSQLSelectTemplate = `SELECT {{if .AsDistinct}}DISTINCT{{end}}
-{{- range $i, $field := .Fields -}}
-    {{if $i}}, {{end}}{{$field}}
-{{- end}}
-FROM {{.Table}}
-{{- range .Joins}}
-    {{.Type}} JOIN {{.Table}} ON {{.On}}
-{{- end}}
-{{- if .WhereClause}}
-WHERE {{.WhereClause}}
-{{- end}}
-{{- if .GroupByClause}}
-GROUP BY {{range $i, $field := .GroupByClause}}{{if $i}}, {{end}}{{$field}}{{end}}
-{{- end}}
-{{- if .HavingClause}}
-HAVING {{.HavingClause}}
-{{- end}}
-{{- if .OrderByClause}}
-ORDER BY {{range $i, $field := .OrderByClause}}{{if $i}}, {{end}}{{$field}}{{if .DescClause}} DESC{{end}}{{end}}
-{{- end}}
-{{- if .LimitClause}}
-LIMIT {{.LimitClause}}
-{{- end}}
-{{- if .OffsetClause}}
-OFFSET {{.OffsetClause}}
-{{- end}}`

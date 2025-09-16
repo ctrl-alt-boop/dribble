@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+	"sync/atomic"
 
 	"github.com/ctrl-alt-boop/dribble/database"
 )
@@ -12,16 +14,33 @@ const Version = "0.0.1"
 
 type TargetName = string
 
+type (
+	Execution struct {
+		RequestID int64
+	}
+	ExecutionResult struct {
+		RequestID int64
+		Status    Status
+		Result    any
+		Err       error
+	}
+)
+
 type Client struct {
+	mu        sync.Mutex
 	executors map[TargetName]database.Executor
+
+	nextRequestID atomic.Int64
+	pending       map[int64]chan ExecutionResult
 
 	onEvent EventHandler
 }
 
 func NewClient() *Client {
 	return &Client{
-		onEvent:   func(eventType EventType, args any, err error) {},
 		executors: make(map[TargetName]database.Executor),
+		pending:   make(map[int64]chan ExecutionResult),
+		onEvent:   func(eventType Status, args any, err error) {},
 	}
 }
 
@@ -52,15 +71,12 @@ func (c *Client) OpenTarget(ctx context.Context, target *database.Target) error 
 	}
 	executor, err := createExecutor(ctx, target)
 	if err != nil {
-		c.onEvent(TargetOpenError, target, err)
+		c.onEvent(ErrorTargetOpen, target, err)
 		return fmt.Errorf("error creating executor: %w", err)
 	}
-	executor.OnBefore(c.onExecuteEvent)
-	executor.OnAfter(c.onExecuteEvent)
-	executor.OnResult(c.onExecuteResult)
 	c.executors[target.Name] = executor
 
-	c.onEvent(TargetOpened, target, nil)
+	c.onEvent(SuccessTargetOpen, target, nil)
 	return nil
 }
 
@@ -95,15 +111,15 @@ func (c *Client) UpdateTarget(ctx context.Context, targetName string, opts ...da
 	c.executors[targetName].SetTarget(target)
 
 	if err := c.executors[targetName].Open(ctx); err != nil {
-		c.onEvent(TargetUpdateError, targetName, err)
+		c.onEvent(ErrorTargetUpdate, targetName, err)
 		return fmt.Errorf("error updating target: %w", err)
 	}
 	if err := c.executors[targetName].Ping(ctx); err != nil {
-		c.onEvent(TargetUpdateError, targetName, err)
+		c.onEvent(ErrorTargetUpdate, targetName, err)
 		return fmt.Errorf("error updating target: %w", err)
 	}
 
-	c.onEvent(TargetUpdated, target, nil)
+	c.onEvent(SuccessTargetUpdate, target, nil)
 	return nil
 }
 
@@ -116,13 +132,13 @@ func (c *Client) CloseTarget(ctx context.Context, targetName ...string) error {
 		executor, ok := c.executors[target]
 		if !ok {
 			err = errors.Join(err, fmt.Errorf("no executor found for target: %s", target))
-			c.onEvent(TargetCloseError, targetName, err)
+			c.onEvent(ErrorTargetClose, targetName, err)
 			continue
 		}
 		err := executor.Close(ctx)
 		if err != nil {
 			err = errors.Join(err, fmt.Errorf("error closing executor for target: %s", target))
-			c.onEvent(TargetCloseError, targetName, err)
+			c.onEvent(ErrorTargetClose, targetName, err)
 			continue
 		}
 		delete(c.executors, target)
@@ -130,7 +146,7 @@ func (c *Client) CloseTarget(ctx context.Context, targetName ...string) error {
 	if err != nil {
 		return fmt.Errorf("error deleting executors: %w", err)
 	}
-	c.onEvent(TargetClosed, targetName, nil)
+	c.onEvent(SuccessTargetClose, targetName, nil)
 	return nil
 }
 
@@ -144,111 +160,204 @@ func (c *Client) GetExecutor(targetName string) (database.Executor, error) {
 
 var ErrNoTarget = errors.New("no target provided")
 
-func (c *Client) Execute(ctx context.Context, intent *database.Intent) error {
+func (c *Client) Execute(ctx context.Context, intent *database.Intent) (int64, error) {
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return 0, ctx.Err()
 	}
 	if intent.Target == nil {
-		return ErrNoTarget
+		return 0, ErrNoTarget
 	}
+
 	executor, ok := c.executors[intent.Target.Name]
 	if !ok {
-		return fmt.Errorf("executor not found: %s", intent.Target.Name)
-	}
-	err := c.executors[intent.Target.Name].Ping(ctx)
-	if err != nil {
-		return fmt.Errorf("executor connection error: %w", err)
+		return 0, fmt.Errorf("executor not found: %s", intent.Target.Name)
 	}
 
+	requestID := c.nextRequestID.Add(1)
+	resultChan := make(chan ExecutionResult, 1)
+
+	c.mu.Lock()
+	c.pending[requestID] = resultChan
+	c.mu.Unlock()
+
 	go func() {
-		err := executor.Execute(ctx, intent)
+		defer func() {
+			c.mu.Lock()
+			delete(c.pending, requestID)
+			c.mu.Unlock()
+			close(resultChan) // Close the channel after deletion
+		}()
+		err := c.executors[intent.Target.Name].Ping(ctx)
 		if err != nil {
-			c.onEvent(QueryExecuteError, intent, err)
+			resultChan <- ExecutionResult{
+				RequestID: requestID,
+				Status:    ErrorExecute,
+				Err:       fmt.Errorf("executor connection error: %w", err),
+			}
 			return
 		}
 
-		c.onEvent(QueryExecuted, intent, nil)
+		result, err := executor.Execute(ctx, intent)
+		resultChan <- ExecutionResult{
+			RequestID: requestID,
+			Status:    SuccessExecute,
+			Result:    result,
+			Err:       err,
+		}
 	}()
 
-	return nil
+	return requestID, nil
 }
 
-func (c *Client) FetchDatabaseNames(ctx context.Context, targetName string) error {
-	if targetName == "" {
-		return ErrNoTarget
+func (c *Client) Request(ctx context.Context, request request) (int64, error) {
+	panic("not implemented")
+}
+
+// Blocks until result is ready
+func (c *Client) GetResult(ctx context.Context, requestID int64) (any, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
 	}
-	executor, ok := c.executors[targetName]
+	resultChan, ok := c.pending[requestID]
 	if !ok {
-		return fmt.Errorf("target not open: %s", targetName)
+		return nil, fmt.Errorf("no result found for request id: %d", requestID)
 	}
-
-	go func() {
-		err := executor.ExecutePrefab(ctx, database.PrefabDatabases)
-		if err != nil {
-			c.onEvent(DatabaseListFetchError, targetName, err)
-			return
-		}
-
-		// c.onEvent(DatabaseListFetched, targetName, nil)
-	}()
-
-	return nil
+	select {
+	case result := <-resultChan:
+		return result.Result, result.Err
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
 
-func (c *Client) FetchTableNames(ctx context.Context, targetName string) error { // FIXME: redo this
-	if targetName == "" {
-		return ErrNoTarget
-	}
-	executor, ok := c.executors[targetName]
-	if !ok {
-		return fmt.Errorf("target not open: %s", targetName)
-	}
+// func (c *Client) FetchDatabaseNames(ctx context.Context, targetName string) (int64, error) {
+// 	if ctx.Err() != nil {
+// 		return 0, ctx.Err()
+// 	}
+// 	if targetName == "" {
+// 		return 0, ErrNoTarget
+// 	}
 
-	go func() {
-		err := executor.ExecutePrefab(ctx, database.PrefabTables)
-		if err != nil {
-			c.onEvent(DBTableListFetchError, targetName, err)
-			return
-		}
-		// c.onEvent(DBTableListFetched, targetName, nil)
-	}()
+// 	executor, ok := c.executors[targetName]
+// 	if !ok {
+// 		return 0, fmt.Errorf("executor not found: %s", targetName)
+// 	}
 
-	return nil
-}
+// 	requestID := c.nextRequestID.Add(1)
+// 	resultChan := make(chan ExecutionResult, 1)
 
-func (c *Client) FetchColumnNames(ctx context.Context, targetName string) error { // FIXME: redo this
-	if targetName == "" {
-		return ErrNoTarget
-	}
-	executor, ok := c.executors[targetName]
-	if !ok {
-		return fmt.Errorf("target not open: %s", targetName)
-	}
+// 	c.mu.Lock()
+// 	c.pending[requestID] = resultChan
+// 	c.mu.Unlock()
 
-	go func() {
-		err := executor.ExecutePrefab(ctx, database.PrefabColumns)
-		if err != nil {
-			c.onEvent(DBTableListFetchError, targetName, err)
-			return
-		}
-		// c.onEvent(DBTableListFetched, targetName, nil)
-	}()
+// 	go func() {
+// 		defer func() {
+// 			c.mu.Lock()
+// 			delete(c.pending, requestID)
+// 			c.mu.Unlock()
+// 			close(resultChan) // Close the channel after deletion
+// 		}()
+// 		err := c.executors[targetName].Ping(ctx)
+// 		if err != nil {
+// 			resultChan <- ExecutionResult{
+// 				Err: fmt.Errorf("executor connection error: %w", err),
+// 			}
+// 			return
+// 		}
+// 		result, err := executor.ExecutePrefab(ctx, database.PrefabDatabases)
+// 		resultChan <- ExecutionResult{
+// 			Result: result,
+// 			Err:    err,
+// 		}
+// 	}()
 
-	return nil
-}
+// 	return requestID, nil
+// }
 
-func (c *Client) onExecuteEvent(intent *database.Intent, err error) {
-	if err != nil {
-		c.onEvent(QueryExecuteError, nil, err)
-		return
-	}
-	c.onEvent(QueryExecuted, nil, nil)
-}
+// func (c *Client) FetchTableNames(ctx context.Context, targetName string) (int64, error) { // FIXME: redo this
+// 	if ctx.Err() != nil {
+// 		return 0, ctx.Err()
+// 	}
+// 	if targetName == "" {
+// 		return 0, ErrNoTarget
+// 	}
 
-func (c *Client) onExecuteResult(result any, err error) {
-	if err != nil {
-		c.onEvent(QueryExecuteError, nil, err)
-		return
-	}
-	c.onEvent(QueryExecuted, result, nil)
-}
+// 	executor, ok := c.executors[targetName]
+// 	if !ok {
+// 		return 0, fmt.Errorf("executor not found: %s", targetName)
+// 	}
+
+// 	requestID := c.nextRequestID.Add(1)
+// 	resultChan := make(chan ExecutionResult, 1)
+
+// 	c.mu.Lock()
+// 	c.pending[requestID] = resultChan
+// 	c.mu.Unlock()
+
+// 	go func() {
+// 		defer func() {
+// 			c.mu.Lock()
+// 			delete(c.pending, requestID)
+// 			c.mu.Unlock()
+// 			close(resultChan) // Close the channel after deletion
+// 		}()
+// 		err := c.executors[targetName].Ping(ctx)
+// 		if err != nil {
+// 			resultChan <- ExecutionResult{
+// 				Err: fmt.Errorf("executor connection error: %w", err),
+// 			}
+// 			return
+// 		}
+// 		result, err := executor.ExecutePrefab(ctx, database.PrefabTables)
+// 		resultChan <- ExecutionResult{
+// 			Result: result,
+// 			Err:    err,
+// 		}
+// 	}()
+
+// 	return requestID, nil
+// }
+
+// func (c *Client) FetchColumnNames(ctx context.Context, targetName string) (int64, error) { // FIXME: redo this
+// 	if ctx.Err() != nil {
+// 		return 0, ctx.Err()
+// 	}
+// 	if targetName == "" {
+// 		return 0, ErrNoTarget
+// 	}
+
+// 	executor, ok := c.executors[targetName]
+// 	if !ok {
+// 		return 0, fmt.Errorf("executor not found: %s", targetName)
+// 	}
+
+// 	requestID := c.nextRequestID.Add(1)
+// 	resultChan := make(chan ExecutionResult, 1)
+
+// 	c.mu.Lock()
+// 	c.pending[requestID] = resultChan
+// 	c.mu.Unlock()
+
+// 	go func() {
+// 		defer func() {
+// 			c.mu.Lock()
+// 			delete(c.pending, requestID)
+// 			c.mu.Unlock()
+// 			close(resultChan) // Close the channel after deletion
+// 		}()
+// 		err := c.executors[targetName].Ping(ctx)
+// 		if err != nil {
+// 			resultChan <- ExecutionResult{
+// 				Err: fmt.Errorf("executor connection error: %w", err),
+// 			}
+// 			return
+// 		}
+// 		result, err := executor.ExecutePrefab(ctx, database.PrefabColumns)
+// 		resultChan <- ExecutionResult{
+// 			Result: result,
+// 			Err:    err,
+// 		}
+// 	}()
+
+// 	return requestID, nil
+// }
