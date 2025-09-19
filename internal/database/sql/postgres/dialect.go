@@ -10,10 +10,8 @@ import (
 //go:embed templates/select.tmpl
 var selectQueryTemplate string
 
-var _ database.Dialect = &Postgres{}
-
 // GetTemplate implements database.Dialect.
-func (p *Postgres) GetTemplate(queryType database.OperationType) string {
+func (p *Postgres) GetTemplate(queryType database.RequestType) string {
 	switch queryType {
 	case database.Read:
 		return selectQueryTemplate

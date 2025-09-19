@@ -6,8 +6,8 @@ import (
 
 type (
 	Query interface {
-		ToSQL(dialect database.Dialect) (queryString string, params []any, err error)
-		ToSQLFormatted(dialect database.Dialect) (queryString string, params []any, err error)
+		ToSQL(dialect database.SQLDialect) (queryString string, params []any, err error)
+		ToSQLFormatted(dialect database.SQLDialect) (queryString string, params []any, err error)
 		Parameters() []any
 	}
 

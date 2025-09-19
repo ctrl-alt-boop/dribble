@@ -9,18 +9,19 @@ import (
 	"github.com/ctrl-alt-boop/dribble"
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/sql"
+	"github.com/ctrl-alt-boop/dribble/target"
 )
 
 type MockDriver struct {
 }
 
 // ConnectionString implements database.Driver.
-func (m *MockDriver) ConnectionString(target *database.Target) string {
+func (m *MockDriver) ConnectionString(target *target.Target) string {
 	panic("unimplemented")
 }
 
 // Dialect implements database.Driver.
-func (m *MockDriver) Dialect() database.Dialect {
+func (m *MockDriver) Dialect() database.SQLDialect {
 	panic("unimplemented")
 }
 
@@ -29,7 +30,7 @@ func (m *MockDriver) RenderIntent(intent *database.Intent) (string, error) {
 	panic("unimplemented")
 }
 
-var mockDriver database.Driver = &MockDriver{}
+var mockDriver database.SQL = &MockDriver{}
 
 func TestQueryBuilding(t *testing.T) {
 	q := sql.Select("ads").From("table").Where(sql.Eq("ads", "ads")).ToIntent()
@@ -54,12 +55,13 @@ func TestClient(t *testing.T) {
 		t.Logf("args: %+v", args)
 		t.Logf("err: %+v", err)
 	})
-	testTarget := database.NewTarget(
+	testTarget := target.New(
 		"test",
-		"postgres",
-		database.WithDB("valmatics"),
-		database.WithUser("valmatics"),
-		database.WithPassword("valmatics"),
+		target.TypeDriver,
+		target.PostgreSQL,
+		target.WithDB("valmatics"),
+		target.WithUser("valmatics"),
+		target.WithPassword("valmatics"),
 	)
 	err := client.OpenTarget(ctx, testTarget)
 	if err != nil {
@@ -77,7 +79,7 @@ func TestClient(t *testing.T) {
 	}
 	t.Logf("result: %+v", result)
 
-	testExecutor, _ := client.GetExecutor("test")
+	testExecutor, _ := client.GetTargetExecutor("test")
 	testExecutor.Execute(ctx, q.ToIntent())
 
 	done := make(chan struct{})

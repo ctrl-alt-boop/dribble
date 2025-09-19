@@ -5,17 +5,20 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/target"
 )
 
-var _ database.Driver = &Firestore{}
-var _ database.NoSQLClient = &Firestore{}
-var _ database.Dialect = &Firestore{}
+func init() {
+	database.DBTypes.Register("NoSQL", "firestore")
+}
+
+var _ database.NoSQL = &Firestore{}
 
 type Firestore struct {
 	client *firestore.Client
 }
 
-func NewFirestoreDriver(target *database.Target) (*Firestore, error) {
+func NewFirestoreDriver(target *target.Target) (*Firestore, error) {
 	driver := &Firestore{}
 	return driver, nil
 }
@@ -28,7 +31,7 @@ func (f *Firestore) Capabilities() []database.Capabilities {
 }
 
 // Open implements database.NoSQLClient.
-func (f *Firestore) Open(ctx context.Context, target *database.Target) error { // I'll use target.Name for the time being
+func (f *Firestore) Open(ctx context.Context, target *target.Target) error { // I'll use target.Name for the time being
 	var client *firestore.Client
 	var err error
 	if target.DBName != "" {
@@ -79,14 +82,14 @@ func (f *Firestore) Delete(any) {
 }
 
 // ConnectionString implements database.Driver.
-func (f *Firestore) ConnectionString(target *database.Target) string {
+func (f *Firestore) ConnectionString(target *target.Target) string {
 	if target.DBName != "" {
 		return target.Name + "/" + target.DBName
 	}
 	return target.Name
 }
 
-func (f *Firestore) Dialect() database.Dialect {
+func (f *Firestore) Dialect() database.SQLDialect {
 	panic("unimplemented")
 }
 

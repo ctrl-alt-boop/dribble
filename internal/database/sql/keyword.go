@@ -2,14 +2,10 @@ package sql
 
 //go:generate stringer -type=KeyWord -linecomment=true
 
-const DefaultSelectLimit int = 10 // Just a safeguard
-
-var SQLMethods = []KeyWord{Select, Insert, Update, Delete}
-
-type KeyWord int
+type Keyword int
 
 const (
-	Select            KeyWord = iota // SELECT
+	Select            Keyword = iota // SELECT
 	Insert                           // INSERT
 	Update                           // UPDATE
 	Delete                           // DELETE

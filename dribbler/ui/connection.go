@@ -61,11 +61,11 @@ func SettingsToConnectionItems(targets []*database.Target) []*ConnectionItem {
 
 func CreateNestedList() *list.List {
 	types := map[database.TargetType]*list.List{
-		database.DBDriver: list.New(),
-		database.DBServer: list.New(),
-		database.Database: list.New(),
-		database.DBTable:  list.New(),
-		database.Unknown:  list.New(),
+		database.TargetDriver:   list.New(),
+		database.TargetServer:   list.New(),
+		database.TargetDatabase: list.New(),
+		database.TargetTable:    list.New(),
+		database.TargetUnknown:  list.New(),
 	}
 	configs := GetSavedConfigsSorted()
 	for _, item := range configs {
@@ -126,13 +126,13 @@ func NewCategoryNode(categoryName string, children TreeNodeChildren) *TreeNode {
 func NewConnectionNode(nodeType database.TargetType, connectionItem *ConnectionItem) *TreeNode {
 	var name string
 	switch nodeType {
-	case database.DBDriver:
+	case database.TargetDriver:
 		name = connectionItem.DriverName
-	case database.DBServer:
+	case database.TargetServer:
 		name = connectionItem.Ip
-	case database.Database:
+	case database.TargetDatabase:
 		name = connectionItem.DBName
-	case database.DBTable:
+	case database.TargetTable:
 		name = "{table}"
 	default:
 		name = "ERR"

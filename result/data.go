@@ -48,7 +48,7 @@ func ParseRows(dbRows *sql.Rows) ([]Column, []Row) {
 	return columns, rows
 }
 
-func ResolveTypes(resolver database.Dialect, rowValue any, column Column) (any, error) {
+func ResolveTypes(resolver database.SQLDialect, rowValue any, column Column) (any, error) {
 	switch value := rowValue.(type) {
 	case string, int, int32, int64, float32, float64, uint, bool:
 		return value, nil

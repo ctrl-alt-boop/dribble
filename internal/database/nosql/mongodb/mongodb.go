@@ -5,19 +5,22 @@ import (
 	"fmt"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/target"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var _ database.Driver = &MongoDB{}
-var _ database.NoSQLClient = &MongoDB{}
-var _ database.Dialect = &MongoDB{}
+func init() {
+	database.DBTypes.Register("NoSQL", "mongo")
+}
+
+var _ database.NoSQL = &MongoDB{}
 
 type MongoDB struct {
 	client *mongo.Client
 }
 
-func NewMongoDBDriver(target *database.Target) (*MongoDB, error) {
+func NewMongoDBDriver(target *target.Target) (*MongoDB, error) {
 	driver := &MongoDB{}
 	return driver, nil
 }
@@ -30,7 +33,7 @@ func (m *MongoDB) Capabilities() []database.Capabilities {
 }
 
 // Open implements database.NoSQLClient.
-func (m *MongoDB) Open(ctx context.Context, target *database.Target) error {
+func (m *MongoDB) Open(ctx context.Context, target *target.Target) error {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(m.ConnectionString(target)))
 	if err != nil {
 		return err
@@ -58,7 +61,7 @@ func (m *MongoDB) Close(ctx context.Context) error {
 }
 
 // ConnectionString implements database.Driver.
-func (m *MongoDB) ConnectionString(target *database.Target) string {
+func (m *MongoDB) ConnectionString(target *target.Target) string {
 	return fmt.Sprintf("mongodb://%s:%d", target.Ip, target.Port)
 }
 
@@ -87,7 +90,7 @@ func (m *MongoDB) Delete(any) {
 	panic("unimplemented")
 }
 
-func (m *MongoDB) Dialect() database.Dialect {
+func (m *MongoDB) Dialect() database.SQLDialect {
 	return m
 }
 

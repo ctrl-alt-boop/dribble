@@ -90,7 +90,7 @@ func testTree() {
 	var treeItems []*ui.TreeNode
 	connItems := ui.GetSavedConfigsSorted()
 	for _, item := range connItems {
-		treeItem := ui.NewConnectionNode(database.DBServer, item)
+		treeItem := ui.NewConnectionNode(database.TargetServer, item)
 		treeItems = append(treeItems, treeItem)
 	}
 

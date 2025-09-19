@@ -7,17 +7,21 @@ import (
 
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/sql"
+	"github.com/ctrl-alt-boop/dribble/target"
 	"github.com/google/uuid"
 
 	_ "github.com/lib/pq"
 )
 
-var _ database.Driver = &Postgres{}
-var _ database.Dialect = &Postgres{}
+func init() {
+	database.DBTypes.Register("SQL", "postgres")
+}
+
+var _ database.SQLDialect = &Postgres{}
 
 type Postgres struct{}
 
-func NewPostgresDriver(target *database.Target) (*Postgres, error) {
+func NewPostgresDriver() (*Postgres, error) {
 	driver := &Postgres{}
 	return driver, nil
 }
@@ -31,7 +35,7 @@ func (p *Postgres) Capabilities() []database.Capabilities {
 }
 
 // ConnectionString implements database.Driver.
-func (p *Postgres) ConnectionString(target *database.Target) string {
+func (p *Postgres) ConnectionString(target *target.Target) string {
 	connString := ""
 	connString += fmt.Sprintf("host=%s ", target.Ip)
 	if target.Port == 0 {
@@ -44,7 +48,7 @@ func (p *Postgres) ConnectionString(target *database.Target) string {
 		target.DBName = "postgres"
 	}
 	connString += fmt.Sprintf("dbname=%s ", target.DBName)
-	sslmode, ok := target.AdditionalSettings["sslmode"]
+	sslmode, ok := target.AdditionalProperties["sslmode"]
 	if !ok {
 		sslmode = "disable"
 	}
@@ -53,7 +57,7 @@ func (p *Postgres) ConnectionString(target *database.Target) string {
 	return connString
 }
 
-func (p *Postgres) Dialect() database.Dialect {
+func (p *Postgres) Dialect() database.SQLDialect {
 	return p
 }
 

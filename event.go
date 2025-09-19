@@ -1,82 +1,17 @@
 package dribble
 
 import (
-	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/request"
 	"github.com/ctrl-alt-boop/dribble/result"
-)
-
-//go:generate stringer -type=Success
-//go:generate stringer -type=Error
-
-type (
-	Status      uint
-	Success     Status
-	Error       Status
-	BatchStatus []Status
-)
-
-const (
-	SuccessConnect Success = iota
-	SuccessReconnect
-	SuccessDisconnect
-	SuccessTargetOpen
-	SuccessTargetUpdate
-	SuccessTargetClose
-
-	SuccessReadDatabaseSchema
-	SuccessReadTableSchema
-	SuccessReadColumnSchema
-
-	SuccessReadDatabaseProperties
-	SuccessReadTableProperties
-	SuccessReadColumnProperties
-
-	SuccessReadDatabaseList
-	SuccessReadDBTableList
-	SuccessReadDBColumnList
-
-	SuccessReadCount
-
-	SuccessReadTable
-
-	SuccessExecute
-	SuccessBatchExecute
-)
-
-const (
-	ErrorConnect Error = iota
-	ErrorReconnect
-	ErrorDisconnect
-	ErrorTargetOpen
-	ErrorTargetClose
-	ErrorTargetUpdate
-
-	ErrorReadDatabaseSchema
-	ErrorReadTableSchema
-	ErrorReadColumnSchema
-
-	ErrorReadDatabaseProperties
-	ErrorReadTableProperties
-	ErrorReadColumnProperties
-
-	ErrorReadDatabaseList
-	ErrorReadDBTableList
-	ErrorReadDBColumnList
-
-	ErrorReadCount
-
-	ErrorReadTable
-
-	ErrorExecute
-	ErrorBatchExecute
+	"github.com/ctrl-alt-boop/dribble/target"
 )
 
 type (
-	EventHandler func(eventType Status, args any, err error)
+	EventHandler func(eventType request.Status, args any, err error)
 
 	DatabaseListFetchData struct {
 		Driver    string
-		Databases []*database.Target
+		Databases []*target.Target
 	}
 
 	TableListFetchData struct {

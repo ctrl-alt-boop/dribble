@@ -77,8 +77,8 @@ const _KeyWord_name = "SELECTINSERTUPDATEDELETEFROMWHERESETVALUESORDER BYASCDESC
 
 var _KeyWord_index = [...]uint16{0, 6, 12, 18, 24, 28, 33, 36, 42, 50, 53, 57, 62, 68, 76, 82, 86, 95, 105, 114, 124, 126, 128, 138, 148, 153, 162, 168, 177, 190, 200, 203, 205, 212, 215, 217, 224, 235, 242, 250, 260, 276, 296, 300, 308, 313, 322, 325, 328, 334, 338, 344, 355, 366, 371, 378, 382, 386, 391, 398, 402, 406, 413, 419}
 
-func (i KeyWord) String() string {
-	if i < 0 || i >= KeyWord(len(_KeyWord_index)-1) {
+func (i Keyword) String() string {
+	if i < 0 || i >= Keyword(len(_KeyWord_index)-1) {
 		return "KeyWord(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
 	return _KeyWord_name[_KeyWord_index[i]:_KeyWord_index[i+1]]

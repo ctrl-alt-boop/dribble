@@ -5,22 +5,30 @@ import (
 	"fmt"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/target"
 )
 
 const (
 	MongoDB = "mongo"
 )
 
-var SupportedDrivers []string = []string{
-	MongoDB,
+// var SupportedDrivers []string = []string{
+// 	MongoDB,
+// }
+
+var SupportedDialects []target.Dialect = []target.Dialect{
+	target.MongoDB,
 }
 
-var Defaults = map[string]*database.Target{
+var Defaults = map[string]*target.Target{
 	MongoDB: {
-		Type:       database.DBDriver,
-		DriverName: MongoDB,
-		Ip:         "127.0.0.1",
-		Port:       27017,
+		Name: "mongo",
+		Type: target.TypeDriver,
+		Properties: target.Properties{
+			Dialect: target.MongoDB,
+			Ip:      "127.0.0.1",
+			Port:    27017,
+		},
 	},
 }
 
@@ -38,12 +46,12 @@ const DefaultFindLimit int = 10 // Just a safeguard
 
 var NoSQLMethods = []Method{MethodFind}
 
-func CreateDriverFromTarget(target *database.Target) (database.NoSQLClient, error) {
-	switch target.DriverName {
+func CreateDriverFromTarget(target *target.Target) (database.NoSQL, error) {
+	switch target.Dialect {
 	// case MongoDB:
 	// return mongodb.NewMongoDBDriver(target)
 	default:
-		return nil, fmt.Errorf("unknown or unsupported driver: %s", target.DriverName)
+		return nil, fmt.Errorf("unknown or unsupported driver: %s", target.Dialect)
 	}
 }
 
@@ -55,8 +63,8 @@ type (
 )
 
 type Executor struct {
-	client database.NoSQLClient
-	target *database.Target
+	client database.NoSQL
+	target *target.Target
 	// driver database.Driver
 
 	onBefore IntentHandler
@@ -64,7 +72,7 @@ type Executor struct {
 	onResult ResultHandler
 }
 
-func NewExecutor(target *database.Target) *Executor {
+func NewExecutor(target *target.Target) *Executor {
 	client, err := CreateDriverFromTarget(target)
 	if err != nil {
 		panic(err)
@@ -85,7 +93,7 @@ func (e *Executor) Close(_ context.Context) error {
 }
 
 // Driver implements database.Executor.
-func (e *Executor) Driver() database.Driver {
+func (e *Executor) Driver() database.SQL {
 	return nil
 }
 
@@ -115,17 +123,17 @@ func (e *Executor) Ping(ctx context.Context) error {
 }
 
 // SetDriver implements database.Executor.
-func (e *Executor) SetDriver(driver database.Driver) {
+func (e *Executor) SetDriver(driver database.SQL) {
 
 }
 
 // SetTarget implements database.Executor.
-func (e *Executor) SetTarget(target *database.Target) {
+func (e *Executor) SetTarget(target *target.Target) {
 	e.target = target
 }
 
 // Target implements database.Executor.
-func (e *Executor) Target() *database.Target {
+func (e *Executor) Target() *target.Target {
 	return e.target
 }
 

@@ -11,69 +11,33 @@ import (
 	"github.com/ctrl-alt-boop/dribble/internal/database/sql/postgres"
 	"github.com/ctrl-alt-boop/dribble/internal/database/sql/sqlite3"
 	"github.com/ctrl-alt-boop/dribble/result"
+	"github.com/ctrl-alt-boop/dribble/target"
 )
 
-const (
-	PostgreSQL = "postgres"
-	MySQL      = "mysql"
-	SQLite     = "sqlite3"
-)
+const DefaultSelectLimit int = 10 // Just a safeguard
 
-var SupportedDrivers []string = []string{
-	PostgreSQL,
-	MySQL,
-	SQLite,
-}
+var SQLMethods = []Keyword{Select, Insert, Update, Delete, Pragma, Exec, Execute}
 
-var Defaults = map[string]*database.Target{
-	PostgreSQL: {
-		Type:       database.DBDriver,
-		DriverName: PostgreSQL,
-		Ip:         "127.0.0.1",
-		Port:       5432,
-		AdditionalSettings: map[string]string{
-			"sslmode": "disable",
-		},
-	},
-	MySQL: {
-		Type:       database.DBDriver,
-		DriverName: MySQL,
-		Ip:         "127.0.0.1",
-		Port:       3306,
-	},
-	SQLite: {
-		Type:       database.DBDriver,
-		DriverName: SQLite,
-	},
-}
-
-func CreateDriverFromTarget(target *database.Target) (database.Driver, error) {
-	switch target.DriverName {
-	case MySQL:
-		return mysql.NewMySQLDriver(target)
-	case PostgreSQL:
-		return postgres.NewPostgresDriver(target)
-	case SQLite:
-		return sqlite3.NewSQLite3Driver(target)
+func CreateClient(dialect database.SQLDialect) (database.SQL, error) {
+	switch dialect {
+	case database.MySQL:
+		return mysql.NewMySQLDriver()
+	case database.PostgreSQL:
+		return postgres.NewPostgresDriver()
+	case database.SQLite3:
+		return sqlite3.NewSQLite3Driver()
 	default:
-		return nil, fmt.Errorf("unknown or unsupported driver: %s", target.DriverName)
+		return nil, fmt.Errorf("unknown or unsupported database dialect: %s", dialect)
 	}
 }
 
-var _ database.Executor = &Executor{}
-
-type (
-	IntentHandler func(intent *database.Intent, err error)
-	ResultHandler func(result any, err error)
-)
-
 type Executor struct {
 	db     *sql.DB
-	target *database.Target
-	driver database.Driver
+	target *target.Target
+	driver database.SQL
 }
 
-func NewExecutor(target *database.Target) *Executor {
+func NewExecutor(target *target.Target) *Executor {
 	driver, err := CreateDriverFromTarget(target)
 	if err != nil {
 		panic(err)
@@ -85,16 +49,23 @@ func NewExecutor(target *database.Target) *Executor {
 }
 
 func (e *Executor) Open(_ context.Context) error {
-	driverName := e.target.DriverName
-	if driverName == "" {
-		return fmt.Errorf("no driver name provided")
-	}
 	connectionString := e.driver.ConnectionString(e.target)
-	db, err := sql.Open(driverName, connectionString)
+	db, err := sql.Open(e.target.Dialect.String(), connectionString)
 	if err != nil {
 		return err
 	}
 	e.db = db
+	return nil
+}
+
+// Ping implements database.Executor.
+func (e *Executor) Ping(ctx context.Context) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if err := e.db.PingContext(ctx); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -103,14 +74,14 @@ func (e *Executor) Close(_ context.Context) error {
 }
 
 // Driver implements database.Executor.
-func (e *Executor) Driver() database.Driver {
+func (e *Executor) Driver() database.SQL {
 	return e.driver
 }
 
 var ErrIntentTargetMismatch = errors.New("intent target does not match executor target")
 
 // Execute implements database.Executor.
-func (e *Executor) Execute(ctx context.Context, intent *database.Intent) (any, error) {
+func (e *Executor) Execute(ctx context.Context, request *database.Request) (any, error) {
 	if intent.Target != e.target {
 		return nil, ErrIntentTargetMismatch
 	}
@@ -130,7 +101,7 @@ func (e *Executor) ExecutePrefab(ctx context.Context, prefabType database.Prefab
 
 	prefab, ok := e.driver.Dialect().GetPrefab(prefabType)
 	if !ok {
-		return nil, fmt.Errorf("prefab type not found for driver: %s", e.target.DriverName)
+		return nil, fmt.Errorf("prefab type not found for driver: %s", e.target.Dialect)
 	}
 
 	if prefabType == database.PrefabTables {
@@ -171,31 +142,7 @@ func (e *Executor) ExecuteWithChannel(ctx context.Context, intent *database.Inte
 	eventChannel <- result
 }
 
-// Ping implements database.Executor.
-func (e *Executor) Ping(ctx context.Context) error {
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-	if err := e.db.PingContext(ctx); err != nil {
-		return err
-	}
-	return nil
-}
-
-// SetDriver implements database.Executor.
-func (e *Executor) SetDriver(driver database.Driver) {
-	e.driver = driver
-}
-
-// SetTarget implements database.Executor.
-func (e *Executor) SetTarget(target *database.Target) {
-	e.target = target
-}
-
-// Target implements database.Executor.
-func (e *Executor) Target() *database.Target {
-	return e.target
-}
+var ErrResultKindNotSupported = errors.New("result kind not supported")
 
 func (e *Executor) execute(ctx context.Context, intent *database.Intent) (any, error) {
 	if ctx.Err() != nil {
@@ -242,6 +189,6 @@ func (e *Executor) execute(ctx context.Context, intent *database.Intent) (any, e
 		return result.CreateDataTable(result.ParseRows(rows)), nil
 
 	default:
-		return nil, fmt.Errorf("result kind not supported yet")
+		return nil, ErrResultKindNotSupported
 	}
 }

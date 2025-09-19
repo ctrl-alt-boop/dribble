@@ -4,15 +4,20 @@ import (
 	"fmt"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/target"
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var _ database.Driver = &MySQL{}
-var _ database.Dialect = &MySQL{}
+func init() {
+	database.DBTypes.Register("SQL", "mysql")
+}
+
+var _ database.SQL = &MySQL{}
+var _ database.SQLDialect = &MySQL{}
 
 type MySQL struct{}
 
-func NewMySQLDriver(target *database.Target) (*MySQL, error) {
+func NewMySQLDriver() (*MySQL, error) {
 	driver := &MySQL{}
 	return driver, nil
 }
@@ -24,7 +29,7 @@ func (m *MySQL) Capabilities() []database.Capabilities {
 
 // ConnectionString implements database.Driver.
 // Server=myServerAddress;Port=1234;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
-func (m *MySQL) ConnectionString(target *database.Target) string {
+func (m *MySQL) ConnectionString(target *target.Target) string {
 	connString := ""
 	if target.Port == 0 {
 		target.Port = 3306
@@ -47,12 +52,12 @@ func (m *MySQL) ConnectionString(target *database.Target) string {
 }
 
 // Dialect implements database.Driver.
-func (m *MySQL) Dialect() database.Dialect {
+func (m *MySQL) Dialect() database.SQLDialect {
 	return m
 }
 
-// RenderIntent implements database.Driver.
-func (m *MySQL) RenderIntent(intent *database.Intent) (string, error) {
+// RenderRequest implements database.Driver.
+func (m *MySQL) RenderRequest(intent *database.Request) (string, error) {
 	panic("unimplemented")
 }
 

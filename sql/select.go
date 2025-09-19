@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/target"
 )
 
 type SelectQuery struct {
@@ -188,7 +189,7 @@ func (s *SelectBuilder) ToIntent() *database.Intent {
 }
 
 // TODO: Of course this needs implementation for the other operation types
-func (s *SelectBuilder) ToIntentOn(target *database.Target) *database.Intent {
+func (s *SelectBuilder) ToIntentOn(target *target.Target) *database.Intent {
 	operation := &SelectQuery{
 		AsDistinct:    s.asDistinct,
 		IsCount:       s.isCount,

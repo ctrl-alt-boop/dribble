@@ -24,7 +24,7 @@ type (
 		columns []Column
 		rows    []Row
 
-		Resolver database.Dialect
+		Resolver database.SQLDialect
 	}
 )
 

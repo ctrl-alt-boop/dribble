@@ -1,37 +1,5 @@
 package dribble
 
-import (
-	"fmt"
-	"maps"
-	"slices"
-
-	"github.com/ctrl-alt-boop/dribble/database"
-	"github.com/ctrl-alt-boop/dribble/internal/database/nosql"
-	"github.com/ctrl-alt-boop/dribble/internal/database/sql"
-)
-
-func CreateExecutorFromTarget(target *database.Target) (database.Executor, error) {
-	switch {
-	case slices.Contains(sql.SupportedDrivers, target.DriverName):
-		return sql.NewExecutor(target), nil
-	case slices.Contains(nosql.SupportedDrivers, target.DriverName):
-		return nosql.NewExecutor(target), nil
-	default:
-		return nil, fmt.Errorf("unknown or unsupported driver: %s", target.DriverName)
-	}
-}
-
-func GetSupportedDrivers() []string {
-	return append(sql.SupportedDrivers, nosql.SupportedDrivers...)
-}
-
-func GetDriverDefaults() map[string]*database.Target {
-	defaults := make(map[string]*database.Target)
-	maps.Copy(defaults, sql.Defaults)
-	maps.Copy(defaults, nosql.Defaults)
-	return defaults
-}
-
 // func (e *QueryExecutor) OnQueryExecuted(f func(query string, err error)) {
 // 	e.onQueryExecuted = f
 // }

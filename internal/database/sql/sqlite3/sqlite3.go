@@ -2,15 +2,20 @@ package sqlite3
 
 import (
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/target"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var _ database.Driver = &SQLite3{}
-var _ database.Dialect = &SQLite3{}
+func init() {
+	database.DBTypes.Register("SQL", "sqlite3")
+}
+
+var _ database.SQL = &SQLite3{}
+var _ database.SQLDialect = &SQLite3{}
 
 type SQLite3 struct{}
 
-func NewSQLite3Driver(target *database.Target) (*SQLite3, error) {
+func NewSQLite3Driver() (*SQLite3, error) {
 	driver := &SQLite3{}
 	return driver, nil
 }
@@ -23,12 +28,12 @@ func (s *SQLite3) Capabilities() []database.Capabilities {
 }
 
 // ConnectionString implements database.Driver.
-func (s *SQLite3) ConnectionString(target *database.Target) string {
+func (s *SQLite3) ConnectionString(target *target.Target) string {
 	panic("unimplemented")
 }
 
 // Dialect implements database.Driver.
-func (s *SQLite3) Dialect() database.Dialect {
+func (s *SQLite3) Dialect() database.SQLDialect {
 	return s
 }
 

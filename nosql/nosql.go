@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/target"
 )
 
 type FindQuery struct {
@@ -62,7 +63,7 @@ func (n *FindBuilder) ToIntent() *database.Intent { // TODO: Ofcourse this needs
 	}
 }
 
-func (n *FindBuilder) ToIntentOn(target *database.Target) *database.Intent { // TODO: Ofcourse this needs implementation for the other operation types
+func (n *FindBuilder) ToIntentOn(target *target.Target) *database.Intent { // TODO: Ofcourse this needs implementation for the other operation types
 	intent := &FindQuery{
 		Collection:   n.collection,
 		Conditions:   n.conditions,
