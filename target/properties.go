@@ -6,87 +6,30 @@ import (
 	"github.com/ctrl-alt-boop/dribble/database"
 )
 
-type Properties struct {
-	Dialect    database.SQLDialect
-	Ip         string
-	Port       int
-	DBName     string
-	Username   string
-	Password   string // FIXME: some other type
-	Additional map[string]string
-}
-
-func (s *Target) Copy(opts ...Option) *Target {
-	newTarget := &Target{
-		Name:       s.Name,
-		Type:       s.Type,
-		Properties: s.Properties,
-	}
-
-	maps.Copy(newTarget.Properties.Additional, s.Properties.Additional)
-
-	for _, opt := range opts {
-		opt(newTarget)
-	}
-
-	return newTarget
-}
-
 type Option func(*Target)
+
+func WithConnectionProperties(properties *database.ConnectionProperties) Option {
+	return func(target *Target) {
+		target.Properties.Addr = properties.Addr
+		target.Properties.Port = properties.Port
+		target.Properties.DBName = properties.DBName
+		target.Properties.Username = properties.Username
+		target.Properties.Password = properties.Password
+		maps.Copy(target.Properties.Additional, properties.Additional)
+	}
+}
 
 func AsTableSelect(table string) Option {
 	return func(target *Target) {
-		target.Type = TableTable
-		target.Properties.Additional["select"] = "SELECT * FROM " + table
+		target.Type = TypeDatabase
+		prop := target.Properties
+		prop.Additional["select"] = "SELECT * FROM " + table
 	}
 }
 
 func AsQuery(query string) Option {
 	return func(target *Target) {
-		target.Type = TableTable
+		target.Type = TypeDatabase
 		target.Properties.Additional["query"] = query
-	}
-}
-
-func WithIp(ip string) Option {
-	return func(target *Target) {
-		target.Properties.Ip = ip
-	}
-}
-
-func WithPort(port int) Option {
-	return func(target *Target) {
-		target.Properties.Port = port
-	}
-}
-
-func WithHost(hostname string, port int) Option {
-	return func(target *Target) {
-		target.Properties.Ip = hostname
-		target.Properties.Port = port
-	}
-}
-
-func WithDB(name string) Option {
-	return func(target *Target) {
-		target.Properties.DBName = name
-	}
-}
-
-func WithUser(user string) Option {
-	return func(target *Target) {
-		target.Properties.Username = user
-	}
-}
-
-func WithPassword(pass string) Option {
-	return func(target *Target) {
-		target.Properties.Password = pass
-	}
-}
-
-func WithProperty(key, value string) Option {
-	return func(target *Target) {
-		target.Properties.Additional[key] = value
 	}
 }

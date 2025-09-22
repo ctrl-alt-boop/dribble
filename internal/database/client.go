@@ -1,20 +1,40 @@
 package database
 
 import (
-	"fmt"
-	"slices"
+	"errors"
 
 	"github.com/ctrl-alt-boop/dribble/database"
-	"github.com/ctrl-alt-boop/dribble/target"
+	"github.com/ctrl-alt-boop/dribble/internal/database/nosql"
+	"github.com/ctrl-alt-boop/dribble/internal/database/sql"
 )
 
-func CreateClientForDialect(dialect target.Dialect) (database.Database, error) {
-	switch {
-	case slices.Contains(sql.SupportedDialects, dialect):
-		return sql.NewClient(dialect), nil
-	case slices.Contains(nosql.SupportedDialects, dialect):
-		return nosql.NewClient(dialect), nil
+func CreateClientForType(t database.Type) (database.Database, error) {
+	switch t := t.(type) {
+	case database.SQLDialectType:
+		return CreateSQLClient(t)
+	case database.NoSQLModelType:
+		return CreateNoSQLClient(t)
+	case database.GraphType:
+		return nil, nil
+	case database.TimeSeriesType:
+		return nil, nil
 	default:
-		return nil, fmt.Errorf("unknown or unsupported driver: %s", dialect)
+		return nil, errors.New("unknown type")
 	}
+}
+
+func CreateSQLClient(dialect database.SQLDialectType) (database.SQL, error) {
+	executor, err := sql.NewExecutor(dialect)
+	if err != nil {
+		return nil, err
+	}
+	return executor, nil
+}
+
+func CreateNoSQLClient(modelType database.NoSQLModelType) (database.NoSQL, error) {
+	executor, err := nosql.NewExecutor(modelType)
+	if err != nil {
+		return nil, err
+	}
+	return executor, nil
 }

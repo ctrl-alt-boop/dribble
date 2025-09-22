@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/ctrl-alt-boop/dribble/database"
-	"github.com/ctrl-alt-boop/dribble/target"
+	"github.com/ctrl-alt-boop/dribble/request"
 )
 
 type SelectQuery struct {
@@ -164,8 +164,7 @@ func (s *SelectBuilder) Offset(offset int) *SelectBuilder {
 	return s
 }
 
-// TODO: Of course this needs implementation for the other operation types
-func (s *SelectBuilder) ToIntent() *database.Intent {
+func (s *SelectBuilder) ToRequest() database.Request {
 	operation := &SelectQuery{
 		AsDistinct:    s.asDistinct,
 		IsCount:       s.isCount,
@@ -180,33 +179,7 @@ func (s *SelectBuilder) ToIntent() *database.Intent {
 		LimitClause:   s.limitClause,
 		OffsetClause:  s.offsetClause,
 	}
-	return &database.Intent{
-		Type:          database.Read,
-		OperationKind: reflect.TypeOf(operation).Kind(),
-		Operation:     operation,
-		Args:          s.params,
-	}
-}
-
-// TODO: Of course this needs implementation for the other operation types
-func (s *SelectBuilder) ToIntentOn(target *target.Target) *database.Intent {
-	operation := &SelectQuery{
-		AsDistinct:    s.asDistinct,
-		IsCount:       s.isCount,
-		Fields:        s.fields,
-		Table:         s.table,
-		Joins:         s.joins,
-		WhereClause:   s.whereClause,
-		args:          s.params,
-		GroupByClause: s.groupByClause,
-		HavingClause:  s.havingClause,
-		OrderByClause: s.orderByClause,
-		LimitClause:   s.limitClause,
-		OffsetClause:  s.offsetClause,
-	}
-
-	return &database.Intent{
-		Target:        target,
+	return &request.Intent{
 		Type:          database.Read,
 		OperationKind: reflect.TypeOf(operation).Kind(),
 		Operation:     operation,

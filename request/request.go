@@ -8,6 +8,7 @@ import (
 )
 
 var _ database.Request = Intent{}
+var _ database.Response = Response{}
 
 type (
 	Intent struct { // TODO: finalize this
@@ -30,6 +31,11 @@ type (
 		Error     error
 	}
 )
+
+// IsPrefab implements database.Request.
+func (i Intent) IsPrefab() bool {
+	return false
+}
 
 // ResponseOnError implements database.Request.
 func (i Intent) ResponseOnError() database.Response {

@@ -1,17 +1,20 @@
 package sqlite3
 
-import "github.com/ctrl-alt-boop/dribble/database"
+import (
+	_ "embed"
+	"fmt"
 
-// GetPrefab implements database.Dialect.
-func (s *SQLite3) GetPrefab(prefabType database.PrefabType) (string, bool) {
-	panic("unimplemented")
-}
+	"github.com/ctrl-alt-boop/dribble/database"
+)
+
+//go:embed templates/select.tmpl
+var selectQueryTemplate string
 
 // GetTemplate implements database.Dialect.
-func (s *SQLite3) GetTemplate(operationType database.OperationType) string {
-	switch operationType {
+func (s *SQLite3) GetTemplate(queryType database.RequestType) string {
+	switch queryType {
 	case database.Read:
-		return "" // DefaultSQLSelectTemplate
+		return selectQueryTemplate
 	case database.Create:
 		return "" // DefaultSQLInsertTemplate
 	case database.Update:
@@ -30,30 +33,30 @@ func (s *SQLite3) IncreamentPlaceholder() string {
 
 // Quote implements database.Dialect.
 func (s *SQLite3) Quote(value string) string {
-	return "`" + value + "`"
+	return fmt.Sprintf(`"%s"`, value)
 }
 
 // QuoteRune implements database.Dialect.
 func (s *SQLite3) QuoteRune() rune {
-	return '`'
+	return '"'
 }
 
 // RenderCurrentTimestamp implements database.Dialect.
 func (s *SQLite3) RenderCurrentTimestamp() string {
-	panic("unimplemented")
+	return "NOW()"
 }
 
 // RenderPlaceholder implements database.Dialect.
 func (s *SQLite3) RenderPlaceholder(index int) string {
-	panic("unimplemented")
+	return fmt.Sprintf("$%d", index)
 }
 
 // RenderTypeCast implements database.Dialect.
-func (s *SQLite3) RenderTypeCast() string {
-	panic("unimplemented")
+func (s *SQLite3) RenderTypeCast() string { // FIXME
+	return "::"
 }
 
 // RenderValue implements database.Dialect.
 func (s *SQLite3) RenderValue(value any) string {
-	panic("unimplemented")
+	return fmt.Sprintf("%v", value)
 }

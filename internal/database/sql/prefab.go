@@ -20,10 +20,10 @@ type (
 	}
 
 	Prefab struct {
-		CurrentDatabase *database.Intent
-		Databases       *database.Intent
-		Tables          *database.Intent
-		Columns         func(tableName string) *database.Intent
+		CurrentDatabase database.Request
+		Databases       database.Request
+		Tables          database.Request
+		Columns         func(tableName string) database.Request
 	}
 )
 
@@ -44,38 +44,45 @@ func CreatePostgresPrefabs() *Prefab {
 		// Databases:       "SELECT datname FROM pg_database",
 		// Tables:          "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
 		// Columns:         "SELECT column_name FROM information_schema.columns WHERE table_name = $1",
-		CurrentDatabase: sql.Select("current_database()").From("").ToIntent(),
-		Databases:       sql.Select("datname").From("pg_database").ToIntent(),
-		Tables:          sql.Select("table_name").From("information_schema.tables").Where(sql.Eq("table_schema", "public")).ToIntent(),
-		Columns: func(tableName string) *database.Intent {
-			return sql.Select("column_name").From("information_schema.columns").Where(sql.Eq("table_name", tableName)).ToIntent()
+		CurrentDatabase: sql.Select("current_database()").From("").ToRequest(),
+		Databases:       sql.Select("datname").From("pg_database").ToRequest(),
+		Tables:          sql.Select("table_name").From("information_schema.tables").Where(sql.Eq("table_schema", "public")).ToRequest(),
+		Columns: func(tableName string) database.Request {
+			return sql.Select("column_name").From("information_schema.columns").Where(sql.Eq("table_name", tableName)).ToRequest()
 		},
 	}
 }
 
 func CreateMySQLPrefabs() *Prefab {
+	databases, _ := sql.FromString("SHOW DATABASES")
+	tables, _ := sql.FromString("SHOW TABLES")
 	return &Prefab{
 		// CurrentDatabase: "SELECT DATABASE()",
 		// Databases:       "SHOW DATABASES",
 		// Tables:          "SHOW TABLES",
 		// Columns:         "SHOW COLUMNS FROM $1",
-		CurrentDatabase: sql.Select("DATABASE()").From("").ToIntent(),
-		Databases:       sql.FromString("SHOW DATABASES"),
-		Tables:          sql.FromString("SHOW TABLES"),
-		Columns:         func(tableName string) *database.Intent { return sql.FromString("SHOW COLUMNS FROM $1", tableName) },
+		CurrentDatabase: sql.Select("DATABASE()").From("").ToRequest(),
+		Databases:       databases,
+		Tables:          tables,
+		Columns: func(tableName string) database.Request {
+			columns, _ := sql.FromString("SHOW COLUMNS FROM $1", tableName)
+			return columns
+		},
 	}
 }
 
 func CreateSQLitePrefabs() *Prefab {
+	databases, _ := sql.FromString("PRAGMA database_list")
 	return &Prefab{
 		// Databases: "PRAGMA database_list",
 		// Tables:    "SELECT name FROM sqlite_master WHERE type='table'",
 		// Columns:   "PRAGMA table_info($1)",
-		CurrentDatabase: sql.Select("db_name()").From("").ToIntent(),
-		Databases:       sql.FromString("PRAGMA database_list"),
-		Tables:          sql.Select("name").From("sqlite_master").Where(sql.Eq("type", "table")).ToIntent(),
-		Columns: func(tableName string) *database.Intent {
-			return sql.FromString("PRAGMA table_info($1)", tableName)
+		CurrentDatabase: sql.Select("db_name()").From("").ToRequest(),
+		Databases:       databases,
+		Tables:          sql.Select("name").From("sqlite_master").Where(sql.Eq("type", "table")).ToRequest(),
+		Columns: func(tableName string) database.Request {
+			columns, _ := sql.FromString("PRAGMA table_info($1)", tableName)
+			return columns
 		},
 	}
 }
@@ -86,12 +93,12 @@ func CreateMsSQLPrefabs() *Prefab {
 		// Databases:       "SELECT name FROM sys.databases",
 		// Tables:          "SELECT name FROM sys.tables",
 		// Columns:         "SELECT name FROM sys.columns WHERE object_id = OBJECT_ID($1)",
-		CurrentDatabase: sql.Select("db_name()").From("").ToIntent(),
-		Databases:       sql.FromString("SELECT name FROM sys.databases"),
-		Tables:          sql.FromString("SELECT name FROM sys.tables"),
-		Columns: func(tableName string) *database.Intent {
+		CurrentDatabase: sql.Select("db_name()").From("").ToRequest(),
+		Databases:       sql.Select("name").From("sys.databases").ToRequest(),
+		Tables:          sql.Select("name").From("sys.tables").ToRequest(),
+		Columns: func(tableName string) database.Request {
 			tableName = fmt.Sprintf("OBJECT_ID(%s)", tableName)
-			return sql.Select("name").From("sys.columns").Where(sql.Eq("object_id", tableName)).ToIntent()
+			return sql.Select("name").From("sys.columns").Where(sql.Eq("object_id", tableName)).ToRequest()
 		},
 	}
 }
@@ -102,11 +109,11 @@ func CreateOraclePrefabs() *Prefab {
 		// Databases:       "SELECT owner FROM all_users",
 		// Tables:          "SELECT table_name FROM all_tables",
 		// Columns:         "SELECT column_name FROM all_tab_columns WHERE table_name = $1",
-		CurrentDatabase: sql.Select("sys_context('USERENV', 'CURRENT_SCHEMA')").From("dual").ToIntent(),
-		Databases:       sql.FromString("SELECT owner FROM all_users"),
-		Tables:          sql.FromString("SELECT table_name FROM all_tables"),
-		Columns: func(tableName string) *database.Intent {
-			return sql.Select("column_name").From("all_tab_columns").Where(sql.Eq("table_name", tableName)).ToIntent()
+		CurrentDatabase: sql.Select("sys_context('USERENV', 'CURRENT_SCHEMA')").From("dual").ToRequest(),
+		Databases:       sql.Select("owner").From("all_users").ToRequest(),
+		Tables:          sql.Select("table_name").From("all_tables").ToRequest(),
+		Columns: func(tableName string) database.Request {
+			return sql.Select("column_name").From("all_tab_columns").Where(sql.Eq("table_name", tableName)).ToRequest()
 		},
 	}
 }
@@ -117,12 +124,12 @@ func CreateSQLServerPrefabs() *Prefab {
 		// Databases:       "SELECT name FROM sys.databases",
 		// Tables:          "SELECT name FROM sys.tables",
 		// Columns:         "SELECT name FROM sys.columns WHERE object_id = OBJECT_ID($1)",
-		CurrentDatabase: sql.Select("db_name()").From("").ToIntent(),
-		Databases:       sql.FromString("SELECT name FROM sys.databases"),
-		Tables:          sql.FromString("SELECT name FROM sys.tables"),
-		Columns: func(tableName string) *database.Intent {
+		CurrentDatabase: sql.Select("db_name()").From("").ToRequest(),
+		Databases:       sql.Select("name").From("sys.databases").ToRequest(),
+		Tables:          sql.Select("name").From("sys.tables").ToRequest(),
+		Columns: func(tableName string) database.Request {
 			tableName = fmt.Sprintf("OBJECT_ID(%s)", tableName)
-			return sql.Select("name").From("sys.columns").Where(sql.Eq("object_id", tableName)).ToIntent()
+			return sql.Select("name").From("sys.columns").Where(sql.Eq("object_id", tableName)).ToRequest()
 		},
 	}
 }

@@ -27,9 +27,8 @@ var (
 )
 
 type Client struct {
-	mu        sync.Mutex
-	executors map[string]database.Executor
-	targets   map[string]*target.Target
+	mu      sync.Mutex
+	targets map[string]*target.Target
 
 	nextRequestID atomic.Int64
 	// requestChannels map[string]chan ...
@@ -38,7 +37,7 @@ type Client struct {
 
 func NewClient() *Client {
 	return &Client{
-		executors: make(map[string]database.Executor),
+		targets: make(map[string]*target.Target),
 		// requestChannels: make(map[string]chan ...),
 
 	}
@@ -48,51 +47,57 @@ func (c *Client) OnEvent(handler EventHandler) {
 
 }
 
-func createExecutor(ctx context.Context, target *target.Target) (database.Executor, error) {
-	executor, err := CreateExecutorFromTarget(target)
-	if err != nil {
-		return nil, fmt.Errorf("error creating executor: %w", err)
-	}
+// func createExecutor(ctx context.Context, target *target.Target) (database.Database, error) {
+// 	executor, err := CreateExecutorFromTarget(target)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error creating executor: %w", err)
+// 	}
 
-	return executor, nil
+// 	return executor, nil
+// }
+
+func (c *Client) Target(targetName string) *target.Target {
+	return c.targets[targetName]
 }
 
-func (c *Client) OpenTarget(ctx context.Context, target *target.Target) error {
-	executor, err := createExecutor(ctx, target)
-	if err != nil {
-
-		return err
-	}
-
+func (c *Client) OpenTarget(ctx context.Context, t *target.Target) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	err = executor.Open(ctx)
+	err := t.Open(ctx)
 	if err != nil {
 		return fmt.Errorf("error opening target: %w", err)
 	}
-	c.executors[target.Name] = executor
+	c.targets[t.Name] = t
 
 	return nil
 }
 
-func (c *Client) PingTarget(ctx context.Context, targetName string) error {
-
-	if targetName == "" {
-		return ErrNoTarget
-	}
-	executor, ok := c.executors[targetName]
-	if !ok {
-		return fmt.Errorf("executor not found: %s", targetName)
-	}
+func (c *Client) OpenTargets(ctx context.Context, targets ...*target.Target) error {
+	var errs error
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	err := executor.Ping(ctx)
-	if err != nil {
-		return fmt.Errorf("error pinging target: %w", err)
+	for _, t := range targets {
+		err := t.Open(ctx)
+		if err != nil {
+			errs = errors.Join(errs, err)
+			continue
+		}
+		c.targets[t.Name] = t
 	}
-	return nil
+	return errs
+}
+
+func (c *Client) PingTarget(ctx context.Context, targetName string) error {
+	if targetName == "" {
+		return ErrNoTarget
+	}
+	t, ok := c.targets[targetName]
+	if !ok {
+		return ErrTargetNotFound(targetName)
+	}
+	return t.Ping(ctx)
 }
 
 // func (c *Client) UpdateTarget(ctx context.Context, targetName string, opts ...target.Option) error {
@@ -119,28 +124,41 @@ func (c *Client) PingTarget(ctx context.Context, targetName string) error {
 // 	return nil
 // }
 
-func (c *Client) CloseTarget(ctx context.Context, targetName ...string) error {
-	var err error
-	for _, target := range targetName {
-		executor, ok := c.executors[target]
-		if !ok {
-			err = errors.Join(err, fmt.Errorf("no executor found for target: %s", target))
-
-			continue
-		}
-		err := executor.Close(ctx)
-		if err != nil {
-			err = errors.Join(err, fmt.Errorf("error closing executor for target: %s", target))
-
-			continue
-		}
-		delete(c.executors, target)
+func (c *Client) CloseTarget(ctx context.Context, targetName string) error {
+	if targetName == "" {
+		return ErrNoTarget
 	}
+	t, ok := c.targets[targetName]
+	if !ok {
+		return ErrTargetNotFound(targetName)
+	}
+	err := t.Close(ctx)
 	if err != nil {
-		return fmt.Errorf("error deleting executors: %w", err)
+		return fmt.Errorf("error closing executor for target: %s", targetName)
+	}
+	delete(c.targets, targetName)
+	return nil
+}
+
+func (c *Client) CloseTargets(ctx context.Context, targetName ...string) error {
+	var errs error
+	for _, target := range targetName {
+		t, ok := c.targets[target]
+		if !ok {
+			errs = errors.Join(errs, ErrTargetNotFound(target))
+			continue
+		}
+		err := t.Close(ctx)
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("error closing executor for target: %s", target))
+		}
+		delete(c.targets, target)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
 	}
 
-	return nil
+	return errs
 }
 
 func (c *Client) Request(ctx context.Context, targetName string, requests ...database.Request) (chan database.Response, error) {
@@ -156,19 +174,19 @@ func (c *Client) Request(ctx context.Context, targetName string, requests ...dat
 	return requestTarget.Request(ctx, requests...)
 }
 
-// Blocks until result is ready
-func (c *Client) GetResult(ctx context.Context, requestID int64) (any, error) {
-	if ctx.Err() != nil {
-		return nil, ctx.Err()
-	}
-	resultChan, ok := c.pending[requestID]
-	if !ok {
-		return nil, fmt.Errorf("no result found for request id: %d", requestID)
-	}
-	select {
-	case result := <-resultChan:
-		return result.Result, result.Err
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	}
-}
+// // Blocks until result is ready
+// func (c *Client) GetResult(ctx context.Context, requestID int64) (any, error) {
+// 	if ctx.Err() != nil {
+// 		return nil, ctx.Err()
+// 	}
+// 	resultChan, ok := c.pending[requestID]
+// 	if !ok {
+// 		return nil, fmt.Errorf("no result found for request id: %d", requestID)
+// 	}
+// 	select {
+// 	case result := <-resultChan:
+// 		return result.Result, result.Err
+// 	case <-ctx.Done():
+// 		return nil, ctx.Err()
+// 	}
+// }

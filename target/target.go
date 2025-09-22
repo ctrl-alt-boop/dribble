@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	internal "github.com/ctrl-alt-boop/dribble/internal/database"
 	"github.com/ctrl-alt-boop/dribble/request"
 )
 
@@ -26,21 +27,22 @@ var ErrNoRequests = errors.New("no requests provided")
 type Target struct {
 	Name       string
 	Type       Type
-	Properties Properties
+	DBType     database.Type
+	Properties database.ConnectionProperties
 
-	database database.Database
+	executor database.Database
 	// mu               sync.Mutex
 	nextRequestID    atomic.Int64
 	pendingResponses map[int64]chan database.Response // TODO: Check if necessary
 }
 
-func New(name string, targetType Type, dialect database.SQLDialect, options ...Option) *Target {
+func New(name string, targetType Type, dbType database.Type, options ...Option) *Target {
 	target := &Target{
-		Name: name,
-		Type: targetType,
-		Properties: Properties{
-			Dialect:    dialect,
-			Ip:         "localhost",
+		Name:   name,
+		Type:   targetType,
+		DBType: dbType,
+		Properties: database.ConnectionProperties{
+			Addr:       "localhost",
 			Port:       0,
 			DBName:     "",
 			Username:   "",
@@ -54,29 +56,37 @@ func New(name string, targetType Type, dialect database.SQLDialect, options ...O
 		option(target)
 	}
 
+	executor, err := internal.CreateClientForType(target.DBType)
+	if err != nil {
+		panic(err)
+	}
+	executor.SetConnectionProperties(target.Properties)
+	target.executor = executor
+
 	return target
 }
 
-func (t *Target) Initialize() error {
-	executor, err := database.CreateClientForDialect(t.Properties.Dialect)
-	if err != nil {
-		return err
-	}
-	t.database = executor
+// func (t *Target) Initialize() error {
 
-	return nil
-}
+// 	executor, err := internal.CreateClientForType(t.Properties.Type)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	t.database = executor
+
+// 	return nil
+// }
 
 func (t *Target) Open(ctx context.Context) error {
-	return t.database.Open(ctx)
+	return t.executor.Open(ctx)
 }
 
 func (t *Target) Ping(ctx context.Context) error {
-	return t.database.Ping(ctx)
+	return t.executor.Ping(ctx)
 }
 
 func (t *Target) Close(ctx context.Context) error {
-	return t.database.Close(ctx)
+	return t.executor.Close(ctx)
 }
 
 func (t *Target) Request(ctx context.Context, requests ...database.Request) (chan database.Response, error) {
@@ -98,7 +108,7 @@ func (t *Target) Request(ctx context.Context, requests ...database.Request) (cha
 			go func(r database.Request) {
 				defer wg.Done()
 
-				requestResult, err := t.database.Request(ctx, r)
+				requestResult, err := t.executor.Request(ctx, r)
 				resultChan <- &request.Response{
 					RequestID: requestID,
 					Status:    request.Status(r.ResponseOnSuccess().Code()),

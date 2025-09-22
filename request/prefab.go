@@ -18,6 +18,12 @@ var (
 	_ database.Request = BatchExecute{}
 )
 
+type PrefabRequest struct{}
+
+func (p PrefabRequest) IsPrefab() bool {
+	return true
+}
+
 // BatchExecute and BatchRequest are not the same thing
 // BatchRequest will send through multiple channels while BatchExecute will send all results in one channel
 // Each channel results in one Response for each request in the BatchRequest
@@ -36,17 +42,20 @@ func ChainRequest(requests ...database.Request) RequestChain {
 type (
 	// args = [database_name]
 	ReadDatabaseSchema struct {
+		PrefabRequest
 		DatabaseName string
 	}
 
 	// args = [database name, table name]
 	ReadTableSchema struct {
+		PrefabRequest
 		DatabaseName string
 		TableName    string
 	}
 
 	// args = [database name, table name, column name]
 	ReadColumnSchema struct {
+		PrefabRequest
 		DatabaseName string
 		TableName    string
 		ColumnName   string
@@ -54,17 +63,20 @@ type (
 
 	// args = [database name]
 	ReadDatabaseProperties struct {
+		PrefabRequest
 		DatabaseName string
 	}
 
 	// args = [database name, table name]
 	ReadTableProperties struct {
+		PrefabRequest
 		DatabaseName string
 		TableName    string
 	}
 
 	// args = [database name, table name, column name]
 	ReadColumnProperties struct {
+		PrefabRequest
 		DatabaseName string
 		TableName    string
 		ColumnName   string
@@ -72,28 +84,33 @@ type (
 
 	// args = [target name]
 	ReadDatabaseNames struct {
+		PrefabRequest
 		TargetName string
 	}
 
 	// args = [database name]
 	ReadTableNames struct {
+		PrefabRequest
 		DatabaseName string
 	}
 
 	// args = [database name, table name]
 	ReadColumnNames struct {
+		PrefabRequest
 		DatabaseName string
 		TableName    string
 	}
 
 	// args = [database name, table name]
 	ReadCount struct {
+		PrefabRequest
 		DatabaseName string
 		TableName    string
 	}
 
 	// args = [[database name, table name], [database name, table name], ...]
 	ReadAllCounts struct {
+		PrefabRequest
 		ReadCount
 		DatabaseName string
 		TableNames   []string
@@ -276,4 +293,14 @@ func (b BatchExecute) ResponseOnSuccess() database.Response {
 	return Response{
 		Status: SuccessBatchExecute,
 	}
+}
+
+// IsPrefab implements database.Request.
+func (b BatchExecute) IsPrefab() bool {
+	return false
+}
+
+// IsPrefab implements database.Request.
+func (e Execute) IsPrefab() bool {
+	return false
 }

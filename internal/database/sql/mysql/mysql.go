@@ -1,10 +1,9 @@
 package mysql
 
 import (
-	"fmt"
+	"text/template"
 
 	"github.com/ctrl-alt-boop/dribble/database"
-	"github.com/ctrl-alt-boop/dribble/target"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -12,7 +11,6 @@ func init() {
 	database.DBTypes.Register("SQL", "mysql")
 }
 
-var _ database.SQL = &MySQL{}
 var _ database.SQLDialect = &MySQL{}
 
 type MySQL struct{}
@@ -27,41 +25,34 @@ func (m *MySQL) Capabilities() []database.Capabilities {
 	return []database.Capabilities{}
 }
 
-// ConnectionString implements database.Driver.
-// Server=myServerAddress;Port=1234;Database=myDataBase;Uid=myUsername;Pwd=myPassword;
-func (m *MySQL) ConnectionString(target *target.Target) string {
-	connString := ""
-	if target.Port == 0 {
-		target.Port = 3306
-	}
-	if target.DBName == "" {
-		target.DBName = "mysql"
-	}
+const connectionStringTemplate = "{{if .Username}}{{.Username}}{{if .Password}}:{{.Password}}{{end}}@{{end}}tcp({{.Addr}}{{if .Port}}:{{.Port}}{{end}})/{{.DBName}}"
 
-	connString += target.Username
-	connString += ":"
-	connString += target.Password
-	connString += "@"
-	connString += "tcp("
-	connString += target.Ip
-	connString += ":"
-	connString += fmt.Sprintf("%d", target.Port)
-	connString += ")/"
-	connString += target.DBName
-	return connString
+// ConnectionStringTemplate implements database.SQLDialect.
+// user:password@tcp(host:port)/dbname
+func (m *MySQL) ConnectionStringTemplate() *template.Template {
+	tmpl, err := template.New("connectionString").Parse(connectionStringTemplate)
+	if err != nil {
+		panic(err)
+	}
+	return tmpl
 }
 
-// Dialect implements database.Driver.
-func (m *MySQL) Dialect() database.SQLDialect {
-	return m
-}
-
-// RenderRequest implements database.Driver.
-func (m *MySQL) RenderRequest(intent *database.Request) (string, error) {
+// GetPrefab implements database.SQLDialect.
+func (m *MySQL) GetPrefab(request database.Request) (string, []any, error) {
 	panic("unimplemented")
 }
 
-// ResolveType implements database.Dialect.
+// Name implements database.SQLDialect.
+func (m *MySQL) Name() string {
+	return "mysql"
+}
+
+// RenderRequest implements database.SQLDialect.
+func (m *MySQL) RenderRequest(request database.Request) (string, []any, error) {
+	panic("unimplemented")
+}
+
+// ResolveType implements database.SQLDialect.
 func (m *MySQL) ResolveType(dbType string, value []byte) (any, error) {
-	return string(value), nil
+	panic("unimplemented")
 }

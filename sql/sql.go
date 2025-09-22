@@ -1,15 +1,22 @@
 package sql
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/request"
 )
 
-func FromString(query string, args ...any) *database.Intent {
+var (
+	ErrUnknownOperation   = errors.New("unknown operation")
+	ErrMultipleStatements = errors.New("multiple statements in query")
+)
+
+func FromString(query string, args ...any) (database.Request, error) {
 	if strings.ContainsAny(query, ";") {
-		panic("query cannot contain a semicolon/multiple statements") // FIXME: return error?
+		return nil, ErrMultipleStatements
 	}
 
 	query = strings.TrimSpace(query)
@@ -25,13 +32,23 @@ func FromString(query string, args ...any) *database.Intent {
 	case strings.HasPrefix(query, "DELETE"):
 		operationType = database.Delete
 	default:
-		panic("statement not supported") // FIXME: return error?
+		return nil, ErrUnknownOperation
 	}
 
-	return &database.Intent{
+	return &request.Intent{
 		Type:          operationType,
 		OperationKind: reflect.TypeOf(query).Kind(),
 		Operation:     query,
 		Args:          args,
-	}
+	}, nil
+}
+
+type ConnectionProperties struct {
+	Addr     string
+	Port     int
+	DBName   string
+	Username string
+	Password string
+
+	Extra map[string]string
 }

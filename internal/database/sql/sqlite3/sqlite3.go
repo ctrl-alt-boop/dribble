@@ -1,8 +1,10 @@
 package sqlite3
 
 import (
+	"text/template"
+
 	"github.com/ctrl-alt-boop/dribble/database"
-	"github.com/ctrl-alt-boop/dribble/target"
+	"github.com/ctrl-alt-boop/dribble/request"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -10,7 +12,6 @@ func init() {
 	database.DBTypes.Register("SQL", "sqlite3")
 }
 
-var _ database.SQL = &SQLite3{}
 var _ database.SQLDialect = &SQLite3{}
 
 type SQLite3 struct{}
@@ -27,18 +28,35 @@ func (s *SQLite3) Capabilities() []database.Capabilities {
 	}
 }
 
+// Name implements database.SQLDialect.
+func (s *SQLite3) Name() string {
+	return "sqlite3"
+}
+
+const connectionStringTemplate = "Data Source={{.Addr}};Version=3{{if .Password}};Password={{.Password}}{{end}}"
+
 // ConnectionString implements database.Driver.
-func (s *SQLite3) ConnectionString(target *target.Target) string {
+// Data Source=c:\mydb.db;Version=3;Password=myPassword
+func (s *SQLite3) ConnectionStringTemplate() *template.Template {
+	tmpl, err := template.New("connectionString").Parse(connectionStringTemplate)
+	if err != nil {
+		panic(err)
+	}
+	return tmpl
+}
+
+// GetPrefab implements database.SQLDialect.
+func (s *SQLite3) GetPrefab(request database.Request) (string, []any, error) {
 	panic("unimplemented")
 }
 
-// Dialect implements database.Driver.
-func (s *SQLite3) Dialect() database.SQLDialect {
-	return s
+// RenderRequest implements database.SQLDialect.
+func (s *SQLite3) RenderRequest(request database.Request) (string, []any, error) {
+	panic("unimplemented")
 }
 
 // RenderIntent implements database.Driver.
-func (s *SQLite3) RenderIntent(intent *database.Intent) (string, error) {
+func (s *SQLite3) RenderIntent(intent *request.Intent) (string, error) {
 	panic("unimplemented")
 }
 
