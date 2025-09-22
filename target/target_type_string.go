@@ -12,12 +12,12 @@ func _() {
 	_ = x[TypeDriver-0]
 	_ = x[TypeServer-1]
 	_ = x[TypeDatabase-2]
-	_ = x[TableTable-3]
+	_ = x[TypeTable-3]
 }
 
-const _Type_name = "TypeUnknownTypeDriverTypeServerTypeDatabaseTableTable"
+const _Type_name = "TypeUnknownTypeDriverTypeServerTypeDatabaseTypeTable"
 
-var _Type_index = [...]uint8{0, 11, 21, 31, 43, 53}
+var _Type_index = [...]uint8{0, 11, 21, 31, 43, 52}
 
 func (i Type) String() string {
 	i -= -1

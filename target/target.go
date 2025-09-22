@@ -19,7 +19,7 @@ const (
 	TypeDriver
 	TypeServer
 	TypeDatabase
-	TableTable
+	TypeTable
 )
 
 var ErrNoRequests = errors.New("no requests provided")
@@ -32,11 +32,10 @@ type Target struct {
 
 	executor database.Database
 	// mu               sync.Mutex
-	nextRequestID    atomic.Int64
-	pendingResponses map[int64]chan database.Response // TODO: Check if necessary
+	nextRequestID atomic.Int64
 }
 
-func New(name string, targetType Type, dbType database.Type, options ...Option) *Target {
+func New(name string, targetType Type, dbType database.Type, options ...Option) (*Target, error) {
 	target := &Target{
 		Name:   name,
 		Type:   targetType,
@@ -49,7 +48,6 @@ func New(name string, targetType Type, dbType database.Type, options ...Option) 
 			Password:   "",
 			Additional: make(map[string]string),
 		},
-		pendingResponses: make(map[int64]chan database.Response),
 	}
 
 	for _, option := range options {
@@ -58,24 +56,13 @@ func New(name string, targetType Type, dbType database.Type, options ...Option) 
 
 	executor, err := internal.CreateClientForType(target.DBType)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	executor.SetConnectionProperties(target.Properties)
 	target.executor = executor
 
-	return target
+	return target, nil
 }
-
-// func (t *Target) Initialize() error {
-
-// 	executor, err := internal.CreateClientForType(t.Properties.Type)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	t.database = executor
-
-// 	return nil
-// }
 
 func (t *Target) Open(ctx context.Context) error {
 	return t.executor.Open(ctx)
@@ -124,15 +111,26 @@ func (t *Target) Request(ctx context.Context, requests ...database.Request) (cha
 }
 
 // Blocks
-func (t *Target) RequestWithHandler(ctx context.Context, handler database.ResponseHandler, requests ...database.Request) error { // TODO
+// RequestWithHandler sends requests and processes responses synchronously using a handler.
+// It blocks until all responses are received and handled or the context is cancelled.
+func (t *Target) RequestWithHandler(ctx context.Context, handler database.ResponseHandler, requests ...database.Request) error {
 	resultChan, err := t.Request(ctx, requests...)
 	if err != nil {
 		return err
 	}
 
-	for result := range resultChan {
-		handler(result, nil)
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case result, ok := <-resultChan:
+			if !ok {
+				// Channel is closed, all responses have been processed.
+				return nil
+			}
+			// Assuming ResponseHandler is of type `func(database.Response)`.
+			// The `result` object itself contains any error information.
+			handler(result)
+		}
 	}
-
-	return nil
 }

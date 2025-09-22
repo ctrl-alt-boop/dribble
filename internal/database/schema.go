@@ -1,9 +1,5 @@
 package database
 
-import (
-	"reflect"
-)
-
 type (
 	Server struct { // This needs going over.
 		Name string
@@ -168,9 +164,6 @@ type (
 		Members     []string
 	}
 
-	// Collections
-	Collection[T struct{}] []*T
-
 	Servers   []*Server
 	Engines   []*Engine
 	Databases []*Database
@@ -181,66 +174,50 @@ type (
 	Fields    []*Field
 )
 
-func (c Collection[T]) AsMap() map[string]*T { // Will try this sometime...
-	items := make(map[string]*T)
-	for _, item := range c {
-		val := reflect.ValueOf(item).Elem()
-		field := val.FieldByName("Name")
-		if field.IsValid() {
-			items[field.String()] = item
-		}
+type Namer interface {
+	GetName() string
+}
+
+func (s *Server) GetName() string   { return s.Name }
+func (d *Database) GetName() string { return d.Name }
+func (t *Table) GetName() string    { return t.Name }
+func (v *View) GetName() string     { return v.Name }
+func (r *Role) GetName() string     { return r.Name }
+func (f *Function) GetName() string { return f.Name }
+func (f *Field) GetName() string    { return f.Name }
+
+func CollectionToMap[T Namer](collection []T) map[string]T {
+	m := make(map[string]T, len(collection))
+	for _, item := range collection {
+		m[item.GetName()] = item
 	}
-	return items
+	return m
 }
 
 func (s *Server) DatabaseMap() map[string]*Database {
-	return s.Databases.AsMap()
+	return CollectionToMap(s.Databases)
 }
 
 func (d Databases) AsMap() map[string]*Database {
-	databases := make(map[string]*Database)
-	for _, database := range d {
-		databases[database.Name] = database
-	}
-	return databases
+	return CollectionToMap(d)
 }
 
 func (t Tables) AsMap() map[string]*Table {
-	tables := make(map[string]*Table)
-	for _, table := range t {
-		tables[table.Name] = table
-	}
-	return tables
+	return CollectionToMap(t)
 }
 
 func (v Views) AsMap() map[string]*View {
-	views := make(map[string]*View)
-	for _, view := range v {
-		views[view.Name] = view
-	}
-	return views
+	return CollectionToMap(v)
 }
 
 func (r Roles) AsMap() map[string]*Role {
-	roles := make(map[string]*Role)
-	for _, role := range r {
-		roles[role.Name] = role
-	}
-	return roles
+	return CollectionToMap(r)
 }
 
 func (f Functions) AsMap() map[string]*Function {
-	functions := make(map[string]*Function)
-	for _, function := range f {
-		functions[function.Name] = function
-	}
-	return functions
+	return CollectionToMap(f)
 }
 
 func (f Fields) AsMap() map[string]*Field {
-	fields := make(map[string]*Field)
-	for _, field := range f {
-		fields[field.Name] = field
-	}
-	return fields
+	return CollectionToMap(f)
 }

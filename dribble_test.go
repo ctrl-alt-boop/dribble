@@ -35,13 +35,17 @@ func TestClient(t *testing.T) {
 		database.WithPassword("valmatics"),
 	)
 
-	testTarget := target.New(
+	testTarget, err := target.New(
 		"test",
 		target.TypeDriver,
 		database.PostgreSQL,
 		target.WithConnectionProperties(connectionProps),
 	)
-	err := client.OpenTarget(ctx, testTarget)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.OpenTarget(ctx, testTarget)
 	if err != nil {
 		t.Fatal(err)
 	}

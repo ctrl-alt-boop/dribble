@@ -1,6 +1,6 @@
 package sql
 
-//go:generate stringer -type=KeyWord -linecomment=true
+//go:generate stringer -type=Keyword -linecomment=true
 
 type Keyword int
 

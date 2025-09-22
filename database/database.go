@@ -37,7 +37,7 @@ var RequestTypes = []RequestType{
 var DBTypes = createBaseTree()
 
 type (
-	ResponseHandler func(Response, error)
+	ResponseHandler func(Response)
 
 	Response interface {
 		Code() int
