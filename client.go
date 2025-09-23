@@ -45,9 +45,9 @@ func (c *Client) String() string {
 	return fmt.Sprintf("dribble version: %s \ntargets:\n%s\n", Version, strings.Join(targetStrings, "\n"))
 }
 
-func (c *Client) OnEvent(handler EventHandler) {
+// func (c *Client) OnEvent(handler EventHandler) {
 
-}
+// }
 
 func (c *Client) Target(targetName string) *target.Target {
 	return c.targets[targetName]

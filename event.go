@@ -34,11 +34,11 @@ type (
 		Driver   string
 		Database string
 		Table    string
-		Query    Query
+		Query    string
 	}
 
 	QueryResult struct {
-		Query Query
+		Query string
 		Value any
 		List  []any
 		Table *result.Table

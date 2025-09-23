@@ -1,18 +1,19 @@
 package io
 
 import (
-	"github.com/ctrl-alt-boop/dribble"
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/target"
 )
 
 type (
 	DribbleEventMsg struct {
-		Type dribble.Response
-		Args any
-		Err  error
+		Response database.Response
+		Args     any
+		Err      error
 	}
 
 	ConnectMsg struct {
-		Target *database.Target
+		Target *target.Target
+		DSN    database.DataSourceNamer
 	}
 )

@@ -8,8 +8,9 @@ import (
 	"github.com/ctrl-alt-boop/dribble"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/request"
+	"github.com/ctrl-alt-boop/dribble/target"
 	"github.com/ctrl-alt-boop/dribbler/config"
-	"github.com/ctrl-alt-boop/dribbler/io"
 	"github.com/ctrl-alt-boop/dribbler/ui"
 )
 
@@ -132,11 +133,8 @@ func (p *Panel) Init() tea.Cmd {
 	for name, settings := range config.GetDriverDefaults() {
 		connectionItems = append(connectionItems, &ui.ConnectionItem{
 			Name: name,
-			Target: database.NewTarget("", database.TargetDriver,
-				database.WithDriver(settings.DriverName),
-				database.WithHost(settings.Ip, settings.Port),
-				database.WithUser(settings.Username),
-				database.WithPassword(settings.Password)),
+			Type: settings.Type,
+			DSN:  nil,
 		})
 	}
 	p.list.SetConnectionItems(connectionItems)
@@ -165,7 +163,7 @@ func (p *Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, config.Keys.New):
 			if selection, ok := p.list.SelectedItem().(ui.ListItem); ok {
 				return p, func() tea.Msg {
-					return OpenQueryBuilderMsg{
+					return OpenIntentBuilderMsg{
 						Method: database.Read,
 						Table:  string(selection),
 					}
@@ -173,31 +171,31 @@ func (p *Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case key.Matches(msg, config.Keys.NewEmpty):
 			return p, func() tea.Msg {
-				return OpenQueryBuilderMsg{Method: database.Read, Table: ""}
+				return OpenIntentBuilderMsg{Method: database.Read, Table: ""}
 			}
 		}
 
-	case io.DribbleEventMsg:
+	case request.Response:
 		p.isLoading = false
 		p.spinner = spinner.New(spinner.WithSpinner(ui.MovingBlock))
-		if msg.Err != nil {
-			logger.Error(msg.Err)
+		if msg.Error != nil {
+			logger.Error(msg.Error.Error())
 			return p, nil
 		}
-		switch msg.Type {
-		case dribble.SuccessReadDatabaseList:
-			args, ok := msg.Args.(dribble.DatabaseListFetchData)
-			if ok {
-				items := ui.SettingsToConnectionItems(args.Databases)
-				p.list.SetConnectionItems(items)
-				p.SetMode(DatabaseList)
-			}
-		case dribble.SuccessReadDBTableList:
-			args, ok := msg.Args.(dribble.TableListFetchData)
-			if ok {
-				p.list.SetStringItems(args.Tables)
-				p.SetMode(TableList)
-			}
+		switch msg.Status {
+		case request.SuccessReadDatabaseList:
+			// args, ok := msg.Args.(dribble.DatabaseListFetchData)
+			// if ok {
+			items := ui.SettingsToConnectionItems(msg.Body.([]*target.Target)) // FIXME: YEAH NO?!
+			p.list.SetConnectionItems(items)
+			p.SetMode(DatabaseList)
+			// }
+		case request.SuccessReadDBTableList:
+			// args, ok := msg.Args.(dribble.TableListFetchData)
+			// if ok {
+			p.list.SetStringItems(msg.Body.([]string))
+			p.SetMode(TableList)
+			// }
 		}
 
 	case spinner.TickMsg:

@@ -8,13 +8,16 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/request"
+	"github.com/ctrl-alt-boop/dribble/target"
 	"github.com/ctrl-alt-boop/dribbler/config"
 	"github.com/ctrl-alt-boop/dribbler/ui"
 	"github.com/ctrl-alt-boop/dribbler/widget"
 )
 
-type QueryBuilder struct {
-	Query *database.Intent
+type IntentBuilder struct {
+	Intent *request.Intent
+	Target target.Target
 
 	QueryForm *huh.Form
 	CancelCmd tea.Cmd
@@ -22,56 +25,56 @@ type QueryBuilder struct {
 	stableWidth, stableHeight int
 }
 
-func newEmptyQueryBuilder() *QueryBuilder {
-	return &QueryBuilder{
+func newEmptyQueryBuilder() *IntentBuilder {
+	return &IntentBuilder{
 		CancelCmd: func() tea.Msg { return widget.PopupCancelMsg{} },
 	}
 }
 
-func newTableQueryBuilder(method database.OperationType, tableName string) *QueryBuilder {
+func newTableQueryBuilder(method database.RequestType, tableName string) *IntentBuilder {
 	q := newEmptyQueryBuilder()
-	q.Query = &database.Intent{
+	q.Intent = &request.Intent{
 		Type: method,
 	}
 	return q
 }
 
-func newQueryBuilder(query *database.DatabaseType) *QueryBuilder {
+func newQueryBuilder(dbType *database.DBType) *IntentBuilder {
 	q := newEmptyQueryBuilder()
 	// q.Query = query
 	return q
 }
 
 // Init implements tea.Model.
-func (q *QueryBuilder) Init() tea.Cmd {
-	if q.Query == nil {
-		q.Query = &database.Intent{}
+func (q *IntentBuilder) Init() tea.Cmd {
+	if q.Intent == nil {
+		q.Intent = &request.Intent{}
 	}
-	formTitle := fmt.Sprintf("New %s query", q.Query.Target.Name)
+	formTitle := fmt.Sprintf("New %s query", q.Target.Name)
 	q.QueryForm = huh.NewForm(
 		huh.NewGroup(
 			huh.NewNote().Title(formTitle),
 		),
 		huh.NewGroup(
-			huh.NewSelect[database.OperationType]().Title("Method:").
-				Options(huh.NewOptions(database.OperationTypes...)...).
-				Value(&q.Query.Type),
+			huh.NewSelect[database.RequestType]().Title("Method:").
+				Options(huh.NewOptions(database.RequestTypes...)...).
+				Value(&q.Intent.Type),
 		),
 		huh.NewGroup(
 			huh.NewInput().Title("Table:").
-				Value(&q.Query.Target.Name),
+				Value(&q.Target.Name),
 		),
 	)
 
 	q.stableWidth = lipgloss.Width(q.QueryForm.View())
 	q.stableHeight = lipgloss.Height(q.QueryForm.View())
 	return func() tea.Msg {
-		return widget.QueryBuilderInitMsg{}
+		return widget.IntentBuilderInitMsg{}
 	}
 }
 
 // Update implements tea.Model.
-func (q *QueryBuilder) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (q *IntentBuilder) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	form, cmd := q.QueryForm.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
 		q.QueryForm = f
@@ -90,7 +93,7 @@ func (q *QueryBuilder) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, config.Keys.Back):
 			return q, q.CancelCmd
 		}
-	case widget.QueryBuilderDataMsg:
+	case widget.IntentBuilderDataMsg:
 		// so this can add things like table schema etc.
 	}
 
@@ -102,30 +105,30 @@ func (q *QueryBuilder) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return q, cmd
 }
 
-func (q *QueryBuilder) ConfirmCmd() tea.Msg {
+func (q *IntentBuilder) ConfirmCmd() tea.Msg {
 
-	return widget.QueryBuilderConfirmMsg{
-		Query: q.Query,
+	return widget.IntentBuilderConfirmMsg{
+		Intent: q.Intent,
 	}
 }
 
 // GetContentSize implements PopupModel.
-func (q *QueryBuilder) GetContentSize() (int, int) {
+func (q *IntentBuilder) GetContentSize() (int, int) {
 	return q.GetContentWidth(), q.GetContentHeight()
 }
 
 // GetContentWidth implements PopupModel.
-func (q *QueryBuilder) GetContentWidth() int {
+func (q *IntentBuilder) GetContentWidth() int {
 	return lipgloss.Width(q.QueryForm.View())
 }
 
 // GetContentHeight implements PopupModel.
-func (q *QueryBuilder) GetContentHeight() int {
+func (q *IntentBuilder) GetContentHeight() int {
 	return lipgloss.Height(q.QueryForm.View())
 }
 
 // SetMaxSize implements PopupModel.
-func (q *QueryBuilder) SetMaxSize(width int, height int) {
+func (q *IntentBuilder) SetMaxSize(width int, height int) {
 	w := min(width-ui.PopupStyle.GetHorizontalFrameSize(), q.GetContentWidth())
 	h := min(height-ui.PopupStyle.GetVerticalFrameSize(), q.GetContentHeight())
 
@@ -133,7 +136,7 @@ func (q *QueryBuilder) SetMaxSize(width int, height int) {
 }
 
 // View implements tea.Model.
-func (q *QueryBuilder) View() string {
+func (q *IntentBuilder) View() string {
 	if q.QueryForm == nil || q.QueryForm.State != huh.StateNormal {
 		return ""
 	}

@@ -3,6 +3,7 @@ package widget
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/request"
 )
 
 type (
@@ -30,22 +31,22 @@ type (
 		Value string
 	}
 
-	OpenQueryBuilderMsg struct {
-		Method database.OperationType
+	OpenIntentBuilderMsg struct {
+		Method database.RequestType
 		Table  string
 	}
 
-	QueryBuilderInitMsg struct {
+	IntentBuilderInitMsg struct {
 		Database string
-		Method   string
+		Method   database.RequestType
 		Table    string
 	}
 
-	QueryBuilderDataMsg struct {
+	IntentBuilderDataMsg struct {
 	}
 
-	QueryBuilderConfirmMsg struct {
-		Query *database.Intent
+	IntentBuilderConfirmMsg struct {
+		Intent *request.Intent
 	}
 )
 

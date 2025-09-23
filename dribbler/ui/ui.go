@@ -21,7 +21,7 @@ const stringTemplate = `{{.DriverName}}
 {{.DBName}}
 {{- end -}}`
 
-func AsString(t database.Target) string {
+func AsString(t database.DataSourceNamer) string {
 	var sb strings.Builder
 	template.Must(template.New("settings").Parse(stringTemplate)).Execute(&sb, t)
 	return sb.String()

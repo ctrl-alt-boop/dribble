@@ -6,9 +6,8 @@ import (
 	"github.com/charmbracelet/lipgloss/tree"
 
 	"github.com/ctrl-alt-boop/dribble"
-	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/target"
 	"github.com/ctrl-alt-boop/dribbler/config"
-	"github.com/ctrl-alt-boop/dribbler/io"
 	"github.com/ctrl-alt-boop/dribbler/logging"
 	"github.com/ctrl-alt-boop/dribbler/ui"
 	"github.com/ctrl-alt-boop/dribbler/widget"
@@ -55,14 +54,14 @@ func InitialModel(dribbleClient *dribble.Client) AppModel {
 func (m AppModel) SetProgramSend(send func(msg tea.Msg)) {
 	m.programSend = send
 
-	m.dribbleClient.OnEvent(func(eventType dribble.Response, args any, err error) {
-		event := io.DribbleEventMsg{
-			Type: eventType,
-			Args: args,
-			Err:  err,
-		}
-		m.programSend(event)
-	})
+	// m.dribbleClient.OnEvent(func(eventType dribble.Response, args any, err error) {
+	// 	event := io.DribbleEventMsg{
+	// 		Type: eventType,
+	// 		Args: args,
+	// 		Err:  err,
+	// 	}
+	// 	m.programSend(event)
+	// })
 }
 
 func (m AppModel) Init() tea.Cmd {
@@ -90,11 +89,11 @@ func testTree() {
 	var treeItems []*ui.TreeNode
 	connItems := ui.GetSavedConfigsSorted()
 	for _, item := range connItems {
-		treeItem := ui.NewConnectionNode(database.TargetServer, item)
+		treeItem := ui.NewConnectionNode(target.TypeServer, item)
 		treeItems = append(treeItems, treeItem)
 	}
 
-	categoryItem := ui.NewCategoryNode("Things", treeItems)
+	categoryItem := ui.NewCategoryNode(target.TypeDriver, treeItems)
 
 	uiTree.Child(categoryItem)
 

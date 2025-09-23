@@ -5,8 +5,8 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/ctrl-alt-boop/dribble"
-	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/request"
+	"github.com/ctrl-alt-boop/dribble/target"
 	"github.com/ctrl-alt-boop/dribbler/config"
 	"github.com/ctrl-alt-boop/dribbler/io"
 	"github.com/ctrl-alt-boop/dribbler/widget"
@@ -94,13 +94,13 @@ func (m AppModel) updatePopupClosed(msg tea.Msg) (AppModel, tea.Cmd) {
 	case widget.OpenCellDataMsg:
 		m.popupHandler.Popup(popup.KindTableCell, msg.Value)
 		m.ChangeFocus(widget.KindPopupHandler)
-	case widget.OpenQueryBuilderMsg:
+	case widget.OpenIntentBuilderMsg:
 		m.popupHandler.Popup(popup.KindQueryBuilder, msg.Method, msg.Table)
 		m.ChangeFocus(widget.KindPopupHandler)
 
 	// Dribble client events (broadcast)
-	case io.DribbleEventMsg:
-		logger.Infof("DribbleEvent received: %+v", msg)
+	case request.Response:
+		logger.Infof("Response received: %+v", msg)
 		// Propagate to interested children
 		var panelCmd, workspaceCmd tea.Cmd
 		_, panelCmd = m.panel.Update(msg)
@@ -108,11 +108,11 @@ func (m AppModel) updatePopupClosed(msg tea.Msg) (AppModel, tea.Cmd) {
 		cmds = append(cmds, panelCmd, workspaceCmd)
 
 		// App-level handling of the event
-		switch msg.Type {
-		case dribble.SuccessConnect:
+		switch msg.Status {
+		case request.SuccessConnect:
 			// cmd = func() tea.Msg { return nil }
 			// cmds = append(cmds, cmd)
-		case dribble.SuccessExecute:
+		case request.ErrorConnect:
 
 		}
 
@@ -168,8 +168,8 @@ func (m AppModel) onPanelSelect(msg widget.PanelSelectMsg) []tea.Cmd {
 
 	switch msg.CurrentMode {
 	case widget.ServerList:
-		if config, ok := config.SavedConfigs[msg.Selected]; ok {
-			cmds = append(cmds, func() tea.Msg { return io.ConnectMsg{Target: config} })
+		if dsn, ok := config.SavedConfigs[msg.Selected]; ok {
+			cmds = append(cmds, func() tea.Msg { return io.ConnectMsg{DSN: dsn} })
 			return cmds
 		}
 		cmds = append(cmds, m.popupHandler.Popup(popup.KindConnect, msg.Selected))
@@ -189,12 +189,9 @@ func (m *AppModel) ChangeFocus(widget widget.Kind) {
 }
 
 func (m AppModel) connectPopupConfirm(msg widget.ConnectPopupConfirmMsg) tea.Cmd {
-	connectMsg := io.ConnectMsg{Target: database.NewTarget("", database.TargetDriver,
-		database.WithDriver(msg.DriverName),
-		database.WithHost(msg.Ip, msg.Port),
-		database.WithUser(msg.Username),
-		database.WithPassword(msg.Password),
-	)}
+	connectMsg := io.ConnectMsg{
+		DSN: nil, // FIXME
+	}
 	return func() tea.Msg { return connectMsg }
 }
 
@@ -210,17 +207,22 @@ func (m AppModel) Connect(msg io.ConnectMsg) tea.Cmd {
 }
 
 func (m AppModel) SelectServer(msg widget.SelectServerMsg) tea.Cmd {
-	saved, ok := config.SavedConfigs[string(msg)]
+	dsn, ok := config.SavedConfigs[string(msg)]
 	if !ok {
 		var cmds []tea.Cmd
 		cmds = append(cmds, m.popupHandler.Popup(popup.KindConnect, string(msg)))
 		m.ChangeFocus(widget.KindPopupHandler)
 		return tea.Batch(cmds...)
 	}
-	logger.Infof("Config found: %+v", saved)
+	logger.Infof("Config found: %+v", dsn)
 	return func() tea.Msg {
-		m.dribbleClient.OpenTarget(context.TODO(), saved)
-		return nil
+		savedTarget, err := target.New(string(msg), dsn)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		return m.dribbleClient.OpenTarget(context.TODO(), savedTarget)
 	}
 }
 

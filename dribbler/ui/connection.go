@@ -2,19 +2,22 @@ package ui
 
 import (
 	"cmp"
+	"fmt"
 	"slices"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/list"
 	"github.com/charmbracelet/lipgloss/tree"
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/target"
 	"github.com/ctrl-alt-boop/dribbler/config"
 )
 
 type (
 	ConnectionItem struct {
-		*database.Target
 		Name string
+		Type target.Type
+		DSN  database.DataSourceNamer
 	}
 )
 
@@ -25,10 +28,10 @@ func (item ConnectionItem) Inspect() string     { return item.Name }
 
 func GetSavedConfigsSorted() []*ConnectionItem {
 	items := make([]*ConnectionItem, 0, len(config.SavedConfigs))
-	for name, settings := range config.SavedConfigs {
+	for name, dataSourceNamer := range config.SavedConfigs {
 		items = append(items, &ConnectionItem{
-			Name:   name,
-			Target: settings,
+			Name: name,
+			DSN:  dataSourceNamer,
 		})
 	}
 
@@ -40,32 +43,33 @@ func GetSavedConfigsSorted() []*ConnectionItem {
 	return items
 }
 
-func SettingsToConnectionItems(targets []*database.Target) []*ConnectionItem {
+func SettingsToConnectionItems(targets []*target.Target) []*ConnectionItem {
 	listString := ""
 	for _, target := range targets {
 		listString += target.Name + "\n"
 	}
 	logger.Infof("SettingsToConnectionItems: %+v", listString)
 	items := make([]*ConnectionItem, 0, len(targets))
-	for _, target := range targets {
+	for i, target := range targets {
+		name := target.Name
 		if target.Name == "" {
-			target.Name = target.DBName
+			name = "Unnamed Connection " + fmt.Sprint(i)
 		}
 		items = append(items, &ConnectionItem{
-			Name:   target.Name,
-			Target: target,
+			Name: name,
+			Type: target.Type,
 		})
 	}
 	return items
 }
 
 func CreateNestedList() *list.List {
-	types := map[database.TargetType]*list.List{
-		database.TargetDriver:   list.New(),
-		database.TargetServer:   list.New(),
-		database.TargetDatabase: list.New(),
-		database.TargetTable:    list.New(),
-		database.TargetUnknown:  list.New(),
+	types := map[target.Type]*list.List{
+		target.TypeDriver:   list.New(),
+		target.TypeServer:   list.New(),
+		target.TypeDatabase: list.New(),
+		target.TypeTable:    list.New(),
+		target.TypeUnknown:  list.New(),
 	}
 	configs := GetSavedConfigsSorted()
 	for _, item := range configs {
@@ -87,7 +91,7 @@ type (
 
 	TreeNode struct {
 		Item     *ConnectionItem
-		Type     database.TargetType
+		Type     target.Type
 		Name     string
 		children TreeNodeChildren
 		hidden   bool
@@ -113,26 +117,26 @@ func NewTree() *Tree {
 	}
 }
 
-func NewCategoryNode(categoryName string, children TreeNodeChildren) *TreeNode {
+func NewCategoryNode(categoryType target.Type, children TreeNodeChildren) *TreeNode {
 	return &TreeNode{
 		Item:     nil,
-		Type:     "Category",
-		Name:     categoryName,
+		Type:     categoryType,
+		Name:     categoryType.String(),
 		children: children,
 		hidden:   false,
 	}
 }
 
-func NewConnectionNode(nodeType database.TargetType, connectionItem *ConnectionItem) *TreeNode {
+func NewConnectionNode(nodeType target.Type, connectionItem *ConnectionItem) *TreeNode {
 	var name string
 	switch nodeType {
-	case database.TargetDriver:
-		name = connectionItem.DriverName
-	case database.TargetServer:
-		name = connectionItem.Ip
-	case database.TargetDatabase:
-		name = connectionItem.DBName
-	case database.TargetTable:
+	case target.TypeDriver:
+		name = connectionItem.Type.String()
+	case target.TypeServer:
+		name = connectionItem.DSN.DSN()
+	case target.TypeDatabase:
+		name = connectionItem.DSN.DSN()
+	case target.TypeTable:
 		name = "{table}"
 	default:
 		name = "ERR"

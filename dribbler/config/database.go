@@ -3,12 +3,14 @@ package config
 import (
 	"fmt"
 
-	"github.com/ctrl-alt-boop/dribble"
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/dsn/mysql"
+	"github.com/ctrl-alt-boop/dribble/dsn/postgres"
+	"github.com/ctrl-alt-boop/dribble/target"
 )
 
 type Connection struct {
-	Type               database.TargetType
+	Type               target.Type
 	DriverName         string
 	Ip                 string
 	Port               int
@@ -21,42 +23,42 @@ func (c Connection) String() string {
 	return fmt.Sprintf("%s://%s:%d", c.DriverName, c.Ip, c.Port)
 }
 
-var SavedConfigs map[string]*database.Target = map[string]*database.Target{
-	"postgres_win": database.NewTarget("postgres_win", database.TargetServer,
-		database.WithDriver("postgres"),
-		database.WithHost("172.24.208.1", 5432),
-		database.WithUser("valmatics"),
-		database.WithPassword("valmatics"),
-		database.WithSetting("sslmode", "disable"),
+var SavedConfigs map[string]database.DataSourceNamer = map[string]database.DataSourceNamer{
+	"postgres_win": postgres.NewDSN(
+		postgres.WithAddr("172.24.208.1"),
+		postgres.WithPort(5432),
+		postgres.WithUsername("valmatics"),
+		postgres.WithPassword("valmatics"),
+		postgres.WithSSLMode(postgres.SSLModeDisable),
 	),
-	"postgres_local": database.NewTarget("postgres_local", database.TargetServer,
-		database.WithDriver("postgres"),
-		database.WithHost("localhost", 5432),
-		database.WithUser("postgres_user"),
-		database.WithPassword("postgres_user"),
-		database.WithSetting("sslmode", "disable"),
+	"postgres_local": postgres.NewDSN(
+		postgres.WithAddr("localhost"),
+		postgres.WithPort(5432),
+		postgres.WithUsername("postgres_user"),
+		postgres.WithPassword("postgres_user"),
+		postgres.WithSSLMode(postgres.SSLModeDisable),
 	),
-	"mysql_local": database.NewTarget("mysql_local", database.TargetServer,
-		database.WithDriver("mysql"),
-		database.WithHost("localhost", 3306),
-		database.WithUser("mysql_user"),
-		database.WithPassword("mysql_user"),
+	"mysql_local": mysql.NewDSN(
+		mysql.WithAddr("localhost"),
+		mysql.WithPort(3306),
+		mysql.WithUsername("mysql_user"),
+		mysql.WithPassword("mysql_user"),
 	),
 }
 
 func GetDriverDefaults() map[string]Connection {
-	defaults := dribble.GetDriverDefaults()
+	// defaults := dribble.GetDriverDefaults()
 	driverDefaults := make(map[string]Connection)
-	for name, settings := range defaults {
-		driverDefaults[name] = Connection{
-			Type:               database.TargetDriver,
-			DriverName:         name,
-			Ip:                 settings.Ip,
-			Port:               settings.Port,
-			Username:           settings.Username,
-			Password:           settings.Password,
-			AdditionalSettings: settings.AdditionalSettings,
-		}
-	}
+	// for name, settings := range defaults {
+	// 	driverDefaults[name] = Connection{
+	// 		Type:               target.TypeDriver,
+	// 		DriverName:         name,
+	// 		Ip:                 settings.Ip,
+	// 		Port:               settings.Port,
+	// 		Username:           settings.Username,
+	// 		Password:           settings.Password,
+	// 		AdditionalSettings: settings.AdditionalSettings,
+	// 	}
+	// }
 	return driverDefaults
 }

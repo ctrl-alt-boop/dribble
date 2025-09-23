@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ctrl-alt-boop/dribble"
 	"github.com/spf13/viper"
 )
 
@@ -93,12 +92,12 @@ func loadConfig() (*Config, *viper.Viper, error) {
 	// 3. Set default values
 
 	// Shown Drivers
-	v.SetDefault("show_drivers", dribble.GetSupportedDrivers())
+	v.SetDefault("show_drivers", map[string]struct{}{})
 
 	// Connections
 	v.SetDefault("connections.servers", map[string]struct{}{})
 	v.SetDefault("connections.databases", map[string]struct{}{})
-	v.SetDefault("Connections.DriverDefaults", dribble.GetDriverDefaults())
+	v.SetDefault("Connections.DriverDefaults", map[string]struct{}{})
 	// v.SetDefault("Connections.Saved", map[string]struct{}{})
 
 	// Ui

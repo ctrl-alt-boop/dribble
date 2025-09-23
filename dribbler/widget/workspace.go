@@ -8,9 +8,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ctrl-alt-boop/dribble"
 
+	"github.com/ctrl-alt-boop/dribble/request"
 	"github.com/ctrl-alt-boop/dribble/result"
 	"github.com/ctrl-alt-boop/dribbler/config"
-	"github.com/ctrl-alt-boop/dribbler/io"
 	"github.com/ctrl-alt-boop/dribbler/ui"
 )
 
@@ -63,14 +63,14 @@ func (d *Workspace) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			d.table.DecreaseColumnSize() // FIXME: Resizing the workspace
 		}
 
-	case io.DribbleEventMsg:
+	case request.Response:
 		d.isLoading = false
-		switch msg.Type {
-		case dribble.SuccessReadTable:
-			args, ok := msg.Args.(dribble.TableFetchData)
-			if ok {
-				return d, tea.Batch(d.SetTable(*args.Table), RequestFocusChange(KindWorkspace))
-			}
+		switch msg.Status {
+		case request.SuccessExecute:
+			// args, ok := msg.Args.(dribble.TableFetchData)
+			// if ok {
+			return d, tea.Batch(d.SetTable(*msg.Body.(*result.Table)), RequestFocusChange(KindWorkspace))
+			// }
 		}
 	}
 
