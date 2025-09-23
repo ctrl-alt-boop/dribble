@@ -1,9 +1,11 @@
 package mysql
 
 import (
+	"fmt"
 	"text/template"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/request"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -25,7 +27,7 @@ func (m *MySQL) Capabilities() []database.Capabilities {
 	return []database.Capabilities{}
 }
 
-const connectionStringTemplate = "{{if .Username}}{{.Username}}{{if .Password}}:{{.Password}}{{end}}@{{end}}tcp({{.Addr}}{{if .Port}}:{{.Port}}{{end}})/{{.DBName}}"
+const connectionStringTemplate = "{{if .Username}}{{.Username}}{{if .Password}}:{{.Password}}{{end}}@{{end}}tcp({{.Addr}}{{if .Port}}:{{.Port}}{{end}})/{{.DBName}}?{{with .Additional.allowCleartextPasswords}}allowCleartextPasswords={{.}}{{else}}&allowCleartextPasswords=false{{end}}"
 
 // ConnectionStringTemplate implements database.SQLDialect.
 // user:password@tcp(host:port)/dbname
@@ -38,18 +40,26 @@ func (m *MySQL) ConnectionStringTemplate() *template.Template {
 }
 
 // GetPrefab implements database.SQLDialect.
-func (m *MySQL) GetPrefab(request database.Request) (string, []any, error) {
-	panic("unimplemented")
+func (m *MySQL) GetPrefab(r database.Request) (string, []any, error) {
+	switch r := r.(type) {
+	case request.ReadDatabaseNames, *request.ReadDatabaseNames:
+		return PrefabDatabases, nil, nil
+	case request.ReadTableNames:
+		return PrefabTables, []any{r.DatabaseName}, nil
+	case *request.ReadTableNames:
+		return PrefabTables, []any{r.DatabaseName}, nil
+	case request.ReadColumnNames:
+		return PrefabColumns, []any{r.TableName}, nil
+	case *request.ReadColumnNames:
+		return PrefabColumns, []any{r.TableName}, nil
+	default:
+		return "", nil, fmt.Errorf("unknown prefab request: %T", r)
+	}
 }
 
 // Name implements database.SQLDialect.
 func (m *MySQL) Name() string {
 	return "mysql"
-}
-
-// RenderRequest implements database.SQLDialect.
-func (m *MySQL) RenderRequest(request database.Request) (string, []any, error) {
-	panic("unimplemented")
 }
 
 // ResolveType implements database.SQLDialect.

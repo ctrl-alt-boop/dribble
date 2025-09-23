@@ -48,7 +48,7 @@ func (m *MySQL) RenderCurrentTimestamp() string {
 
 // RenderPlaceholder implements database.Dialect.
 func (m *MySQL) RenderPlaceholder(index int) string {
-	return fmt.Sprintf("$%d", index)
+	return "?"
 }
 
 // RenderTypeCast implements database.Dialect.

@@ -48,7 +48,7 @@ func (s *SQLite3) RenderCurrentTimestamp() string {
 
 // RenderPlaceholder implements database.Dialect.
 func (s *SQLite3) RenderPlaceholder(index int) string {
-	return fmt.Sprintf("$%d", index)
+	return "?"
 }
 
 // RenderTypeCast implements database.Dialect.

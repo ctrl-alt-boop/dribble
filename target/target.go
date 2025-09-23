@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/ctrl-alt-boop/dribble/database"
-	internal "github.com/ctrl-alt-boop/dribble/internal/database"
+	"github.com/ctrl-alt-boop/dribble/internal/client"
 	"github.com/ctrl-alt-boop/dribble/request"
 )
 
@@ -25,44 +25,33 @@ const (
 var ErrNoRequests = errors.New("no requests provided")
 
 type Target struct {
-	Name       string
-	Type       Type
-	DBType     database.Type
-	Properties database.ConnectionProperties
+	Name   string
+	Type   Type
+	DBType database.Type
 
-	executor database.Database
-	// mu               sync.Mutex
+	executor      database.Database
 	nextRequestID atomic.Int64
 }
 
-func New(name string, targetType Type, dbType database.Type, options ...Option) (*Target, error) {
+func New(name string, dsn database.DataSourceNamer) (*Target, error) {
 	target := &Target{
 		Name:   name,
-		Type:   targetType,
-		DBType: dbType,
-		Properties: database.ConnectionProperties{
-			Addr:       "localhost",
-			Port:       0,
-			DBName:     "",
-			Username:   "",
-			Password:   "",
-			Additional: make(map[string]string),
-		},
+		Type:   TypeDriver,
+		DBType: dsn.Type(),
 	}
 
-	for _, option := range options {
-		option(target)
-	}
-
-	executor, err := internal.CreateClientForType(target.DBType)
+	executor, err := client.Create(dsn)
 	if err != nil {
 		return nil, err
 	}
-	executor.SetConnectionProperties(target.Properties)
 	target.executor = executor
 
 	return target, nil
 }
+
+// func (t *Target) String() string {
+// 	return fmt.Sprintf("%s (%s)", t.Name, t.DBType)
+// }
 
 func (t *Target) Open(ctx context.Context) error {
 	return t.executor.Open(ctx)
@@ -94,11 +83,16 @@ func (t *Target) Request(ctx context.Context, requests ...database.Request) (cha
 		for _, req := range requests {
 			go func(r database.Request) {
 				defer wg.Done()
-
 				requestResult, err := t.executor.Request(ctx, r)
+				var resp database.Response
+				if err != nil {
+					resp = r.ResponseOnError()
+				} else {
+					resp = r.ResponseOnSuccess()
+				}
 				resultChan <- &request.Response{
 					RequestID: requestID,
-					Status:    request.Status(r.ResponseOnSuccess().Code()),
+					Status:    request.Status(resp.Code()),
 					Body:      requestResult,
 					Error:     err,
 				}

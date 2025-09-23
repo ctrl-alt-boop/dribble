@@ -42,7 +42,6 @@ func ParseRows(dbRows *sql.Rows) ([]Column, []Row) {
 		// 		continue
 		// 	}
 		// }
-
 		rows = append(rows, row)
 	}
 	return columns, rows

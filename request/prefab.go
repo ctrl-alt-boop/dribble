@@ -1,306 +1,221 @@
 package request
 
-import "github.com/ctrl-alt-boop/dribble/database"
+import (
+	"fmt"
 
-var (
-	_ database.Request = ReadDatabaseSchema{}
-	_ database.Request = ReadTableSchema{}
-	_ database.Request = ReadColumnSchema{}
-	_ database.Request = ReadDatabaseProperties{}
-	_ database.Request = ReadTableProperties{}
-	_ database.Request = ReadColumnProperties{}
-	_ database.Request = ReadDatabaseNames{}
-	_ database.Request = ReadTableNames{}
-	_ database.Request = ReadColumnNames{}
-	_ database.Request = ReadCount{}
-	_ database.Request = ReadAllCounts{}
-	_ database.Request = Execute{}
-	_ database.Request = BatchExecute{}
+	"github.com/ctrl-alt-boop/dribble/database"
 )
 
-type PrefabRequest struct{}
+var (
+	_ database.Request = (*ReadDatabaseSchema)(nil)
+	_ database.Request = (*ReadTableSchema)(nil)
+	_ database.Request = (*ReadColumnSchema)(nil)
+	_ database.Request = (*ReadDatabaseProperties)(nil)
+	_ database.Request = (*ReadTableProperties)(nil)
+	_ database.Request = (*ReadColumnProperties)(nil)
+	_ database.Request = (*ReadDatabaseNames)(nil)
+	_ database.Request = (*ReadTableNames)(nil)
+	_ database.Request = (*ReadColumnNames)(nil)
+	_ database.Request = (*ReadCount)(nil)
+	_ database.Request = (*ReadAllCounts)(nil)
+)
 
-func (p PrefabRequest) IsPrefab() bool {
+type prefab struct {
+	successStatus Status
+}
+
+func (p prefab) IsPrefab() bool {
 	return true
 }
 
-// BatchExecute and BatchRequest are not the same thing
-// BatchRequest will send through multiple channels while BatchExecute will send all results in one channel
-// Each channel results in one Response for each request in the BatchRequest
-type batchRequest []database.Request
-
-func BatchRequest(requests ...database.Request) batchRequest {
-	return requests
+func (p prefab) Name() string {
+	return fmt.Sprintf("%T", p)
 }
 
-type RequestChain []database.Request
-
-func ChainRequest(requests ...database.Request) RequestChain {
-	return requests
+// args = [database_name]
+type ReadDatabaseSchema struct {
+	prefab
+	DatabaseName string
 }
 
-type (
-	// args = [database_name]
-	ReadDatabaseSchema struct {
-		PrefabRequest
-		DatabaseName string
-	}
-
-	// args = [database name, table name]
-	ReadTableSchema struct {
-		PrefabRequest
-		DatabaseName string
-		TableName    string
-	}
-
-	// args = [database name, table name, column name]
-	ReadColumnSchema struct {
-		PrefabRequest
-		DatabaseName string
-		TableName    string
-		ColumnName   string
-	}
-
-	// args = [database name]
-	ReadDatabaseProperties struct {
-		PrefabRequest
-		DatabaseName string
-	}
-
-	// args = [database name, table name]
-	ReadTableProperties struct {
-		PrefabRequest
-		DatabaseName string
-		TableName    string
-	}
-
-	// args = [database name, table name, column name]
-	ReadColumnProperties struct {
-		PrefabRequest
-		DatabaseName string
-		TableName    string
-		ColumnName   string
-	}
-
-	// args = [target name]
-	ReadDatabaseNames struct {
-		PrefabRequest
-		TargetName string
-	}
-
-	// args = [database name]
-	ReadTableNames struct {
-		PrefabRequest
-		DatabaseName string
-	}
-
-	// args = [database name, table name]
-	ReadColumnNames struct {
-		PrefabRequest
-		DatabaseName string
-		TableName    string
-	}
-
-	// args = [database name, table name]
-	ReadCount struct {
-		PrefabRequest
-		DatabaseName string
-		TableName    string
-	}
-
-	// args = [[database name, table name], [database name, table name], ...]
-	ReadAllCounts struct {
-		PrefabRequest
-		ReadCount
-		DatabaseName string
-		TableNames   []string
-	}
-
-	// args = []
-	Execute struct {
-	}
-
-	// BatchExecute and BatchRequest are not the same thing
-	// BatchExecute will send all results in one channel while a BatchRequest will send through multiple channels
-	// This results in a BatchResponse
-	BatchExecute struct {
-	}
-)
-
-// ResponseOnError implements database.Request.
-func (r ReadDatabaseSchema) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorReadDatabaseSchema,
+func NewReadDatabaseSchema(databaseName string) ReadDatabaseSchema {
+	return ReadDatabaseSchema{
+		prefab:       prefab{successStatus: SuccessReadDatabaseSchema},
+		DatabaseName: databaseName,
 	}
 }
 
-// ResponseOnSuccess implements database.Request.
-func (r ReadDatabaseSchema) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessReadDatabaseSchema,
+// args = [database name, table name]
+type ReadTableSchema struct {
+	prefab
+	DatabaseName string
+	TableName    string
+}
+
+func NewReadTableSchema(databaseName, tableName string) ReadTableSchema {
+	return ReadTableSchema{
+		prefab:       prefab{successStatus: SuccessReadTableSchema},
+		DatabaseName: databaseName,
+		TableName:    tableName,
 	}
 }
 
-// ResponseOnError implements database.Request.
-func (r ReadTableSchema) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorReadTableSchema,
+// args = [database name, table name, column name]
+type ReadColumnSchema struct {
+	prefab
+	DatabaseName string
+	TableName    string
+	ColumnName   string
+}
+
+func NewReadColumnSchema(databaseName, tableName, columnName string) ReadColumnSchema {
+	return ReadColumnSchema{
+		prefab:       prefab{successStatus: SuccessReadColumnSchema},
+		DatabaseName: databaseName,
+		TableName:    tableName,
+		ColumnName:   columnName,
 	}
 }
 
-// ResponseOnSuccess implements database.Request.
-func (r ReadTableSchema) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessReadTableSchema,
+// args = [database name]
+type ReadDatabaseProperties struct {
+	prefab
+	DatabaseName string
+}
+
+func NewReadDatabaseProperties(databaseName string) ReadDatabaseProperties {
+	return ReadDatabaseProperties{
+		prefab:       prefab{successStatus: SuccessReadDatabaseProperties},
+		DatabaseName: databaseName,
 	}
 }
 
-// ResponseOnError implements database.Request.
-func (r ReadColumnSchema) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorReadColumnSchema,
+// args = [database name, table name]
+type ReadTableProperties struct {
+	prefab
+	DatabaseName string
+	TableName    string
+}
+
+func NewReadTableProperties(databaseName, tableName string) ReadTableProperties {
+	return ReadTableProperties{
+		prefab:       prefab{successStatus: SuccessReadTableProperties},
+		DatabaseName: databaseName,
+		TableName:    tableName,
 	}
 }
 
-// ResponseOnSuccess implements database.Request.
-func (r ReadColumnSchema) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessReadColumnSchema,
+// args = [database name, table name, column name]
+type ReadColumnProperties struct {
+	prefab
+	DatabaseName string
+	TableName    string
+	ColumnName   string
+}
+
+func NewReadColumnProperties(databaseName, tableName, columnName string) ReadColumnProperties {
+	return ReadColumnProperties{
+		prefab:       prefab{successStatus: SuccessReadColumnProperties},
+		DatabaseName: databaseName,
+		TableName:    tableName,
+		ColumnName:   columnName,
 	}
 }
 
-// ResponseOnError implements database.Request.
-func (r ReadDatabaseProperties) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorReadDatabaseProperties,
+// args = [target name]
+type ReadDatabaseNames struct {
+	prefab
+}
+
+func NewReadDatabaseNames() ReadDatabaseNames {
+	return ReadDatabaseNames{
+		prefab: prefab{successStatus: SuccessReadDatabaseList},
 	}
 }
 
-// ResponseOnSuccess implements database.Request.
-func (r ReadDatabaseProperties) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessReadDatabaseProperties,
+// args = [database name]
+type ReadTableNames struct {
+	prefab
+	DatabaseName string
+}
+
+func NewReadTableNames() ReadTableNames {
+	return ReadTableNames{
+		prefab:       prefab{successStatus: SuccessReadDBTableList},
+		DatabaseName: "",
 	}
 }
 
-// ResponseOnError implements database.Request.
-func (r ReadTableProperties) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorReadTableProperties,
+func NewReadDBTableNames(databaseName string) ReadTableNames {
+	return ReadTableNames{
+		prefab:       prefab{successStatus: SuccessReadDBTableList},
+		DatabaseName: databaseName,
 	}
 }
 
-// ResponseOnSuccess implements database.Request.
-func (r ReadTableProperties) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessReadTableProperties,
+// args = [database name, table name]
+type ReadColumnNames struct {
+	prefab
+	DatabaseName string
+	TableName    string
+}
+
+func NewReadColumnNames(databaseName, tableName string) ReadColumnNames {
+	return ReadColumnNames{
+		prefab:       prefab{successStatus: SuccessReadDBColumnList},
+		DatabaseName: databaseName,
+		TableName:    tableName,
 	}
 }
 
-// ResponseOnError implements database.Request.
-func (r ReadColumnProperties) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorReadColumnProperties,
+// args = [database name, table name]
+type ReadCount struct {
+	prefab
+	DatabaseName string
+	TableName    string
+}
+
+func NewReadCount(tableName string) ReadCount {
+	return ReadCount{
+		prefab:       prefab{successStatus: SuccessReadCount},
+		DatabaseName: "",
+		TableName:    tableName,
 	}
 }
 
-// ResponseOnSuccess implements database.Request.
-func (r ReadColumnProperties) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessReadColumnProperties,
+func NewReadCountWithDB(databaseName, tableName string) ReadCount {
+	return ReadCount{
+		prefab:       prefab{successStatus: SuccessReadCount},
+		DatabaseName: databaseName,
+		TableName:    tableName,
 	}
 }
 
-// ResponseOnError implements database.Request.
-func (r ReadDatabaseNames) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorReadDatabaseList,
+// args = [[database name, table name], [database name, table name], ...]
+type ReadAllCounts struct {
+	prefab
+	DatabaseName string
+	TableNames   []string
+}
+
+func NewReadAllCounts(databaseName string, tableNames []string) ReadAllCounts {
+	return ReadAllCounts{
+		prefab:       prefab{successStatus: SuccessReadCount},
+		DatabaseName: databaseName,
+		TableNames:   tableNames,
 	}
 }
 
-// ResponseOnSuccess implements database.Request.
-func (r ReadDatabaseNames) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessReadDatabaseList,
+func (p prefab) ResponseOnSuccess() database.Response {
+	if p.successStatus == StatusUnknown {
+		panic(fmt.Sprintf("prefab request of type %T created without using its constructor", p))
 	}
+	return Response{Status: p.successStatus}
 }
 
-// ResponseOnError implements database.Request.
-func (r ReadTableNames) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorReadDBTableList,
+func (p prefab) ResponseOnError() database.Response {
+	if p.successStatus == StatusUnknown {
+		panic(fmt.Sprintf("prefab request of type %T created without using its constructor", p))
 	}
-}
-
-// ResponseOnSuccess implements database.Request.
-func (r ReadTableNames) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessReadDBTableList,
-	}
-}
-
-// ResponseOnError implements database.Request.
-func (r ReadColumnNames) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorReadDBColumnList,
-	}
-}
-
-// ResponseOnSuccess implements database.Request.
-func (r ReadColumnNames) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessReadDBColumnList,
-	}
-}
-
-// ResponseOnError implements database.Request.
-func (r ReadCount) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorReadCount,
-	}
-}
-
-// ResponseOnSuccess implements database.Request.
-func (r ReadCount) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessReadCount,
-	}
-}
-
-// ResponseOnError implements database.Request.
-func (e Execute) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorExecute,
-	}
-}
-
-// ResponseOnSuccess implements database.Request.
-func (e Execute) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessExecute,
-	}
-}
-
-// ResponseOnError implements database.Request.
-func (b BatchExecute) ResponseOnError() database.Response {
-	return Response{
-		Status: ErrorBatchExecute,
-	}
-}
-
-// ResponseOnSuccess implements database.Request.
-func (b BatchExecute) ResponseOnSuccess() database.Response {
-	return Response{
-		Status: SuccessBatchExecute,
-	}
-}
-
-// IsPrefab implements database.Request.
-func (b BatchExecute) IsPrefab() bool {
-	return false
-}
-
-// IsPrefab implements database.Request.
-func (e Execute) IsPrefab() bool {
-	return false
+	return Response{Status: -p.successStatus}
 }

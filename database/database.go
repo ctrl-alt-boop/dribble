@@ -52,7 +52,6 @@ type (
 
 	Database interface {
 		Type() Type
-		SetConnectionProperties(ConnectionProperties)
 
 		Open(context.Context) error
 		Ping(context.Context) error
@@ -81,8 +80,6 @@ type (
 		GetPrefab(Request) (string, []any, error)
 
 		Capabilities() []Capabilities
-
-		RenderRequest(Request) (string, []any, error)
 
 		RenderPlaceholder(index int) string
 		IncreamentPlaceholder() string

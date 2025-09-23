@@ -1,6 +1,7 @@
 package sqlite3
 
 import (
+	"fmt"
 	"text/template"
 
 	"github.com/ctrl-alt-boop/dribble/database"
@@ -33,10 +34,15 @@ func (s *SQLite3) Name() string {
 	return "sqlite3"
 }
 
-const connectionStringTemplate = "Data Source={{.Addr}};Version=3{{if .Password}};Password={{.Password}}{{end}}"
+// example: file:test.db?cache=shared&mode=memory
+// _auth_user
+// _auth_pass
+// _auth_crypt
+// mode ro, rw, rwc, memory
+// cache shared, private
+const connectionStringTemplate = "file:{{.Addr}}{{if .DBName}}?_auth_user={{.Username}}&_auth_pass={{.Password}}&_auth_crypt={{.DBName}}{{end}}{{with .Additional.mode}}&mode={{.}}{{else}}{{end}}{{with .Additional.cache}}&cache={{.}}{{else}}{{end}}"
 
 // ConnectionString implements database.Driver.
-// Data Source=c:\mydb.db;Version=3;Password=myPassword
 func (s *SQLite3) ConnectionStringTemplate() *template.Template {
 	tmpl, err := template.New("connectionString").Parse(connectionStringTemplate)
 	if err != nil {
@@ -46,18 +52,19 @@ func (s *SQLite3) ConnectionStringTemplate() *template.Template {
 }
 
 // GetPrefab implements database.SQLDialect.
-func (s *SQLite3) GetPrefab(request database.Request) (string, []any, error) {
-	panic("unimplemented")
-}
-
-// RenderRequest implements database.SQLDialect.
-func (s *SQLite3) RenderRequest(request database.Request) (string, []any, error) {
-	panic("unimplemented")
-}
-
-// RenderIntent implements database.Driver.
-func (s *SQLite3) RenderIntent(intent *request.Intent) (string, error) {
-	panic("unimplemented")
+func (s *SQLite3) GetPrefab(r database.Request) (string, []any, error) {
+	switch r := r.(type) {
+	case request.ReadDatabaseNames, *request.ReadDatabaseNames:
+		return PrefabDatabases, nil, nil
+	case request.ReadTableNames, *request.ReadTableNames:
+		return PrefabTables, nil, nil
+	case request.ReadColumnNames:
+		return PrefabColumns, []any{r.TableName}, nil
+	case *request.ReadColumnNames:
+		return PrefabColumns, []any{r.TableName}, nil
+	default:
+		return "", nil, fmt.Errorf("unknown prefab request: %T", r)
+	}
 }
 
 func (s *SQLite3) ResolveType(dbType string, value []byte) (any, error) {

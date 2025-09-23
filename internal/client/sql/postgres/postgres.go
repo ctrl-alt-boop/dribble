@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"fmt"
-	"strings"
 	"text/template"
 
 	"github.com/ctrl-alt-boop/dribble/database"
@@ -53,29 +52,6 @@ func (p *Postgres) Dialect() database.SQLDialect {
 	return p
 }
 
-// RenderRequest implements database.SQLDialect.
-func (p *Postgres) RenderRequest(r database.Request) (string, []any, error) {
-	intent, ok := r.(*request.Intent)
-	if !ok {
-		return "", nil, fmt.Errorf("invalid request type: %T", r)
-	}
-
-	queryStringTemplate := p.GetTemplate(intent.Type)
-
-	tmpl, err := template.New("query").Parse(queryStringTemplate)
-	if err != nil {
-		return "", nil, fmt.Errorf("error parsing query template: %w", err)
-	}
-	operation := intent.Operation
-	var sb strings.Builder
-	err = tmpl.Execute(&sb, operation)
-	if err != nil {
-		return "", nil, fmt.Errorf("error executing query template: %w", err)
-	}
-	queryString := strings.TrimSpace(sb.String())
-	return queryString, intent.Args, nil
-}
-
 func (p *Postgres) ResolveType(dbType string, value []byte) (any, error) {
 	switch dbType {
 	case "UUID":
@@ -93,8 +69,13 @@ func (p *Postgres) GetPrefab(r database.Request) (string, []any, error) {
 		return PrefabTables, nil, nil
 	case request.ReadColumnNames:
 		return PrefabColumns, []any{r.TableName}, nil
+	case request.ReadCount:
+		if r.DatabaseName != "" {
+			return fmt.Sprintf(PrefabCountDBFormat, r.DatabaseName, r.TableName), nil, nil
+		}
+		return fmt.Sprintf(PrefabCountFormat, r.TableName), nil, nil
 	default:
-		return "", nil, nil
+		return "", nil, fmt.Errorf("unknown prefab request: %T", r)
 	}
 }
 

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/ctrl-alt-boop/dribble/database"
-	"github.com/ctrl-alt-boop/dribble/internal/database/nosql/firestore"
-	"github.com/ctrl-alt-boop/dribble/internal/database/nosql/mongodb"
+	"github.com/ctrl-alt-boop/dribble/internal/client/nosql/firestore"
+	"github.com/ctrl-alt-boop/dribble/internal/client/nosql/mongodb"
 )
 
 // var Defaults = map[string]*target.Target{
@@ -41,11 +41,6 @@ type Executor struct {
 	client database.NoSQLClient
 }
 
-// SetConnectionProperties implements database.NoSQL.
-func (e *Executor) SetConnectionProperties(database.ConnectionProperties) {
-	return
-}
-
 func NewExecutor(modelType database.NoSQLModelType) (*Executor, error) {
 	var client database.NoSQLClient
 	var err error
@@ -56,6 +51,27 @@ func NewExecutor(modelType database.NoSQLModelType) (*Executor, error) {
 		client, err = firestore.NewFirestoreClient()
 	default:
 		return nil, fmt.Errorf("unknown or unsupported database model: %s", modelType)
+	}
+	if err != nil {
+		panic(err)
+	}
+	return &Executor{
+		client: client,
+	}, nil
+}
+
+func New(dsn database.DataSourceNamer) (*Executor, error) {
+	var client database.NoSQLClient
+	var err error
+	switch dsn.Type() {
+	case database.MongoDB:
+		client, err = mongodb.NewMongoDBClient()
+	case database.Firestore:
+		client, err = firestore.NewFirestoreClient()
+	case database.Redis:
+		client, err = nil, fmt.Errorf("redis not implemented")
+	default:
+		return nil, fmt.Errorf("unknown or unsupported database model: %s", dsn.Type())
 	}
 	if err != nil {
 		panic(err)

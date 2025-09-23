@@ -28,6 +28,41 @@ type (
 	}
 )
 
+// String implements Response.
+func (r Row) String() string {
+	return strings.Join(sliceTransform(r.Values, func(value any) string {
+		return fmt.Sprint(value)
+	}), ", ")
+}
+
+// Value implements Response.
+func (r Row) Get() any {
+	return r.get()
+}
+
+func (r Row) get() []any {
+	return r.Values
+}
+
+// String implements Response.
+func (dt Table) String() string {
+	tableString := ""
+	for _, row := range dt.GetRowStringsAll() {
+		fmt.Println(row)
+		tableString += strings.Join(row, ", ")
+	}
+	return tableString
+}
+
+// Value implements Response.
+func (dt Table) Get() any {
+	return dt.get()
+}
+
+func (dt Table) get() Table {
+	return dt
+}
+
 func (dt *Table) NumColumns() int {
 	return len(dt.columns)
 }

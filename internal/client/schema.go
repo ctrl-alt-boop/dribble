@@ -1,4 +1,4 @@
-package database
+package client
 
 type (
 	Server struct { // This needs going over.

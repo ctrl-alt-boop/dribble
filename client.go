@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
-	"sync/atomic"
+	"maps"
+	"strings"
 
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/target"
@@ -27,34 +27,27 @@ var (
 )
 
 type Client struct {
-	mu      sync.Mutex
 	targets map[string]*target.Target
-
-	nextRequestID atomic.Int64
-	// requestChannels map[string]chan ...
-
 }
 
 func NewClient() *Client {
 	return &Client{
 		targets: make(map[string]*target.Target),
-		// requestChannels: make(map[string]chan ...),
-
 	}
+}
+
+func (c *Client) String() string {
+	targets := maps.Values(c.targets)
+	targetStrings := []string{}
+	for t := range targets {
+		targetStrings = append(targetStrings, fmt.Sprint(t))
+	}
+	return fmt.Sprintf("dribble version: %s \ntargets:\n%s\n", Version, strings.Join(targetStrings, "\n"))
 }
 
 func (c *Client) OnEvent(handler EventHandler) {
 
 }
-
-// func createExecutor(ctx context.Context, target *target.Target) (database.Database, error) {
-// 	executor, err := CreateExecutorFromTarget(target)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error creating executor: %w", err)
-// 	}
-
-// 	return executor, nil
-// }
 
 func (c *Client) Target(targetName string) *target.Target {
 	return c.targets[targetName]

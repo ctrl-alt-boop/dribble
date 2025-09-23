@@ -25,7 +25,7 @@ type (
 	IntentBatch []*Intent
 
 	Response struct {
-		Status
+		Status    Status
 		RequestID int64
 		Body      any
 		Error     error
@@ -90,5 +90,17 @@ func (r Response) Code() int {
 }
 
 func (r Response) Message() string {
-	return fmt.Sprintf("%d: %s", r.Code(), r.String())
+	return fmt.Sprintf("%d: %s", r.Code(), r.Status.String())
+}
+
+type RequestBatch []database.Request
+
+func Batch(requests ...database.Request) RequestBatch {
+	return requests
+}
+
+type RequestChain []database.Request
+
+func Chain(requests ...database.Request) RequestChain {
+	return requests
 }

@@ -1,11 +1,12 @@
-package database
+package client
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ctrl-alt-boop/dribble/database"
-	"github.com/ctrl-alt-boop/dribble/internal/database/nosql"
-	"github.com/ctrl-alt-boop/dribble/internal/database/sql"
+	"github.com/ctrl-alt-boop/dribble/internal/client/nosql"
+	"github.com/ctrl-alt-boop/dribble/internal/client/sql"
 )
 
 func CreateClientForType(t database.Type) (database.Database, error) {
@@ -37,4 +38,19 @@ func CreateNoSQLClient(modelType database.NoSQLModelType) (database.NoSQL, error
 		return nil, err
 	}
 	return executor, nil
+}
+
+func Create(dsn database.DataSourceNamer) (database.Database, error) {
+	switch dsn.Type().BaseType() {
+	case database.TypeSQL:
+		return sql.New(dsn)
+	case database.TypeNoSQL:
+		return nosql.New(dsn)
+	case database.TypeGraph:
+		return nil, nil
+	case database.TypeTimeSeries:
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("unknown base type: %s", dsn.Type().BaseType())
+	}
 }

@@ -2,7 +2,9 @@ package result
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
+	"strings"
 )
 
 type List struct {
@@ -12,6 +14,28 @@ type List struct {
 	ScanType   reflect.Type
 	ActualType reflect.Type
 	DBKind     string
+}
+
+// String implements Response.
+func (l List) String() string {
+	stringValues := make([]string, len(l.Values))
+	for i, v := range l.Values {
+		if v == nil {
+			stringValues[i] = "NULL"
+		} else {
+			stringValues[i] = fmt.Sprintf("%v", v)
+		}
+	}
+	return strings.Join(stringValues, "\n")
+}
+
+// Value implements Response.
+func (l List) Get() any {
+	return l.get()
+}
+
+func (l List) get() []any {
+	return l.Values
 }
 
 func RowsToList(dbRows *sql.Rows) List {
