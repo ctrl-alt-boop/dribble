@@ -146,6 +146,36 @@ func (c *Client) Request(ctx context.Context, targetName string, request databas
 	return requestTarget.Request(ctx, request)
 }
 
+// Non-Blocking
+func (c *Client) RequestWithHandler(ctx context.Context, handler ResponseHandler, targetName string, req database.Request) error {
+	requestTarget, ok := c.targets[targetName]
+	if !ok {
+		return ErrTargetNotFound(targetName)
+	}
+
+	return requestTarget.RequestWithHandler(ctx, handler, req)
+}
+
+// no targets = NoOp
+func (c *Client) RequestForAll(ctx context.Context, req database.Request) (chan *request.Response, error) {
+	if len(c.targets) == 0 {
+		return nil, nil
+	}
+	var errs error
+	responseChan := make(chan *request.Response, len(c.targets))
+	defer close(responseChan)
+
+	for _, target := range c.targets {
+		respChan, err := target.Request(ctx, req)
+		if err != nil {
+			errs = errors.Join(errs, err)
+			continue
+		}
+		responseChan <- (<-respChan)
+	}
+	return responseChan, errs
+}
+
 // Blocking
 func (c *Client) PerformWithHandler(ctx context.Context, handler ResponseHandler, targetName string, req database.Request) error {
 	requestTarget, ok := c.targets[targetName]
@@ -156,12 +186,25 @@ func (c *Client) PerformWithHandler(ctx context.Context, handler ResponseHandler
 	return requestTarget.PerformWithHandler(ctx, handler, req)
 }
 
-// Non-Blocking
-func (c *Client) RequestWithHandler(ctx context.Context, handler ResponseHandler, targetName string, req database.Request) error {
-	requestTarget, ok := c.targets[targetName]
-	if !ok {
-		return ErrTargetNotFound(targetName)
+// no targets = NoOp
+func (c *Client) PerformForAll(ctx context.Context, handler ResponseHandler, req database.Request) error {
+	if len(c.targets) == 0 {
+		return nil
 	}
+	var errs error
+	responseChan := make(chan *request.Response, len(c.targets))
+	defer close(responseChan)
 
-	return requestTarget.RequestWithHandler(ctx, handler, req)
+	for _, target := range c.targets {
+		respChan, err := target.Request(ctx, req)
+		if err != nil {
+			errs = errors.Join(errs, err)
+			continue
+		}
+		responseChan <- (<-respChan)
+	}
+	for response := range responseChan { // Maybe...
+		handler(response)
+	}
+	return errs
 }

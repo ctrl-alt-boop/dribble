@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/huh v0.7.0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/x/ansi v0.10.1
-	github.com/ctrl-alt-boop/dribble v0.0.0-20250923135227-ba7555a989a1
+	github.com/ctrl-alt-boop/dribble v0.0.0-20250923151700-b88245b01c6a
 	github.com/muesli/reflow v0.3.0
 	github.com/spf13/viper v1.21.0
 )
@@ -57,7 +57,6 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/sahilm/fuzzy v0.1.1 // indirect
-	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
