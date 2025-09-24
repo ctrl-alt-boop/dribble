@@ -15,7 +15,7 @@ func init() {
 	database.DBTypes.Register("SQL", "postgres")
 }
 
-var _ database.SQLDialect = &Postgres{}
+var _ database.SQLDialect = (*Postgres)(nil)
 
 type Postgres struct{}
 

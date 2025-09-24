@@ -1,12 +1,12 @@
-package client
+package datasource
 
 import (
 	"errors"
 	"fmt"
 
 	"github.com/ctrl-alt-boop/dribble/database"
-	"github.com/ctrl-alt-boop/dribble/internal/client/nosql"
-	"github.com/ctrl-alt-boop/dribble/internal/client/sql"
+	"github.com/ctrl-alt-boop/dribble/internal/datasource/nosql"
+	"github.com/ctrl-alt-boop/dribble/internal/datasource/sql"
 )
 
 func CreateClientForType(t database.Type) (database.Database, error) {

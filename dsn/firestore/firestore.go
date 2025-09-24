@@ -6,9 +6,20 @@ import (
 	"github.com/ctrl-alt-boop/dribble/database"
 )
 
+var _ database.DataSourceNamer = (*FirestoreDSN)(nil)
+
 type FirestoreDSN struct {
 	ProjectID string `json:"project_id"`
 	Database  string `json:"database"`
+}
+
+// Info implements database.DataSourceNamer.
+func (f *FirestoreDSN) Info() string {
+	dbString := ""
+	if f.Database != "" {
+		dbString = fmt.Sprintf(" (%s)", f.Database)
+	}
+	return fmt.Sprintf("Firestore: %s%s", f.ProjectID, dbString)
 }
 
 // Type implements database.DataSourceNamer.

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/ctrl-alt-boop/dribble/database"
-	"github.com/ctrl-alt-boop/dribble/internal/client/nosql/firestore"
-	"github.com/ctrl-alt-boop/dribble/internal/client/nosql/mongodb"
+	"github.com/ctrl-alt-boop/dribble/internal/datasource/nosql/firestore"
+	"github.com/ctrl-alt-boop/dribble/internal/datasource/nosql/mongodb"
 )
 
 // var Defaults = map[string]*target.Target{
@@ -21,7 +21,7 @@ import (
 // 	},
 // }
 
-var _ database.NoSQL = &Executor{}
+var _ database.NoSQL = (*Executor)(nil)
 
 type Method string
 
@@ -91,6 +91,11 @@ func (e *Executor) Close(ctx context.Context) error {
 	panic("unimplemented")
 }
 
+// IsClosed implements database.NoSQL.
+func (e *Executor) IsClosed() bool {
+	panic("unimplemented")
+}
+
 // Open implements database.NoSQL.
 func (e *Executor) Open(ctx context.Context) error {
 	panic("unimplemented")
@@ -102,12 +107,7 @@ func (e *Executor) Ping(ctx context.Context) error {
 }
 
 // Request implements database.NoSQL.
-func (e *Executor) Request(ctx context.Context, requests ...database.Request) (any, error) {
-	panic("unimplemented")
-}
-
-// RequestWithHandler implements database.NoSQL.
-func (e *Executor) RequestWithHandler(ctx context.Context, handler func(response database.Response, err error), requests ...database.Request) error {
+func (e *Executor) Request(ctx context.Context, request database.Request) (any, error) {
 	panic("unimplemented")
 }
 

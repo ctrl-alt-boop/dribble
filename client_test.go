@@ -52,21 +52,13 @@ func TestClient(t *testing.T) {
 
 	responseChannel, _ := client.Request(ctx, postgresTarget.Name, r)
 
-	for res := range responseChannel {
-		response, ok := res.(*request.Response)
-		if !ok {
-			t.Fatal("response is not of type *request.Response")
-		}
+	for response := range responseChannel {
 		t.Logf("%+v: %+v", response.RequestID, response.Status)
 	}
 
 	responseChannel, _ = client.Target("test").Request(ctx, r)
 
-	for res := range responseChannel {
-		response, ok := res.(*request.Response)
-		if !ok {
-			t.Fatal("response is not of type *request.Response")
-		}
+	for response := range responseChannel {
 		t.Logf("%+v: %+v", response.RequestID, response.Status)
 	}
 
@@ -90,11 +82,7 @@ func TestClient(t *testing.T) {
 
 	responseChannel, _ = client.Target(mysqlTarget.Name).Request(ctx, r)
 
-	for res := range responseChannel {
-		response, ok := res.(*request.Response)
-		if !ok {
-			t.Fatal("response is not of type *request.Response")
-		}
+	for response := range responseChannel {
 		t.Logf("%+v: %+v", response.RequestID, response.Status)
 	}
 }
@@ -174,11 +162,7 @@ func TestPrefab(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for res := range responseChannel {
-		response, ok := res.(*request.Response)
-		if !ok {
-			t.Fatal("response is not of type *request.Response")
-		}
+	for response := range responseChannel {
 		if response.Status != request.Status(r.ResponseOnSuccess().Code()) {
 			t.Fatal("response status is not SuccessReadDatabaseList")
 		}
@@ -205,11 +189,7 @@ func TestNewClient(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for res := range respChan {
-		response, ok := res.(*request.Response)
-		if !ok {
-			t.Fatal("response is not of type *request.Response")
-		}
+	for response := range respChan {
 		if response.Status != request.Status(r.ResponseOnSuccess().Code()) {
 			t.Fatal("response status is not SuccessReadDatabaseList")
 		}
@@ -243,11 +223,7 @@ func TestGetCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for res := range respChan {
-		response, ok := res.(*request.Response)
-		if !ok {
-			t.Fatal("response is not of type *request.Response")
-		}
+	for response := range respChan {
 		if response.Status != request.Status(r.ResponseOnSuccess().Code()) {
 			t.Logf("%s: %v", response.Status, response.Error)
 			t.Fatal("response status is not SuccessReadCount: ", response.Status)

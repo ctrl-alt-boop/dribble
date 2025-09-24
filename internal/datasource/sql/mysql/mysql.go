@@ -13,7 +13,7 @@ func init() {
 	database.DBTypes.Register("SQL", "mysql")
 }
 
-var _ database.SQLDialect = &MySQL{}
+var _ database.SQLDialect = (*MySQL)(nil)
 
 type MySQL struct{}
 

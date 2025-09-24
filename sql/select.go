@@ -1,8 +1,6 @@
 package sql
 
 import (
-	"reflect"
-
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/request"
 )
@@ -180,10 +178,9 @@ func (s *SelectBuilder) ToRequest() database.Request {
 		OffsetClause:  s.offsetClause,
 	}
 	return &request.Intent{
-		Type:          database.Read,
-		OperationKind: reflect.TypeOf(operation).Kind(),
-		Operation:     operation,
-		Args:          s.params,
+		Type:      database.Read,
+		Operation: operation,
+		Args:      s.params,
 	}
 }
 

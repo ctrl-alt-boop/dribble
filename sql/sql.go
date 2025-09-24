@@ -2,7 +2,6 @@ package sql
 
 import (
 	"errors"
-	"reflect"
 	"strings"
 
 	"github.com/ctrl-alt-boop/dribble/database"
@@ -36,10 +35,9 @@ func FromString(query string, args ...any) (database.Request, error) {
 	}
 
 	return &request.Intent{
-		Type:          operationType,
-		OperationKind: reflect.TypeOf(query).Kind(),
-		Operation:     query,
-		Args:          args,
+		Type:      operationType,
+		Operation: query,
+		Args:      args,
 	}, nil
 }
 

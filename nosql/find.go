@@ -1,8 +1,6 @@
 package nosql
 
 import (
-	"reflect"
-
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/request"
 )
@@ -56,10 +54,9 @@ func (n *FindBuilder) ToIntent() database.Request { // TODO: Ofcourse this needs
 		OffsetClause: n.offsetClause,
 	}
 	return &request.Intent{
-		Type:          database.Read,
-		OperationKind: reflect.TypeOf(intent).Kind(),
-		Operation:     intent,
-		Args:          n.args,
+		Type:      database.Read,
+		Operation: intent,
+		Args:      n.args,
 	}
 }
 

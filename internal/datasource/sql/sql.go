@@ -9,14 +9,14 @@ import (
 	"text/template"
 
 	"github.com/ctrl-alt-boop/dribble/database"
-	"github.com/ctrl-alt-boop/dribble/internal/client/sql/mysql"
-	"github.com/ctrl-alt-boop/dribble/internal/client/sql/postgres"
-	"github.com/ctrl-alt-boop/dribble/internal/client/sql/sqlite3"
+	"github.com/ctrl-alt-boop/dribble/internal/datasource/sql/mysql"
+	"github.com/ctrl-alt-boop/dribble/internal/datasource/sql/postgres"
+	"github.com/ctrl-alt-boop/dribble/internal/datasource/sql/sqlite3"
 	"github.com/ctrl-alt-boop/dribble/request"
 	"github.com/ctrl-alt-boop/dribble/result"
 )
 
-var _ database.SQL = &Executor{}
+var _ database.SQL = (*Executor)(nil)
 
 type Executor struct {
 	db              *sql.DB
@@ -103,21 +103,32 @@ func (e *Executor) Close(_ context.Context) error {
 	return e.db.Close()
 }
 
+func (e *Executor) IsClosed() bool {
+	return e.db == nil
+}
+
 // execute runs a single request against the database.
 func (e *Executor) execute(ctx context.Context, req database.Request) (any, error) {
 	if err := e.Ping(ctx); err != nil {
 		return nil, err
 	}
 
-	queryString, queryArgs, err := e.renderRequest(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to render request: %w", err)
-	}
-	fmt.Printf("queryString: %+v\n", queryString)
-
 	intent, isIntent := req.(request.Intent)
 	if !isIntent {
-		return e.executeRead(ctx, queryString, queryArgs)
+		if req.IsPrefab() {
+			fmt.Printf("got prefab request: %T\n", req)
+			queryString, queryArgs, err := e.dialect.GetPrefab(req)
+			if err != nil {
+				return nil, fmt.Errorf("failed to render prefab request: %w", err)
+			}
+
+			return e.executeRead(ctx, queryString, queryArgs)
+		}
+
+	}
+	queryString, queryArgs, err := e.renderRequest(intent)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render intent request: %w", err)
 	}
 
 	switch intent.Type {
@@ -132,17 +143,7 @@ func (e *Executor) execute(ctx context.Context, req database.Request) (any, erro
 }
 
 // renderRequest converts a database.Request into a query string and arguments.
-func (e *Executor) renderRequest(req database.Request) (string, []any, error) {
-	if req.IsPrefab() {
-		fmt.Printf("got prefab request: %T\n", req)
-		return e.dialect.GetPrefab(req)
-	}
-
-	intent, ok := req.(*request.Intent)
-	if !ok {
-		return "", nil, fmt.Errorf("invalid request type for RenderRequest: %T", req)
-	}
-
+func (e *Executor) renderRequest(intent request.Intent) (string, []any, error) {
 	queryStringTemplate := e.dialect.GetTemplate(intent.Type)
 	if queryStringTemplate == "" {
 		return "", nil, fmt.Errorf("no template found for request type %v in dialect %s", intent.Type, e.dialect.Name())
@@ -161,6 +162,7 @@ func (e *Executor) renderRequest(req database.Request) (string, []any, error) {
 }
 
 func (e *Executor) executeRead(ctx context.Context, query string, args []any) (any, error) {
+	fmt.Printf("queryString: %+v\n", query)
 	rows, err := e.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("error executing query: %w", err)
@@ -179,15 +181,11 @@ func (e *Executor) Dialect() database.SQLDialect {
 	return e.dialect
 }
 
-func (e *Executor) Request(ctx context.Context, requests ...database.Request) (any, error) {
-	if len(requests) != 1 {
-		return nil, errors.New("SQL executor received multiple requests, but only supports one at a time")
-	}
-	return e.execute(ctx, requests[0])
-}
-
-func (e *Executor) RequestWithHandler(ctx context.Context, handler func(response database.Response, err error), requests ...database.Request) error {
-	panic("unimplemented")
+func (e *Executor) Request(ctx context.Context, request database.Request) (any, error) {
+	// if len(requests) != 1 {
+	// 	return nil, errors.New("SQL executor received multiple requests, but only supports one at a time")
+	// }
+	return e.execute(ctx, request)
 }
 
 // Type implements database.SQL.

@@ -13,7 +13,7 @@ func init() {
 	database.DBTypes.Register("SQL", "sqlite3")
 }
 
-var _ database.SQLDialect = &SQLite3{}
+var _ database.SQLDialect = (*SQLite3)(nil)
 
 type SQLite3 struct{}
 

@@ -16,7 +16,7 @@ func init() {
 	database.DBTypes.Register("NoSQL", "mongo")
 }
 
-var _ database.NoSQLClient = &MongoDB{}
+var _ database.NoSQLClient = (*MongoDB)(nil)
 
 type MongoDB struct {
 	client *mongo.Client

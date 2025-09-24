@@ -8,7 +8,7 @@ import (
 	"github.com/ctrl-alt-boop/dribbler/widget"
 )
 
-var _ PopupModel = Details{}
+var _ PopupModel = (*Details)(nil)
 
 type Details struct {
 	viewport.Model

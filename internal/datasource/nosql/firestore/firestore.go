@@ -12,7 +12,7 @@ func init() {
 	database.DBTypes.Register("NoSQL", "firestore")
 }
 
-var _ database.NoSQLClient = &Firestore{}
+var _ database.NoSQLClient = (*Firestore)(nil)
 
 type Firestore struct {
 	client *firestore.Client

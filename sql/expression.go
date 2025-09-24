@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-var _ Expr = &compExpr{}
-var _ Expr = &logicExpr{}
-var _ Expr = &notExpr{}
+var _ Expr = (*compExpr)(nil)
+var _ Expr = (*logicExpr)(nil)
+var _ Expr = (*notExpr)(nil)
 
 var Parameterized = false
 

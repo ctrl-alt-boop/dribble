@@ -6,6 +6,8 @@ import (
 	"github.com/ctrl-alt-boop/dribble/database"
 )
 
+var _ database.DataSourceNamer = (*PostgreSQLDSN)(nil)
+
 type SSLMode string
 
 const (
@@ -22,6 +24,14 @@ type PostgreSQLDSN struct {
 	Password string  `json:"password"`
 	DBName   string  `json:"dbname"`
 	SSLMode  SSLMode `json:"sslmode"`
+}
+
+// Info implements database.DataSourceNamer.
+func (p *PostgreSQLDSN) Info() string {
+	if p.DBName == "" {
+		return fmt.Sprintf("PostgreSQL: %s:%d", p.Addr, p.Port)
+	}
+	return fmt.Sprintf("PostgreSQL: %s:%d/%s", p.Addr, p.Port, p.DBName)
 }
 
 // Type implements database.DataSourceNamer.

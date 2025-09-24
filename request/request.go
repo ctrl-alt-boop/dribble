@@ -1,36 +1,35 @@
 package request
 
 import (
-	"fmt"
-	"reflect"
-
 	"github.com/ctrl-alt-boop/dribble/database"
 )
 
-var _ database.Request = Intent{}
-var _ database.Response = Response{}
+var _ database.Request = (*Intent)(nil)
+
+var _ database.Request = (*BatchRequest)(nil)
+var _ database.Request = (*ChainRequest)(nil)
 
 type (
 	Intent struct { // TODO: finalize this
 		Type database.RequestType
-
-		// Was this supposed to be Select, Insert, Find etc.?
-		OperationKind reflect.Kind
 
 		Operation any
 
 		Args []any
 	}
 
-	IntentBatch []*Intent
+	BatchRequest []database.Request
 
-	Response struct {
-		Status    Status
-		RequestID int64
-		Body      any
-		Error     error
-	}
+	ChainRequest []database.Request
 )
+
+func Batch(requests ...database.Request) BatchRequest {
+	return requests
+}
+
+func Chain(requests ...database.Request) ChainRequest {
+	return requests
+}
 
 // IsPrefab implements database.Request.
 func (i Intent) IsPrefab() bool {
@@ -85,22 +84,40 @@ func (i Intent) ResponseOnSuccess() database.Response {
 	}
 }
 
-func (r Response) Code() int {
-	return int(r.Status)
+// IsPrefab implements database.Request.
+func (c ChainRequest) IsPrefab() bool {
+	return false
 }
 
-func (r Response) Message() string {
-	return fmt.Sprintf("%d: %s", r.Code(), r.Status.String())
+// ResponseOnError implements database.Request.
+func (c ChainRequest) ResponseOnError() database.Response {
+	return Response{
+		Status: ErrorChainExecute,
+	}
 }
 
-type RequestBatch []database.Request
-
-func Batch(requests ...database.Request) RequestBatch {
-	return requests
+// ResponseOnSuccess implements database.Request.
+func (c ChainRequest) ResponseOnSuccess() database.Response {
+	return Response{
+		Status: SuccessChainExecute,
+	}
 }
 
-type RequestChain []database.Request
+// IsPrefab implements database.Request.
+func (b BatchRequest) IsPrefab() bool {
+	return false
+}
 
-func Chain(requests ...database.Request) RequestChain {
-	return requests
+// ResponseOnError implements database.Request.
+func (b BatchRequest) ResponseOnError() database.Response {
+	return Response{
+		Status: ErrorBatchExecute,
+	}
+}
+
+// ResponseOnSuccess implements database.Request.
+func (b BatchRequest) ResponseOnSuccess() database.Response {
+	return Response{
+		Status: SuccessBatchExecute,
+	}
 }

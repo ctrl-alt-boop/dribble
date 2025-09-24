@@ -66,6 +66,7 @@ const (
 
 	SuccessExecute
 	SuccessBatchExecute
+	SuccessChainExecute
 )
 
 const (
@@ -98,4 +99,5 @@ const (
 
 	ErrorExecute
 	ErrorBatchExecute
+	ErrorChainExecute
 )

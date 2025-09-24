@@ -6,12 +6,22 @@ import (
 	"github.com/ctrl-alt-boop/dribble/database"
 )
 
+var _ database.DataSourceNamer = (*MySQLDSN)(nil)
+
 type MySQLDSN struct {
 	Addr     string `json:"addr"`
 	Port     int    `json:"port"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	DBName   string `json:"dbname"`
+}
+
+// Info implements database.DataSourceNamer.
+func (m *MySQLDSN) Info() string {
+	if m.DBName == "" {
+		return fmt.Sprintf("MySQL: %s:%d", m.Addr, m.Port)
+	}
+	return fmt.Sprintf("MySQL: %s:%d/%s", m.Addr, m.Port, m.DBName)
 }
 
 // Type implements database.DataSourceNamer.

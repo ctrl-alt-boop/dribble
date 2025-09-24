@@ -1,4 +1,4 @@
-package client
+package datasource
 
 type (
 	Server struct { // This needs going over.

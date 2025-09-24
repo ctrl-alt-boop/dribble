@@ -7,12 +7,22 @@ import (
 	"github.com/ctrl-alt-boop/dribble/database"
 )
 
+var _ database.DataSourceNamer = (*RedisDSN)(nil)
+
 type RedisDSN struct {
 	Addr     string `json:"addr"`
 	Port     int    `json:"port"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	DB       int    `json:"db"` // Redis DB number
+}
+
+// Info implements database.DataSourceNamer.
+func (r *RedisDSN) Info() string {
+	if r.DB == 0 {
+		return fmt.Sprintf("Redis: %s:%d", r.Addr, r.Port)
+	}
+	return fmt.Sprintf("Redis: %s:%d/%d", r.Addr, r.Port, r.DB)
 }
 
 // Type implements database.DataSourceNamer.

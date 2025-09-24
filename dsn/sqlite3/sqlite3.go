@@ -7,7 +7,7 @@ import (
 	"github.com/ctrl-alt-boop/dribble/database"
 )
 
-var _ database.DataSourceNamer = &SQLite3DSN{}
+var _ database.DataSourceNamer = (*SQLite3DSN)(nil)
 
 type Mode string
 
@@ -32,6 +32,11 @@ type SQLite3DSN struct {
 	AuthCrypt string `json:"_auth_crypt"`
 	Mode      Mode   `json:"mode"`
 	Cache     Cache  `json:"cache"`
+}
+
+// Info implements database.DataSourceNamer.
+func (s *SQLite3DSN) Info() string {
+	return "SQLite3: " + s.Path
 }
 
 // Type implements database.DataSourceNamer.

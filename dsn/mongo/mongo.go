@@ -6,12 +6,22 @@ import (
 	"github.com/ctrl-alt-boop/dribble/database"
 )
 
+var _ database.DataSourceNamer = (*MongoDBDSN)(nil)
+
 type MongoDBDSN struct {
 	Addr     string `json:"addr"`
 	Port     int    `json:"port"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	DBName   string `json:"dbname"`
+}
+
+// Info implements database.DataSourceNamer.
+func (m *MongoDBDSN) Info() string {
+	if m.DBName == "" {
+		return fmt.Sprintf("MongoDB: %s:%d", m.Addr, m.Port)
+	}
+	return fmt.Sprintf("MongoDB: %s:%d/%s", m.Addr, m.Port, m.DBName)
 }
 
 // Type implements database.DataSourceNamer.

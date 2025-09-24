@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/request"
 	"github.com/ctrl-alt-boop/dribble/target"
 )
 
@@ -45,10 +46,6 @@ func (c *Client) String() string {
 	return fmt.Sprintf("dribble version: %s \ntargets:\n%s\n", Version, strings.Join(targetStrings, "\n"))
 }
 
-// func (c *Client) OnEvent(handler EventHandler) {
-
-// }
-
 func (c *Client) Target(targetName string) *target.Target {
 	return c.targets[targetName]
 }
@@ -68,16 +65,11 @@ func (c *Client) OpenTarget(ctx context.Context, t *target.Target) error {
 
 func (c *Client) OpenTargets(ctx context.Context, targets ...*target.Target) error {
 	var errs error
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
 	for _, t := range targets {
-		err := t.Open(ctx)
+		err := c.OpenTarget(ctx, t)
 		if err != nil {
 			errs = errors.Join(errs, err)
-			continue
 		}
-		c.targets[t.Name] = t
 	}
 	return errs
 }
@@ -93,29 +85,27 @@ func (c *Client) PingTarget(ctx context.Context, targetName string) error {
 	return t.Ping(ctx)
 }
 
-// func (c *Client) UpdateTarget(ctx context.Context, targetName string, opts ...target.Option) error {
-// 	if ctx.Err() != nil {
-// 		return ctx.Err()
-// 	}
-// 	if targetName == "" {
-// 		return ErrNoTarget
-// 	}
-// 	c.CloseTarget(ctx, targetName)
+func (c *Client) UpdateTarget(ctx context.Context, targetName string, opts ...target.TargetOption) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if targetName == "" {
+		return ErrNoTarget
+	}
 
-// 	target := c.executors[targetName].Target().Copy(opts...)
-// 	c.executors[targetName].SetTarget(target)
+	c.targets[targetName].Update(ctx, opts...)
 
-// 	if err := c.executors[targetName].Open(ctx); err != nil {
+	if err := c.targets[targetName].Open(ctx); err != nil {
 
-// 		return ErrUpdateTarget(targetName, err)
-// 	}
-// 	if err := c.executors[targetName].Ping(ctx); err != nil {
+		return ErrUpdateTarget(targetName, err)
+	}
+	if err := c.targets[targetName].Ping(ctx); err != nil {
 
-// 		return ErrUpdateTarget(targetName, err)
-// 	}
+		return ErrUpdateTarget(targetName, err)
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
 func (c *Client) CloseTarget(ctx context.Context, targetName string) error {
 	if targetName == "" {
@@ -133,19 +123,10 @@ func (c *Client) CloseTarget(ctx context.Context, targetName string) error {
 	return nil
 }
 
-func (c *Client) CloseTargets(ctx context.Context, targetName ...string) error {
+func (c *Client) CloseTargets(ctx context.Context, targets ...string) error {
 	var errs error
-	for _, target := range targetName {
-		t, ok := c.targets[target]
-		if !ok {
-			errs = errors.Join(errs, ErrTargetNotFound(target))
-			continue
-		}
-		err := t.Close(ctx)
-		if err != nil {
-			errs = errors.Join(errs, fmt.Errorf("error closing executor for target: %s", target))
-		}
-		delete(c.targets, target)
+	for _, targetName := range targets {
+		err := c.CloseTarget(ctx, targetName)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
@@ -154,32 +135,33 @@ func (c *Client) CloseTargets(ctx context.Context, targetName ...string) error {
 	return errs
 }
 
-func (c *Client) Request(ctx context.Context, targetName string, requests ...database.Request) (chan database.Response, error) {
+type ResponseHandler func(*request.Response)
+
+func (c *Client) Request(ctx context.Context, targetName string, request database.Request) (chan *request.Response, error) {
 	requestTarget, ok := c.targets[targetName]
 	if !ok {
 		return nil, ErrTargetNotFound(targetName)
 	}
-	numRequests := len(requests)
-	if numRequests == 0 {
-		return nil, ErrNoRequests
-	}
 
-	return requestTarget.Request(ctx, requests...)
+	return requestTarget.Request(ctx, request)
 }
 
-// // Blocks until result is ready
-// func (c *Client) GetResult(ctx context.Context, requestID int64) (any, error) {
-// 	if ctx.Err() != nil {
-// 		return nil, ctx.Err()
-// 	}
-// 	resultChan, ok := c.pending[requestID]
-// 	if !ok {
-// 		return nil, fmt.Errorf("no result found for request id: %d", requestID)
-// 	}
-// 	select {
-// 	case result := <-resultChan:
-// 		return result.Result, result.Err
-// 	case <-ctx.Done():
-// 		return nil, ctx.Err()
-// 	}
-// }
+// Blocking
+func (c *Client) PerformWithHandler(ctx context.Context, handler ResponseHandler, targetName string, req database.Request) error {
+	requestTarget, ok := c.targets[targetName]
+	if !ok {
+		return ErrTargetNotFound(targetName)
+	}
+
+	return requestTarget.PerformWithHandler(ctx, handler, req)
+}
+
+// Non-Blocking
+func (c *Client) RequestWithHandler(ctx context.Context, handler ResponseHandler, targetName string, req database.Request) error {
+	requestTarget, ok := c.targets[targetName]
+	if !ok {
+		return ErrTargetNotFound(targetName)
+	}
+
+	return requestTarget.RequestWithHandler(ctx, handler, req)
+}

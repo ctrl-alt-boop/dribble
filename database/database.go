@@ -37,8 +37,6 @@ var RequestTypes = []RequestType{
 var DBTypes = createBaseTree()
 
 type (
-	ResponseHandler func(Response)
-
 	Response interface {
 		Code() int
 		Message() string
@@ -56,9 +54,9 @@ type (
 		Open(context.Context) error
 		Ping(context.Context) error
 		Close(context.Context) error
+		IsClosed() bool
 
-		Request(context.Context, ...Request) (any, error)
-		RequestWithHandler(context.Context, func(Response, error), ...Request) error
+		Request(context.Context, Request) (any, error)
 	}
 
 	SQL interface {
