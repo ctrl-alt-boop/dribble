@@ -174,7 +174,7 @@ func (e *Executor) executeRead(ctx context.Context, query string, args []any) (a
 		return result.RowsToList(rows), nil
 	}
 	columns, dataRows := result.ParseRows(rows)
-	return result.CreateDataTable(columns, dataRows), nil
+	return result.NewTable(columns, dataRows), nil
 }
 
 func (e *Executor) Dialect() database.SQLDialect {

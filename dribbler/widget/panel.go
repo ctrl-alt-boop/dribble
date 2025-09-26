@@ -63,6 +63,15 @@ func (p *Panel) GetMode() PanelMode {
 	return p.mode
 }
 
+func (p *Panel) UpdateContent(names map[string][]string) {
+	tableNames := make([]string, 0)
+	for _, tables := range names {
+		tableNames = append(tableNames, tables...)
+	}
+
+	p.list.SetStringItems(tableNames)
+}
+
 func (p *Panel) OnSelect() tea.Cmd {
 	var cmd tea.Cmd
 	switch p.mode {

@@ -21,14 +21,13 @@ type (
 	}
 
 	Table struct {
-		columns []Column
-		rows    []Row
+		columns []*Column
+		rows    []*Row
 
 		Resolver database.SQLDialect
 	}
 )
 
-// String implements Response.
 func (r Row) String() string {
 	return strings.Join(sliceTransform(r.Values, func(value any) string {
 		return fmt.Sprint(value)
@@ -44,7 +43,6 @@ func (r Row) get() []any {
 	return r.Values
 }
 
-// String implements Response.
 func (dt Table) String() string {
 	tableString := ""
 	for _, row := range dt.GetRowStringsAll() {
@@ -71,11 +69,11 @@ func (dt *Table) NumRows() int {
 	return len(dt.rows)
 }
 
-func (dt *Table) Columns() []Column {
+func (dt *Table) Columns() []*Column {
 	return dt.columns
 }
 
-func (dt *Table) Rows() []Row {
+func (dt *Table) Rows() []*Row {
 	return dt.rows
 }
 
@@ -89,7 +87,7 @@ func CreateDataList(rows []Row) []any {
 	})
 }
 
-func CreateDataTable(columns []Column, rows []Row) *Table {
+func NewTable(columns []*Column, rows []*Row) *Table {
 	return &Table{
 		columns: columns,
 		rows:    rows,
@@ -168,25 +166,25 @@ func (dt *Table) ColumnSlices() (names []string, types []string, dbTypes []strin
 }
 
 func (dt *Table) ColumnNames() []string {
-	return sliceTransform(dt.columns, func(col Column) string {
+	return sliceTransform(dt.columns, func(col *Column) string {
 		return col.Name
 	})
 }
 
 func (dt *Table) ColumnTypeStrings() []string {
-	return sliceTransform(dt.columns, func(col Column) string {
+	return sliceTransform(dt.columns, func(col *Column) string {
 		return col.ScanType.Kind().String()
 	})
 }
 
 func (dt *Table) ColumnDatabaseTypeStrings() []string {
-	return sliceTransform(dt.columns, func(col Column) string {
+	return sliceTransform(dt.columns, func(col *Column) string {
 		return col.DBType
 	})
 }
 
 func (dt *Table) ClearRows() error {
-	dt.rows = make([]Row, 0)
+	dt.rows = make([]*Row, 0)
 	return nil
 }
 

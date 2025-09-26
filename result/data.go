@@ -8,23 +8,23 @@ import (
 	"github.com/ctrl-alt-boop/dribble/database"
 )
 
-func ParseRows(dbRows *sql.Rows) ([]Column, []Row) {
+func ParseRows(dbRows *sql.Rows) ([]*Column, []*Row) {
 	dbColumns, err := dbRows.ColumnTypes()
 	if err != nil {
 		return nil, nil
 	}
-	columns := make([]Column, len(dbColumns))
+	columns := make([]*Column, len(dbColumns))
 	for i := range dbColumns {
-		columns[i] = Column{
+		columns[i] = &Column{
 			Name:     dbColumns[i].Name(),
 			ScanType: dbColumns[i].ScanType(),
 			DBType:   dbColumns[i].DatabaseTypeName(),
 		}
 	}
 
-	rows := make([]Row, 0)
+	rows := make([]*Row, 0)
 	for dbRows.Next() {
-		row := Row{
+		row := &Row{
 			Values: make([]any, len(dbColumns)),
 		}
 		scanArr := make([]any, len(dbColumns))

@@ -90,6 +90,13 @@ func (m AppModel) updatePopupClosed(msg tea.Msg) (AppModel, tea.Cmd) {
 	case widget.SelectTableColumnsMsg:
 		cmd = m.SelectTableColumns(msg)
 
+	case TableNamesMapMsg:
+		if msg.Err != nil {
+			logger.Error(msg.Err)
+			return m, nil
+		}
+		m.panel.UpdateContent(msg.TableNames)
+
 	// Messages that open popups
 	case widget.OpenCellDataMsg:
 		m.popupHandler.Popup(popup.KindTableCell, msg.Value)
