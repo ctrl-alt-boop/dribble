@@ -3,6 +3,7 @@ package dribble_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -30,12 +31,15 @@ func TestClient(t *testing.T) {
 
 	client := dribble.NewClient()
 
+	valmaticsUsr := os.Getenv("DB_VALMATICS_USER")
+	valmaticsPwd := os.Getenv("DB_VALMATICS_PWD")
+
 	postgresTarget, err := target.New("postgres", postgres.NewDSN(
 		postgres.WithAddr("localhost"),
 		postgres.WithPort(5432),
 		postgres.WithDBName("valmatics"),
-		postgres.WithUsername("valmatics"),
-		postgres.WithPassword("valmatics"),
+		postgres.WithUsername(valmaticsUsr),
+		postgres.WithPassword(valmaticsPwd),
 		postgres.WithSSLMode(postgres.SSLModeDisable),
 	))
 	if err != nil {
@@ -46,7 +50,8 @@ func TestClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("%+v", client.Target(postgresTarget.Name))
+	pgTarget, _ := client.Target(postgresTarget.Name)
+	t.Logf("%+v", pgTarget)
 
 	r := sql.SelectAll().From("pg_database").ToRequest()
 
@@ -56,7 +61,7 @@ func TestClient(t *testing.T) {
 		t.Logf("%+v: %+v", response.RequestID, response.Status)
 	}
 
-	responseChannel, _ = client.Target("test").Request(ctx, r)
+	responseChannel, _ = pgTarget.Request(ctx, r)
 
 	for response := range responseChannel {
 		t.Logf("%+v: %+v", response.RequestID, response.Status)
@@ -78,9 +83,10 @@ func TestClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("%+v", client.Target(mysqlTarget.Name))
+	myTarget, _ := client.Target(mysqlTarget.Name)
+	t.Logf("%+v", myTarget)
 
-	responseChannel, _ = client.Target(mysqlTarget.Name).Request(ctx, r)
+	responseChannel, _ = myTarget.Request(ctx, r)
 
 	for response := range responseChannel {
 		t.Logf("%+v: %+v", response.RequestID, response.Status)
@@ -153,11 +159,12 @@ func TestPrefab(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("%+v", client.Target(sqlite3Target.Name))
+	liteTarget, _ := client.Target(sqlite3Target.Name)
+	t.Logf("%+v", liteTarget)
 
 	r := request.NewReadTableNames()
 
-	responseChannel, err := client.Target(sqlite3Target.Name).Request(ctx, r)
+	responseChannel, err := liteTarget.Request(ctx, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,8 +187,8 @@ func TestNewClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	t.Logf("%+v", client.Target(sqlite3Target.Name))
+	liteTarget, _ := client.Target(sqlite3Target.Name)
+	t.Logf("%+v", liteTarget)
 
 	r := request.NewReadTableNames()
 	respChan, err := sqlite3Target.Request(context.Background(), r)
@@ -214,7 +221,8 @@ func TestGetCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("target: ", client.Target(postgresTarget.Name))
+	pgTarget, _ := client.Target(postgresTarget.Name)
+	fmt.Println("target: ", pgTarget)
 
 	r := request.NewReadCount("pg_database")
 

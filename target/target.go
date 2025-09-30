@@ -26,13 +26,13 @@ const (
 var ErrNoRequests = errors.New("no requests provided")
 
 type Target struct {
-	Name   string
-	Type   Type
-	DSN    database.DataSourceNamer
-	DBType database.Type
-
-	dataSource    database.Database
 	nextRequestID atomic.Int64
+	Name          string
+	Type          Type
+	DSN           database.DataSourceNamer
+	DBType        database.Type
+
+	dataSource database.Database
 }
 
 func New(name string, dsn database.DataSourceNamer) (*Target, error) {

@@ -46,8 +46,13 @@ func (c *Client) String() string {
 	return fmt.Sprintf("dribble version: %s \ntargets:\n%s\n", Version, strings.Join(targetStrings, "\n"))
 }
 
-func (c *Client) Target(targetName string) *target.Target {
-	return c.targets[targetName]
+// func (c *Client) Target(targetName string) *target.Target {
+// 	return c.targets[targetName]
+// }
+
+func (c *Client) Target(targetName string) (*target.Target, bool) {
+	target, ok := c.targets[targetName]
+	return target, ok
 }
 
 func (c *Client) OpenTarget(ctx context.Context, t *target.Target) error {
@@ -139,10 +144,9 @@ type ResponseHandler func(*request.Response)
 
 func (c *Client) Request(ctx context.Context, targetName string, request database.Request) (chan *request.Response, error) {
 	requestTarget, ok := c.targets[targetName]
-	if !ok {
+	if !ok || requestTarget == nil {
 		return nil, ErrTargetNotFound(targetName)
 	}
-
 	return requestTarget.Request(ctx, request)
 }
 
