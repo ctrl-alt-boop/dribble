@@ -42,9 +42,9 @@ func (m MySQLDSN) DSN() string {
 	if m.Port != 0 {
 		dsn += fmt.Sprintf(":%d", m.Port)
 	}
-	dsn += ")"
+	dsn += ")" + "/"
 	if m.DBName != "" {
-		dsn += "/" + m.DBName
+		dsn += m.DBName
 	}
 	return dsn
 }

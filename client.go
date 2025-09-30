@@ -97,7 +97,9 @@ func (c *Client) UpdateTarget(ctx context.Context, targetName string, opts ...ta
 	if targetName == "" {
 		return ErrNoTarget
 	}
-
+	if _, ok := c.targets[targetName]; !ok {
+		return ErrTargetNotFound(targetName)
+	}
 	c.targets[targetName].Update(ctx, opts...)
 
 	if err := c.targets[targetName].Open(ctx); err != nil {

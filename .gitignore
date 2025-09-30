@@ -27,3 +27,8 @@ go.work.sum
 # env file
 .env
 main
+.idea/vcs.xml
+.idea/modules.xml
+.idea/inspectionProfiles/Project_Default.xml
+.idea/dribble.iml
+.idea/workspace.xml
