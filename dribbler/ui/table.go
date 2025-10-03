@@ -50,7 +50,7 @@ func (t *ListTable) SetTable(table *result.Table) {
 	t.table = lists
 }
 
-func (t *ListTable) View() string {
+func (t ListTable) View() string {
 	if t.table == nil {
 		return ""
 	}
@@ -62,11 +62,11 @@ func (t *ListTable) View() string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, views...)
 }
 
-func (t *ListTable) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (t ListTable) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	return t, nil
 }
 
-func (t *ListTable) Init() tea.Cmd {
+func (t ListTable) Init() tea.Cmd {
 	return nil
 }

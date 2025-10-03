@@ -10,16 +10,10 @@ import (
 )
 
 func main() {
-	// defer logging.CloseGlobalLogger()
-	// var ip string = "localhost"
-	// if len(os.Args) > 1 {
-	// 	ip = os.Args[1]
-	// }
 
-	// logging.GlobalLogger().Infof("DribbleAPI Create")
 	dribble := dribble.NewClient()
 
-	dribbler := dribbler.InitialModel(dribble)
+	dribbler := dribbler.CreateTestModel(dribble)
 	p := tea.NewProgram(dribbler, tea.WithAltScreen())
 
 	if _, err := p.Run(); err != nil {

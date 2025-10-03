@@ -31,7 +31,6 @@ const (
 	NodeTypeCustom
 )
 
-var _ Content[[]string] = (*Tree)(nil)
 var _ Selection = (*Tree)(nil)
 var _ tea.Model = (*Tree)(nil)
 
@@ -146,18 +145,6 @@ func (t *Tree) GetAt(index int) *Node {
 
 func (t *Tree) GetAtPath(path []int) *Node {
 	return t.Node.GetAtPath(path)
-}
-
-func (t *Tree) Data() any {
-	return t.Node.Data
-}
-
-func (t *Tree) UpdateSize(width int, height int) {
-	t.Width, t.Height = width, height
-}
-
-func (t *Tree) Get() []string {
-	return strings.Split(t.Node.View(), "\n")
 }
 
 func (t *Tree) View() string {

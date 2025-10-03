@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/ctrl-alt-boop/dribbler/ui"
 )
 
-var _ Content[string] = (*Text)(nil)
 var _ tea.Model = (*Text)(nil)
 
 type Text struct {
@@ -14,15 +14,11 @@ type Text struct {
 	Width, Height int
 }
 
-func (t *Text) Init() tea.Cmd {
+func (t Text) Init() tea.Cmd {
 	return nil
 }
 
-func (t *Text) Data() any {
-	return t.Item
-}
-
-func (t *Text) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (t Text) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return t, nil
 }
 
@@ -31,13 +27,9 @@ func (t *Text) UpdateSize(width int, height int) {
 }
 
 func (t *Text) String() string {
-	return t.Get()
-}
-
-func (t *Text) Get() string {
 	return fmt.Sprint(t.Item)
 }
 
-func (t *Text) View() string {
-	return t.Get()
+func (t Text) View() string {
+	return ui.Inline(t.Width, t.Height, t.String())
 }

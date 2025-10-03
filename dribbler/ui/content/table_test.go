@@ -1,7 +1,6 @@
 package content_test
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/ctrl-alt-boop/dribble/result"
@@ -32,10 +31,6 @@ func TestTable_NewTable(t *testing.T) {
 
 	if table.Name != "Test Table" {
 		t.Errorf("Expected table name 'Test Table', got '%s'", table.Name)
-	}
-
-	if table.Data() != resTable {
-		t.Error("Table data not set correctly")
 	}
 }
 
@@ -124,9 +119,5 @@ func TestTable_Update(t *testing.T) {
 
 	if table.Name != "Updated" {
 		t.Errorf("Expected table name to be 'Updated', got '%s'", table.Name)
-	}
-
-	if !reflect.DeepEqual(table.Data(), newResTable) {
-		t.Error("Table data was not updated correctly")
 	}
 }

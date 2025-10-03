@@ -7,13 +7,14 @@ require (
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/huh v0.7.0
 	github.com/charmbracelet/lipgloss v1.1.0
-	github.com/charmbracelet/x/ansi v0.10.1
-	github.com/ctrl-alt-boop/dribble v0.0.0-20250924131614-b7652548f484
+	github.com/charmbracelet/x/ansi v0.10.2
+	github.com/ctrl-alt-boop/dribble v0.0.0-20250930080457-e65d3d91796b
 	github.com/muesli/reflow v0.3.0
 	github.com/spf13/viper v1.21.0
 )
 
 require (
+	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -32,7 +33,7 @@ require (
 	github.com/catppuccin/go v0.3.0 // indirect
 	github.com/charmbracelet/colorprofile v0.3.2 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13 // indirect
-	github.com/charmbracelet/x/exp/strings v0.0.0-20250922100529-c9afca5d6f21 // indirect
+	github.com/charmbracelet/x/exp/strings v0.0.0-20250930200525-31788bbe6486 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
@@ -52,7 +53,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
-	github.com/mattn/go-runewidth v0.0.17 // indirect
+	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/mattn/go-sqlite3 v1.14.32 // indirect
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
@@ -88,10 +89,10 @@ require (
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	golang.org/x/time v0.13.0 // indirect
-	google.golang.org/api v0.250.0 // indirect
-	google.golang.org/genproto v0.0.0-20250922171735-9219d122eba9 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250922171735-9219d122eba9 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250922171735-9219d122eba9 // indirect
+	google.golang.org/api v0.251.0 // indirect
+	google.golang.org/genproto v0.0.0-20250929231259-57b25ae835d4 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250929231259-57b25ae835d4 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250929231259-57b25ae835d4 // indirect
 	google.golang.org/grpc v1.75.1 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 )

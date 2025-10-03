@@ -51,19 +51,6 @@ func InitialModel(dribbleClient *dribble.Client) AppModel {
 	}
 }
 
-func (m AppModel) SetProgramSend(send func(msg tea.Msg)) {
-	m.programSend = send
-
-	// m.dribbleClient.OnEvent(func(eventType dribble.Response, args any, err error) {
-	// 	event := io.DribbleEventMsg{
-	// 		Type: eventType,
-	// 		Args: args,
-	// 		Err:  err,
-	// 	}
-	// 	m.programSend(event)
-	// })
-}
-
 func (m AppModel) Init() tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd

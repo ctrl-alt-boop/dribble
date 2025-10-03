@@ -1,6 +1,11 @@
 package content
 
-import "fmt"
+import (
+	"github.com/charmbracelet/lipgloss"
+	"github.com/ctrl-alt-boop/dribbler/logging"
+)
+
+var logger = logging.GlobalLogger()
 
 type (
 	Selection interface {
@@ -18,14 +23,9 @@ type (
 
 		GetSelected() any
 	}
-
-	Content[T ~[]fmt.Stringer | ~string | ~[]string | ~[][]string | StringTable] interface {
-		UpdateSize(width, height int)
-
-		Data() any
-		Get() T
-	}
 )
+
+var DefaultStyle = lipgloss.NewStyle().Margin(1, 2)
 
 // Totally unnecessary
 func ListToString[L ~[]T, T any, F func(T) string](list L, fn F) []string {

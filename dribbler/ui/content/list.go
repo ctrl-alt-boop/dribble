@@ -5,16 +5,16 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
-var _ Content[[]string] = (*List)(nil)
 var _ Selection = (*List)(nil)
 var _ tea.Model = (*List)(nil)
 
 type Item struct {
 	ID    int
 	Index int
-
+	Style lipgloss.Style
 	Value any
 }
 
@@ -25,8 +25,13 @@ func (l *Item) String() string {
 type List struct {
 	Items []Item
 
-	Width, Height int
-	cursorY       int
+	cursorY int
+}
+
+func NewList(items []Item) *List {
+	return &List{
+		Items: items,
+	}
 }
 
 func (l *List) GetSelected() any {
@@ -75,20 +80,12 @@ func (l *List) SetCursor(_ int, y int) {
 	l.cursorY = y
 }
 
-func (l *List) Init() tea.Cmd {
+func (l List) Init() tea.Cmd {
 	return nil
 }
 
-func (l *List) Data() any {
-	return l.Items
-}
-
-func (l *List) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (l List) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return l, nil
-}
-
-func (l *List) UpdateSize(width int, height int) {
-	l.Width, l.Height = width, height
 }
 
 func (l *List) String() string {
@@ -98,14 +95,8 @@ func (l *List) String() string {
 	return strings.Join(itemStrings, "\n")
 }
 
-func (l *List) Get() []string {
-	s := make([]string, len(l.Items))
-	for i, item := range l.Items {
-		s[i] = item.String()
-	}
-	return s
-}
+func (l List) View() string {
+	// style := DefaultStyle
 
-func (l *List) View() string {
 	return l.String()
 }

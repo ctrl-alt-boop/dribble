@@ -71,3 +71,36 @@ var (
 			AlignHorizontal(lipgloss.Left).
 			AlignVertical(lipgloss.Top)
 )
+
+const (
+	DefaultHorizontalGutter = "\u2550"
+	DefaultVerticalGutter   = "\u2551"
+)
+
+var (
+	DefaultStyle  = lipgloss.NewStyle()
+	DefaultBorder = lipgloss.Border{
+		Top:         "─",
+		Bottom:      "─",
+		Left:        "│",
+		Right:       "│",
+		TopLeft:     "┌",
+		TopRight:    "┐",
+		BottomLeft:  "└",
+		BottomRight: "┘",
+	}
+	DefaultBorderStyle = lipgloss.NewStyle().Border(DefaultBorder)
+	DefaultGutter      = []rune{'\u2550', '\u2551'}
+
+	DefaultBoxStyle = lipgloss.NewStyle().
+			Border(DefaultBorder)
+)
+
+func DefaultBox(width, height int) lipgloss.Style {
+	box := DefaultBoxStyle.Width(width).Height(height)
+	return box.Width(width - box.GetHorizontalFrameSize()).Height(height - box.GetVerticalFrameSize())
+}
+
+func Inline(width, height int, render string) string {
+	return DefaultStyle.Inline(true).MaxWidth(width).MaxHeight(height).Render(render)
+}
