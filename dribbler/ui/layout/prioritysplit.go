@@ -161,7 +161,7 @@ func (p *PrioritySplitLayout) CreatePrimarySeparator(direction Direction, size .
 }
 
 func (p *PrioritySplitLayout) AddLayout(definition LayoutDefinition) {
-	p.renderDefinition.Layouts = append(p.renderDefinition.Layouts, definition)
+	p.renderDefinition.Definitions = append(p.renderDefinition.Definitions, definition)
 }
 
 func (p *PrioritySplitLayout) GetDefinition() RenderDefinition {
@@ -169,13 +169,13 @@ func (p *PrioritySplitLayout) GetDefinition() RenderDefinition {
 }
 
 func (p *PrioritySplitLayout) GetLayout(index int) LayoutDefinition {
-	return p.renderDefinition.Layouts[index]
+	return p.renderDefinition.Definitions[index]
 }
 
 // If position is not set, returns empty LayoutDefinition
 func (p *PrioritySplitLayout) GetLayoutForPosition(position Position) LayoutDefinition {
 	if index, ok := p.renderDefinition.indexForPosition[position]; ok {
-		return p.renderDefinition.Layouts[index]
+		return p.renderDefinition.Definitions[index]
 	}
 	return LayoutDefinition{}
 }
@@ -185,11 +185,11 @@ func (p *PrioritySplitLayout) SetDefinition(definition RenderDefinition) {
 }
 
 func (p *PrioritySplitLayout) SetLayout(index int, definition LayoutDefinition) {
-	p.renderDefinition.Layouts[index] = definition
+	p.renderDefinition.Definitions[index] = definition
 }
 
 func (p *PrioritySplitLayout) UpdateLayout(index int, opts ...LayoutOption) {
 	for _, opt := range opts {
-		opt(&p.renderDefinition.Layouts[index])
+		opt(&p.renderDefinition.Definitions[index])
 	}
 }

@@ -52,7 +52,7 @@ func (s *SimpleLayout) View(models []tea.Model) string {
 }
 
 func (s *SimpleLayout) AddLayout(definition LayoutDefinition) {
-	s.renderDefinition.Layouts = append(s.renderDefinition.Layouts, definition)
+	s.renderDefinition.Definitions = append(s.renderDefinition.Definitions, definition)
 }
 
 func (s *SimpleLayout) GetDefinition() RenderDefinition {
@@ -60,13 +60,13 @@ func (s *SimpleLayout) GetDefinition() RenderDefinition {
 }
 
 func (s *SimpleLayout) GetLayout(index int) LayoutDefinition {
-	return s.renderDefinition.Layouts[index]
+	return s.renderDefinition.Definitions[index]
 }
 
 // If position is not set, returns empty LayoutDefinition
 func (s *SimpleLayout) GetLayoutForPosition(position Position) LayoutDefinition {
 	if index, ok := s.renderDefinition.indexForPosition[position]; ok {
-		return s.renderDefinition.Layouts[index]
+		return s.renderDefinition.Definitions[index]
 	}
 	return LayoutDefinition{}
 }
@@ -76,11 +76,11 @@ func (s *SimpleLayout) SetDefinition(definition RenderDefinition) {
 }
 
 func (s *SimpleLayout) SetLayout(index int, definition LayoutDefinition) {
-	s.renderDefinition.Layouts[index] = definition
+	s.renderDefinition.Definitions[index] = definition
 }
 
 func (s *SimpleLayout) UpdateLayout(index int, opts ...LayoutOption) {
 	for _, opt := range opts {
-		opt(&s.renderDefinition.Layouts[index])
+		opt(&s.renderDefinition.Definitions[index])
 	}
 }

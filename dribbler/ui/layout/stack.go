@@ -119,7 +119,7 @@ func (s *StackLayout) CreateStackSeparator(direction Direction, size ...int) str
 }
 
 func (s *StackLayout) AddLayout(definition LayoutDefinition) {
-	s.renderDefinition.Layouts = append(s.renderDefinition.Layouts, definition)
+	s.renderDefinition.Definitions = append(s.renderDefinition.Definitions, definition)
 }
 
 func (s *StackLayout) GetDefinition() RenderDefinition {
@@ -127,13 +127,13 @@ func (s *StackLayout) GetDefinition() RenderDefinition {
 }
 
 func (s *StackLayout) GetLayout(index int) LayoutDefinition {
-	return s.renderDefinition.Layouts[index]
+	return s.renderDefinition.Definitions[index]
 }
 
 // If position is not set, returns empty LayoutDefinition
 func (s *StackLayout) GetLayoutForPosition(position Position) LayoutDefinition {
 	if index, ok := s.renderDefinition.indexForPosition[position]; ok {
-		return s.renderDefinition.Layouts[index]
+		return s.renderDefinition.Definitions[index]
 	}
 	return LayoutDefinition{}
 }
@@ -143,11 +143,11 @@ func (s *StackLayout) SetDefinition(definition RenderDefinition) {
 }
 
 func (s *StackLayout) SetLayout(index int, definition LayoutDefinition) {
-	s.renderDefinition.Layouts[index] = definition
+	s.renderDefinition.Definitions[index] = definition
 }
 
 func (s *StackLayout) UpdateLayout(index int, opts ...LayoutOption) {
 	for _, opt := range opts {
-		opt(&s.renderDefinition.Layouts[index])
+		opt(&s.renderDefinition.Definitions[index])
 	}
 }

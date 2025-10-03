@@ -100,7 +100,7 @@ func (t *TabbedLayout) View(models []tea.Model) string {
 }
 
 func (t *TabbedLayout) AddLayout(definition LayoutDefinition) {
-	t.renderDefinition.Layouts = append(t.renderDefinition.Layouts, definition)
+	t.renderDefinition.Definitions = append(t.renderDefinition.Definitions, definition)
 }
 
 func (t *TabbedLayout) GetDefinition() RenderDefinition {
@@ -108,13 +108,13 @@ func (t *TabbedLayout) GetDefinition() RenderDefinition {
 }
 
 func (t *TabbedLayout) GetLayout(index int) LayoutDefinition {
-	return t.renderDefinition.Layouts[index]
+	return t.renderDefinition.Definitions[index]
 }
 
 // If position is not set, returns empty LayoutDefinition
 func (t *TabbedLayout) GetLayoutForPosition(position Position) LayoutDefinition {
 	if index, ok := t.renderDefinition.indexForPosition[position]; ok {
-		return t.renderDefinition.Layouts[index]
+		return t.renderDefinition.Definitions[index]
 	}
 	return LayoutDefinition{}
 }
@@ -124,11 +124,11 @@ func (t *TabbedLayout) SetDefinition(definition RenderDefinition) {
 }
 
 func (t *TabbedLayout) SetLayout(index int, definition LayoutDefinition) {
-	t.renderDefinition.Layouts[index] = definition
+	t.renderDefinition.Definitions[index] = definition
 }
 
 func (t *TabbedLayout) UpdateLayout(index int, opts ...LayoutOption) {
 	for _, opt := range opts {
-		opt(&t.renderDefinition.Layouts[index])
+		opt(&t.renderDefinition.Definitions[index])
 	}
 }

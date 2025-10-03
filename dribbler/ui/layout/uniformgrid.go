@@ -119,7 +119,7 @@ func (g *UniformGridLayout) View(models []tea.Model) string {
 }
 
 func (g *UniformGridLayout) AddLayout(definition LayoutDefinition) {
-	g.renderDefinition.Layouts = append(g.renderDefinition.Layouts, definition)
+	g.renderDefinition.Definitions = append(g.renderDefinition.Definitions, definition)
 }
 
 func (g *UniformGridLayout) GetDefinition() RenderDefinition {
@@ -127,13 +127,13 @@ func (g *UniformGridLayout) GetDefinition() RenderDefinition {
 }
 
 func (g *UniformGridLayout) GetLayout(index int) LayoutDefinition {
-	return g.renderDefinition.Layouts[index]
+	return g.renderDefinition.Definitions[index]
 }
 
 // If position is not set, returns empty LayoutDefinition
 func (g *UniformGridLayout) GetLayoutForPosition(position Position) LayoutDefinition {
 	if index, ok := g.renderDefinition.indexForPosition[position]; ok {
-		return g.renderDefinition.Layouts[index]
+		return g.renderDefinition.Definitions[index]
 	}
 	return LayoutDefinition{}
 }
@@ -143,11 +143,11 @@ func (g *UniformGridLayout) SetDefinition(definition RenderDefinition) {
 }
 
 func (g *UniformGridLayout) SetLayout(index int, definition LayoutDefinition) {
-	g.renderDefinition.Layouts[index] = definition
+	g.renderDefinition.Definitions[index] = definition
 }
 
 func (g *UniformGridLayout) UpdateLayout(index int, opts ...LayoutOption) {
 	for _, opt := range opts {
-		opt(&g.renderDefinition.Layouts[index])
+		opt(&g.renderDefinition.Definitions[index])
 	}
 }
