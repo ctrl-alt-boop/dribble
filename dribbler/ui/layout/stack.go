@@ -9,18 +9,18 @@ import (
 var _ Manager = (*StackLayout)(nil)
 
 type StackLayout struct {
+	managerBase
 	StackDirection Direction
-	Width, Height  int
-	X, Y           int
 
 	perModelWidth, perModelHeight    int
 	HorizontalGutter, VerticalGutter string
-
-	renderDefinition RenderDefinition
 }
 
 func NewStackLayout(direction Direction) *StackLayout {
 	return &StackLayout{
+		managerBase: managerBase{
+			focusPassThrough: false,
+		},
 		StackDirection:   direction,
 		HorizontalGutter: ui.DefaultHorizontalGutter,
 		VerticalGutter:   ui.DefaultVerticalGutter,
@@ -115,39 +115,5 @@ func (s *StackLayout) CreateStackSeparator(direction Direction, size ...int) str
 		)
 	default:
 		return ""
-	}
-}
-
-func (s *StackLayout) AddLayout(definition LayoutDefinition) {
-	s.renderDefinition.Definitions = append(s.renderDefinition.Definitions, definition)
-}
-
-func (s *StackLayout) GetDefinition() RenderDefinition {
-	return s.renderDefinition
-}
-
-func (s *StackLayout) GetLayout(index int) LayoutDefinition {
-	return s.renderDefinition.Definitions[index]
-}
-
-// If position is not set, returns empty LayoutDefinition
-func (s *StackLayout) GetLayoutForPosition(position Position) LayoutDefinition {
-	if index, ok := s.renderDefinition.indexForPosition[position]; ok {
-		return s.renderDefinition.Definitions[index]
-	}
-	return LayoutDefinition{}
-}
-
-func (s *StackLayout) SetDefinition(definition RenderDefinition) {
-	s.renderDefinition = definition
-}
-
-func (s *StackLayout) SetLayout(index int, definition LayoutDefinition) {
-	s.renderDefinition.Definitions[index] = definition
-}
-
-func (s *StackLayout) UpdateLayout(index int, opts ...LayoutOption) {
-	for _, opt := range opts {
-		opt(&s.renderDefinition.Definitions[index])
 	}
 }

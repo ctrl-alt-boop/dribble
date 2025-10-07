@@ -8,17 +8,17 @@ import (
 var _ Manager = (*TabbedLayout)(nil)
 
 type TabbedLayout struct {
-	ActiveIndex   int
-	Width, Height int
-	X, Y          int
-	TabStyle      lipgloss.Style
-	TabsSide      Position // FIXME: Implement
-
-	renderDefinition RenderDefinition
+	managerBase
+	ActiveIndex int
+	TabStyle    lipgloss.Style
+	TabsSide    Position // FIXME: Implement
 }
 
 func NewTabbedLayout(tabsSide Position) *TabbedLayout {
 	return &TabbedLayout{
+		managerBase: managerBase{
+			focusPassThrough: false,
+		},
 		ActiveIndex: 0,
 		TabStyle:    lipgloss.NewStyle().Border(lipgloss.NormalBorder()).BorderForeground(lipgloss.Color("63")).Padding(0, 1),
 		TabsSide:    tabsSide,
@@ -97,38 +97,4 @@ func (t *TabbedLayout) View(models []tea.Model) string {
 	contentStyle := lipgloss.NewStyle().Height(t.Height-tabsHeight).Width(t.Width).Align(lipgloss.Center, lipgloss.Center)
 
 	return lipgloss.JoinVertical(lipgloss.Left, tabsRender, contentStyle.Render(models[t.ActiveIndex].View()))
-}
-
-func (t *TabbedLayout) AddLayout(definition LayoutDefinition) {
-	t.renderDefinition.Definitions = append(t.renderDefinition.Definitions, definition)
-}
-
-func (t *TabbedLayout) GetDefinition() RenderDefinition {
-	return t.renderDefinition
-}
-
-func (t *TabbedLayout) GetLayout(index int) LayoutDefinition {
-	return t.renderDefinition.Definitions[index]
-}
-
-// If position is not set, returns empty LayoutDefinition
-func (t *TabbedLayout) GetLayoutForPosition(position Position) LayoutDefinition {
-	if index, ok := t.renderDefinition.indexForPosition[position]; ok {
-		return t.renderDefinition.Definitions[index]
-	}
-	return LayoutDefinition{}
-}
-
-func (t *TabbedLayout) SetDefinition(definition RenderDefinition) {
-	t.renderDefinition = definition
-}
-
-func (t *TabbedLayout) SetLayout(index int, definition LayoutDefinition) {
-	t.renderDefinition.Definitions[index] = definition
-}
-
-func (t *TabbedLayout) UpdateLayout(index int, opts ...LayoutOption) {
-	for _, opt := range opts {
-		opt(&t.renderDefinition.Definitions[index])
-	}
 }

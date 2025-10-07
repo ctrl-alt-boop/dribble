@@ -54,6 +54,12 @@ type mockLayout struct {
 	viewStringToReturn string
 }
 
+// GetFocusPassThrough implements layout.Manager.
+func (m *mockLayout) GetFocusPassThrough() bool { return false }
+
+// SetFocusPassThrough implements layout.Manager.
+func (m *mockLayout) SetFocusPassThrough(v bool) {}
+
 // AddLayout implements layout.Manager.
 func (m *mockLayout) AddLayout(definition layout.LayoutDefinition) {}
 

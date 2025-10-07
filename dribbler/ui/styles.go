@@ -78,7 +78,9 @@ const (
 )
 
 var (
-	DefaultStyle  = lipgloss.NewStyle()
+	DefaultStyle = lipgloss.NewStyle().
+			Border(lipgloss.HiddenBorder())
+
 	DefaultBorder = lipgloss.Border{
 		Top:         "─",
 		Bottom:      "─",

@@ -1,7 +1,6 @@
 package layout
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -12,58 +11,13 @@ const (
 	Vertical
 )
 
-type Position int
-
-const (
-	None Position = iota
-	Center
-	Top
-	Bottom
-	Left
-	Right
-)
-
-const Middle = Center
-
-func (p Position) AsLipglossHorizontal() lipgloss.Position {
-	switch p {
-	case Left:
-		return lipgloss.Left
-	case Right:
-		return lipgloss.Right
-	default:
-		return lipgloss.Center
-	}
-}
-
-func (p Position) AsLipglossVertical() lipgloss.Position {
-	switch p {
-	case Top:
-		return lipgloss.Top
-	case Bottom:
-		return lipgloss.Bottom
-	default:
-		return lipgloss.Center
-	}
-}
-
-type Manager interface {
-	SetDefinition(definition RenderDefinition)
-	GetDefinition() RenderDefinition
-
-	AddLayout(definition LayoutDefinition)
-
-	UpdateLayout(index int, opts ...LayoutOption)
-	SetLayout(index int, definition LayoutDefinition)
-	GetLayout(index int) LayoutDefinition
-
-	// If position is not set, returns empty LayoutDefinition
-	GetLayoutForPosition(position Position) LayoutDefinition
-
-	Layout(models []tea.Model) []tea.Model
-	View(models []tea.Model) string
-
-	SetSize(width, height int)
+func CreateConnectedCorners(style lipgloss.Style) lipgloss.Border {
+	border := style.GetBorderStyle()
+	border.TopLeft = border.MiddleTop
+	border.TopRight = border.MiddleTop
+	border.BottomLeft = border.MiddleBottom
+	border.BottomRight = border.MiddleBottom
+	return border
 }
 
 type LayoutDefinition struct {
@@ -80,11 +34,13 @@ type LayoutDefinition struct {
 type RenderDefinition struct {
 	Definitions []LayoutDefinition
 
-	PanelBorders                 lipgloss.Border
+	PanelBorder                  lipgloss.Border
 	FocusedStyle, UnfocusedStyle lipgloss.Style
 
 	indexForPosition      map[Position]int
 	hasFocusUnfocusStyles bool
+	customPanelBorder     bool
+	connectCorners        bool
 }
 
 func (r *RenderDefinition) Update(opts ...Option) {
@@ -93,18 +49,53 @@ func (r *RenderDefinition) Update(opts ...Option) {
 	}
 }
 
+func (r RenderDefinition) PositionsInUse() []Position {
+	positions := make([]Position, 0, len(r.indexForPosition))
+	for position := range r.indexForPosition {
+		positions = append(positions, position)
+	}
+	return positions
+}
+
 func NewDefinition(definitions []LayoutDefinition, opts ...Option) RenderDefinition {
-	renderDefinition := RenderDefinition{
-		Definitions: make([]LayoutDefinition, len(definitions)),
+	definition := RenderDefinition{
+		Definitions:       make([]LayoutDefinition, len(definitions)),
+		PanelBorder:       lipgloss.NormalBorder(),
+		FocusedStyle:      lipgloss.NewStyle().Border(lipgloss.NormalBorder()),
+		customPanelBorder: false,
+		connectCorners:    true,
+		indexForPosition:  make(map[Position]int),
 	}
 
-	copy(renderDefinition.Definitions, definitions)
+	copy(definition.Definitions, definitions)
 
 	for _, option := range opts {
-		option(&renderDefinition)
+		option(&definition)
 	}
 
-	return renderDefinition
+	if definition.customPanelBorder || definition.connectCorners {
+		if definition.PanelBorder.MiddleTop == "" || definition.PanelBorder.MiddleBottom == "" {
+			panic("custom panel border requires MiddleTop and MiddleBottom")
+		}
+	}
+
+	for i, def := range definition.Definitions {
+		definition.indexForPosition[def.Position] = i
+	}
+
+	return definition
+}
+
+func NewLayoutDefinition(position Position, opts ...LayoutOption) LayoutDefinition {
+	definition := LayoutDefinition{
+		Position: position,
+	}
+
+	for _, option := range opts {
+		option(&definition)
+	}
+
+	return definition
 }
 
 type Option func(*RenderDefinition)
@@ -120,6 +111,30 @@ func WithMaxSize(width, height int) LayoutOption {
 func WithMinSize(width, height int) LayoutOption {
 	return func(def *LayoutDefinition) {
 		def.MinWidth = width
+		def.MinHeight = height
+	}
+}
+
+func WithMaxWidth(width int) LayoutOption {
+	return func(def *LayoutDefinition) {
+		def.MaxWidth = width
+	}
+}
+
+func WithMaxHeight(height int) LayoutOption {
+	return func(def *LayoutDefinition) {
+		def.MaxHeight = height
+	}
+}
+
+func WithMinWidth(width int) LayoutOption {
+	return func(def *LayoutDefinition) {
+		def.MinWidth = width
+	}
+}
+
+func WithMinHeight(height int) LayoutOption {
+	return func(def *LayoutDefinition) {
 		def.MinHeight = height
 	}
 }
@@ -145,12 +160,19 @@ func FillRemainingAt(position Position) Option {
 	}
 }
 
-// func WithSize(width, height int) Option {
-// 	return func(renderModel *RenderDefinition) {
-// 		renderModel.Width = width
-// 		renderModel.Height = height
-// 	}
-// }
+// The custom border uses MiddleTop and MiddleBottom if connectCorners is true
+func WithPanelBorder(border lipgloss.Border) Option {
+	return func(renderModel *RenderDefinition) {
+		renderModel.PanelBorder = border
+		renderModel.customPanelBorder = true
+	}
+}
+
+func WithoutConnectCorners() Option {
+	return func(renderModel *RenderDefinition) {
+		renderModel.connectCorners = false
+	}
+}
 
 func WithStyle(style lipgloss.Style) Option {
 	return func(renderModel *RenderDefinition) {

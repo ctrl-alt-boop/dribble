@@ -1,33 +1,5 @@
 package layout
 
-import "github.com/charmbracelet/lipgloss"
-
-func (p Position) CalculateTopLeft(width, height int) (x, y int) {
-	switch p {
-	// case TopLeft:
-	// 	x, y = 0, 0
-	// case TopCenter:
-	// 	x, y = width/2, 0
-	// case TopRight:
-	// 	x, y = width-1, 0
-	// case MiddleLeft:
-	// 	x, y = 0, height/2
-	// case MiddleCenter:
-	// 	x, y = width/2, height/2
-	// case MiddleRight:
-	// 	x, y = width-1, height/2
-	// case BottomLeft:
-	// 	x, y = 0, height-1
-	// case BottomCenter:
-	// 	x, y = width/2, height-1
-	// case BottomRight:
-	// 	x, y = width-1, height-1
-	default:
-		x, y = 0, 0
-	}
-	return
-}
-
 type Coord struct {
 	X, Y int
 }
@@ -46,11 +18,6 @@ func (p Position) CalculateBoundingBox(width, height int) BoundingBox {
 		TopLeft:     Coord{X: topLeftX, Y: topLeftY},
 		BottomRight: Coord{X: bottomRightX, Y: bottomRightY},
 	}
-}
-
-func (p Position) CalculateTopLeftInBox(boxWidth, boxHeight int) (lipgloss.Position, lipgloss.Position) {
-	x, y := p.CalculateTopLeft(boxWidth, boxHeight)
-	return lipgloss.Position(HorizontalPosInBox(x, boxWidth)), lipgloss.Position(VerticalPosInBox(y, boxHeight))
 }
 
 func HorizontalPosInBox(x, boxWidth int) float64 {

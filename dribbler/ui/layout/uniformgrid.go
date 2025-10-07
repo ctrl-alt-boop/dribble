@@ -9,20 +9,20 @@ import (
 var _ Manager = (*UniformGridLayout)(nil)
 
 type UniformGridLayout struct {
+	managerBase
 	Columns int
 
 	CellWidth, CellHeight int
-	Width, Height         int
-	X, Y                  int
 	// I'm not entierly sure how I want to do this, either letting the content decide or Layout decide...
 	// One option is to reset the style of Children and using the one the parent decides
 	VerticalGutter, HorizontalGutter string
-
-	renderDefinition RenderDefinition
 }
 
 func NewUniformGridLayout(numColumns int) *UniformGridLayout {
 	return &UniformGridLayout{
+		managerBase: managerBase{
+			focusPassThrough: false,
+		},
 		Columns:          numColumns,
 		HorizontalGutter: ui.DefaultHorizontalGutter,
 		VerticalGutter:   ui.DefaultVerticalGutter,
@@ -116,38 +116,4 @@ func (g *UniformGridLayout) View(models []tea.Model) string {
 
 	// 3. Join the rows vertically to form the final grid
 	return lipgloss.JoinVertical(lipgloss.Left, rows...)
-}
-
-func (g *UniformGridLayout) AddLayout(definition LayoutDefinition) {
-	g.renderDefinition.Definitions = append(g.renderDefinition.Definitions, definition)
-}
-
-func (g *UniformGridLayout) GetDefinition() RenderDefinition {
-	return g.renderDefinition
-}
-
-func (g *UniformGridLayout) GetLayout(index int) LayoutDefinition {
-	return g.renderDefinition.Definitions[index]
-}
-
-// If position is not set, returns empty LayoutDefinition
-func (g *UniformGridLayout) GetLayoutForPosition(position Position) LayoutDefinition {
-	if index, ok := g.renderDefinition.indexForPosition[position]; ok {
-		return g.renderDefinition.Definitions[index]
-	}
-	return LayoutDefinition{}
-}
-
-func (g *UniformGridLayout) SetDefinition(definition RenderDefinition) {
-	g.renderDefinition = definition
-}
-
-func (g *UniformGridLayout) SetLayout(index int, definition LayoutDefinition) {
-	g.renderDefinition.Definitions[index] = definition
-}
-
-func (g *UniformGridLayout) UpdateLayout(index int, opts ...LayoutOption) {
-	for _, opt := range opts {
-		opt(&g.renderDefinition.Definitions[index])
-	}
 }

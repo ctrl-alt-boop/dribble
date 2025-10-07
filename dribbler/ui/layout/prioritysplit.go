@@ -9,10 +9,9 @@ import (
 var _ Manager = (*PrioritySplitLayout)(nil)
 
 type PrioritySplitLayout struct {
+	managerBase
 	Ratio                            float64
 	Direction                        Direction
-	Width, Height                    int
-	X, Y                             int
 	HorizontalGutter, VerticalGutter string
 
 	// I'm not entierly sure how I want to do this, either letting the content decide or Layout decide...
@@ -22,12 +21,13 @@ type PrioritySplitLayout struct {
 	secondaryWidth, secondaryHeight             int
 	secondaryWidthForOne, secondaryHeightForOne int
 	stackLayout                                 *StackLayout
-
-	renderDefinition RenderDefinition
 }
 
 func NewPrioritySplitLayout(direction Direction) *PrioritySplitLayout {
 	layout := &PrioritySplitLayout{
+		managerBase: managerBase{
+			focusPassThrough: false,
+		},
 		Ratio:            0.6,
 		Direction:        direction,
 		HorizontalGutter: ui.DefaultHorizontalGutter,
@@ -157,39 +157,5 @@ func (p *PrioritySplitLayout) CreatePrimarySeparator(direction Direction, size .
 		)
 	default:
 		return ""
-	}
-}
-
-func (p *PrioritySplitLayout) AddLayout(definition LayoutDefinition) {
-	p.renderDefinition.Definitions = append(p.renderDefinition.Definitions, definition)
-}
-
-func (p *PrioritySplitLayout) GetDefinition() RenderDefinition {
-	return p.renderDefinition
-}
-
-func (p *PrioritySplitLayout) GetLayout(index int) LayoutDefinition {
-	return p.renderDefinition.Definitions[index]
-}
-
-// If position is not set, returns empty LayoutDefinition
-func (p *PrioritySplitLayout) GetLayoutForPosition(position Position) LayoutDefinition {
-	if index, ok := p.renderDefinition.indexForPosition[position]; ok {
-		return p.renderDefinition.Definitions[index]
-	}
-	return LayoutDefinition{}
-}
-
-func (p *PrioritySplitLayout) SetDefinition(definition RenderDefinition) {
-	p.renderDefinition = definition
-}
-
-func (p *PrioritySplitLayout) SetLayout(index int, definition LayoutDefinition) {
-	p.renderDefinition.Definitions[index] = definition
-}
-
-func (p *PrioritySplitLayout) UpdateLayout(index int, opts ...LayoutOption) {
-	for _, opt := range opts {
-		opt(&p.renderDefinition.Definitions[index])
 	}
 }

@@ -79,7 +79,9 @@ func (t *TestModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return t, tea.Batch(cmds...)
 }
 
-var ViewList = []func() tea.Model{
+var ViewList = []func() widget.ContentArea{
+	CreateTestDockContentAreaNotFull,
+	CreateTestDockContentAreaFull,
 	CreateTestPriorityContentAreaHorizontal,
 	CreateTestPriorityContentAreaVertical,
 	CreateTestStackContentAreaHorizontal,
@@ -120,7 +122,58 @@ func CreateTestModel(dribbleClient *dribble.Client) tea.Model {
 	}
 }
 
-func CreateTestPriorityContentAreaHorizontal() tea.Model {
+func CreateTestDockContentAreaFull() widget.ContentArea {
+	top := content.Text{Item: content.Item{Value: "Top"}}
+	bottom := content.Text{Item: content.Item{Value: "Bottom"}}
+	left := content.Text{Item: content.Item{Value: "Left"}}
+	right := content.Text{Item: content.Item{Value: "Right"}}
+	center := content.Text{Item: content.Item{Value: "Center"}}
+
+	contentArea := widget.NewContentArea(0, "DockLayoutFull", top, bottom, left, right, center)
+
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
+	dockLayout := layout.NewDockLayout()
+	dockLayout.SetDefinition(
+		layout.NewDefinition(
+			[]layout.LayoutDefinition{
+				layout.NewLayoutDefinition(layout.Top, layout.WithMaxHeight(5)),
+				layout.NewLayoutDefinition(layout.Bottom, layout.WithMaxHeight(15)),
+				layout.NewLayoutDefinition(layout.Left, layout.WithMaxWidth(45)),
+				layout.NewLayoutDefinition(layout.Right, layout.WithMaxWidth(25)),
+				layout.NewLayoutDefinition(layout.Center),
+			},
+			layout.WithStyle(lipgloss.NewStyle().Border(lipgloss.RoundedBorder())),
+		))
+	contentArea.SetLayoutManager(dockLayout)
+
+	return contentArea
+}
+
+func CreateTestDockContentAreaNotFull() widget.ContentArea {
+	bottom := content.Text{Item: content.Item{Value: "Bottom"}}
+	left := content.Text{Item: content.Item{Value: "Left"}}
+	center := content.Text{Item: content.Item{Value: "Center"}}
+	// contentList := CreateTestList(3)
+
+	contentArea := widget.NewContentArea(0, "DockLayoutNotFull", bottom, left, center)
+
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
+	dockLayout := layout.NewDockLayout()
+	dockLayout.SetDefinition(
+		layout.NewDefinition(
+			[]layout.LayoutDefinition{
+				layout.NewLayoutDefinition(layout.Bottom, layout.WithMaxHeight(25)),
+				layout.NewLayoutDefinition(layout.Left, layout.WithMaxWidth(45)),
+				layout.NewLayoutDefinition(layout.Center),
+			},
+			layout.WithStyle(lipgloss.NewStyle().Border(lipgloss.RoundedBorder())),
+		))
+	contentArea.SetLayoutManager(dockLayout)
+
+	return contentArea
+}
+
+func CreateTestPriorityContentAreaHorizontal() widget.ContentArea {
 	contentList := CreateTestList(4)
 
 	contentArea := widget.NewContentArea(0, "PrioritySplitHorizontal", contentList...)
@@ -130,74 +183,85 @@ func CreateTestPriorityContentAreaHorizontal() tea.Model {
 	return contentArea
 }
 
-func CreateTestPriorityContentAreaVertical() tea.Model {
+func CreateTestPriorityContentAreaVertical() widget.ContentArea {
 	contentList := CreateTestList(4)
 
 	contentArea := widget.NewContentArea(0, "PrioritySplitVertical", contentList...)
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 	contentArea.SetLayoutManager(layout.NewPrioritySplitLayout(layout.Vertical))
 	return contentArea
 }
 
-func CreateTestStackContentAreaHorizontal() tea.Model {
+func CreateTestStackContentAreaHorizontal() widget.ContentArea {
 	contentList := CreateTestList(3)
 
 	contentArea := widget.NewContentArea(0, "StackHorizontal", contentList...)
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 	contentArea.SetLayoutManager(layout.NewStackLayout(layout.Horizontal))
 	return contentArea
 }
 
-func CreateTestStackContentAreaVertical() tea.Model {
+func CreateTestStackContentAreaVertical() widget.ContentArea {
 	contentList := CreateTestList(3)
 
 	contentArea := widget.NewContentArea(0, "StackVertical", contentList...)
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 	contentArea.SetLayoutManager(layout.NewStackLayout(layout.Vertical))
 	return contentArea
 }
 
-func CreateTestTabbedContentArea() tea.Model {
+func CreateTestTabbedContentArea() widget.ContentArea {
 	contentList := CreateTestList(4)
 
 	contentArea := widget.NewContentArea(0, "Tabbed", contentList...)
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 	contentArea.SetLayoutManager(layout.NewTabbedLayout(layout.Top))
 	return contentArea
 }
 
-func CreateTest2x2GridContentArea() tea.Model {
+func CreateTest2x2GridContentArea() widget.ContentArea {
 	contentList := CreateTestList(4)
 
 	contentArea := widget.NewContentArea(0, "2x2Grid", contentList...)
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 	contentArea.SetLayoutManager(layout.NewUniformGridLayout(2))
 
 	return contentArea
 }
 
-func CreateTest2x3GridContentArea() tea.Model {
+func CreateTest2x3GridContentArea() widget.ContentArea {
 	contentList := CreateTestList(6)
 
 	contentArea := widget.NewContentArea(0, "2x3Grid", contentList...)
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 	contentArea.SetLayoutManager(layout.NewUniformGridLayout(3))
 
 	return contentArea
 }
 
-func CreateTest3x3GridContentArea() tea.Model {
+func CreateTest3x3GridContentArea() widget.ContentArea {
 	contentList := CreateTestList(9)
 
 	contentArea := widget.NewContentArea(0, "3x3Grid", contentList...)
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 	contentArea.SetLayoutManager(layout.NewUniformGridLayout(3))
 
 	return contentArea
 }
 
-func CreateTestSimpleContentArea() tea.Model {
-	contentArea := widget.NewContentArea(0, "Simple")
+func CreateTestSimpleContentArea() widget.ContentArea {
+
+	contentArea := widget.NewContentArea(0, "Simple", content.Text{Item: content.Item{Value: "Simple Layout"}})
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 	contentArea.SetLayoutManager(layout.NewSimpleLayout())
 
 	return contentArea
 }
 
-func CreateTestEmptyContentArea() tea.Model {
+func CreateTestEmptyContentArea() widget.ContentArea {
+
 	contentArea := widget.NewContentArea(0, "empty")
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 	return contentArea
 }
 
