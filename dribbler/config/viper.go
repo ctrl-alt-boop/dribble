@@ -11,15 +11,15 @@ import (
 // Gemini code, Quality unknown
 
 const (
-	AppName        string = "dribble"
-	AppNameUpper   string = "DRIBBLE"
+	AppName        string = "dribbler"
+	AppNameUpper   string = "DRIBBLER"
 	configFileName string = "config"
 )
 
 type Config struct {
 	ShowDrivers []string `mapstructure:"show_drivers"`
 
-	Connections struct {
+	Targets struct {
 		Servers map[string]struct {
 			ServerName string
 			Settings   Connection
@@ -30,9 +30,10 @@ type Config struct {
 		} `mapstructure:"databases"`
 
 		DriverDefaults []Connection `mapstructure:"-"`
-	} `mapstructure:"connections"`
+	} `mapstructure:"targets"`
+
 	Ui struct {
-		ShowDetails bool `mapstructure:"show_details"`
+		ShowTargetDetails bool `mapstructure:"show_details"`
 
 		Theme struct {
 			Borders struct {
@@ -45,6 +46,8 @@ type Config struct {
 				Accent     string
 				Text       string
 				Background string
+				Borders    string
+				Selection  string
 			} `mapstructure:"colors"`
 		} `mapstructure:"theme"`
 	} `mapstructure:"ui"`
@@ -95,8 +98,8 @@ func loadConfig() (*Config, *viper.Viper, error) {
 	v.SetDefault("show_drivers", map[string]struct{}{})
 
 	// Connections
-	v.SetDefault("connections.servers", map[string]struct{}{})
-	v.SetDefault("connections.databases", map[string]struct{}{})
+	v.SetDefault("targets.servers", map[string]struct{}{})
+	v.SetDefault("targets.databases", map[string]struct{}{})
 	v.SetDefault("Connections.DriverDefaults", map[string]struct{}{})
 	// v.SetDefault("Connections.Saved", map[string]struct{}{})
 
@@ -115,8 +118,8 @@ func loadConfig() (*Config, *viper.Viper, error) {
 
 	// 4. Enable automatic environment variable binding
 	// This will look for environment variables with the prefix
-	// e.g., DRIBBLE_DATABASE_HOST will map to database.host
-	v.SetEnvPrefix(AppNameUpper) // DRIBBLE
+	// e.g., DRIBBLER_DATABASE_HOST will map to database.host
+	v.SetEnvPrefix(AppNameUpper) // DRIBBLER
 	v.AutomaticEnv()             // Read ENV variables
 
 	// You can also explicitly bind specific environment variables if needed

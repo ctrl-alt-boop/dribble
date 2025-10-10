@@ -15,24 +15,29 @@ type (
 		ID   int
 		name string
 
-		Style  lipgloss.Style
-		Layout layout.Manager
+		Style         lipgloss.Style
+		LayoutManager layout.Manager
 
 		Children     []tea.Model
 		FocusedChild int
-	}
-
-	UnfocusChildMsg struct {
-		ID int
 	}
 )
 
 func NewContentArea(id int, name string, children ...tea.Model) ContentArea {
 	return ContentArea{
-		ID:       id,
-		name:     name,
-		Children: children,
-		Layout:   &layout.SimpleLayout{},
+		ID:            id,
+		name:          name,
+		Children:      children,
+		LayoutManager: &layout.SimpleLayout{},
+	}
+}
+
+func New(name string, manager layout.Manager, children ...tea.Model) ContentArea {
+	return ContentArea{
+		name:          name,
+		LayoutManager: manager,
+		Children:      children,
+		FocusedChild:  -1,
 	}
 }
 
@@ -45,7 +50,7 @@ func (a *ContentArea) AddChild(child ContentArea) {
 }
 
 func (a *ContentArea) SetLayoutManager(manager layout.Manager) {
-	a.Layout = manager
+	a.LayoutManager = manager
 }
 
 func (a *ContentArea) SetStyle(style lipgloss.Style) {
@@ -53,13 +58,15 @@ func (a *ContentArea) SetStyle(style lipgloss.Style) {
 }
 
 func (a ContentArea) Init() tea.Cmd {
-	return nil
+	cmds := []tea.Cmd{}
+	for _, child := range a.Children {
+		cmds = append(cmds, child.Init())
+	}
+	return tea.Batch(cmds...)
 }
 
 func (a *ContentArea) UnfocusCmd() tea.Msg {
-	return UnfocusChildMsg{
-		ID: a.FocusedChild,
-	}
+	return FocusBackMsg{}
 }
 
 func (a ContentArea) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -69,17 +76,18 @@ func (a ContentArea) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 
-		updated.Layout.SetSize(msg.Width, msg.Height)
+		updated.LayoutManager.SetSize(msg.Width, msg.Height)
 
-		updatedChildren := a.Layout.Layout(a.Children)
+		updatedChildren := a.LayoutManager.Layout(a.Children)
 		updated.Children = updatedChildren
 		return updated, nil
 
 	case tea.KeyMsg:
-		if key.Matches(msg, config.Keys.Back) {
-			return updated, a.UnfocusCmd
-		} else if key.Matches(msg, config.Keys.CycleView) {
+		if key.Matches(msg, config.Keys.CycleView) {
 			updated.FocusedChild = (a.FocusedChild + 1) % len(a.Children)
+			return updated, nil
+		}
+		if len(a.Children) == 0 {
 			return updated, nil
 		}
 		focusedChild := a.Children[a.FocusedChild]
@@ -88,6 +96,20 @@ func (a ContentArea) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
+
+	case FocusMsg:
+		updated.FocusedChild = msg.Index[0]
+		if updated.FocusedChild != -1 && updated.FocusedChild >= len(a.Children) {
+			if len(msg.Index) > 1 {
+				msg.Index = msg.Index[1:]
+				focusedChild, cmd := a.Children[a.FocusedChild].Update(msg)
+				updated.Children[a.FocusedChild] = focusedChild
+				if cmd != nil {
+					cmds = append(cmds, cmd)
+				}
+			}
+		}
+
 	default:
 		for i, child := range a.Children {
 			child, cmd := child.Update(msg)
@@ -102,5 +124,5 @@ func (a ContentArea) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a ContentArea) View() string {
-	return a.Style.Render(a.Layout.View(a.Children))
+	return a.Style.Render(a.LayoutManager.View(a.Children))
 }

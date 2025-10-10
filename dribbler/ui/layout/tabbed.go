@@ -11,12 +11,16 @@ type TabbedLayout struct {
 	managerBase
 	ActiveIndex int
 	TabStyle    lipgloss.Style
-	TabsSide    Position // FIXME: Implement
+	TabsSide    Direction // FIXME: Implement
 }
 
-func NewTabbedLayout(tabsSide Position) *TabbedLayout {
+func NewTabbedLayout(tabsSide Direction, opts ...layoutOption) *TabbedLayout {
 	return &TabbedLayout{
 		managerBase: managerBase{
+			layoutDefinition: New(
+				[]panelDefinition{},
+				opts...,
+			),
 			focusPassThrough: false,
 		},
 		ActiveIndex: 0,
@@ -60,7 +64,7 @@ func (t *TabbedLayout) Layout(models []tea.Model) []tea.Model {
 // View implements Manager.
 func (t *TabbedLayout) View(models []tea.Model) string {
 	if len(models) == 0 {
-		return ""
+		return lipgloss.NewStyle().Width(t.Width).Height(t.Height).Render("")
 	}
 
 	if t.ActiveIndex < 0 || t.ActiveIndex >= len(models) {

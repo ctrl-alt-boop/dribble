@@ -11,11 +11,11 @@ import (
 
 const DefaultMaxCellWidth int = 36 // Guid length, including the '-'s
 
-type StringTable0 struct {
-	Columns []string
-	Rows    [][]string
-	Widths  []int
-}
+// type StringTable struct {
+// 	Columns []string
+// 	Rows    [][]string
+// 	Widths  []int
+// }
 
 type StringTable struct {
 	// map[Column]ColumnRows

@@ -106,10 +106,8 @@ func TestPrioritySplitLayout(t *testing.T) {
 	models := []tea.Model{child1, child2, child3}
 
 	t.Run("Layout Horizontal", func(t *testing.T) {
-		l := &layout.PrioritySplitLayout{
-			Ratio:     0.7,
-			Direction: layout.Horizontal,
-		}
+		l := layout.NewPrioritySplitLayout(layout.Right)
+		l.PrimarySizeRatio = 0.7
 		// 101 width - 1 gutter = 100.
 		// Primary: 100 * 0.7 = 70 width.
 		// Secondary: 100 - 70 = 30 width total. 30 / 2 children = 15 width each.
@@ -128,10 +126,9 @@ func TestPrioritySplitLayout(t *testing.T) {
 	})
 
 	t.Run("Layout Vertical", func(t *testing.T) {
-		l := &layout.PrioritySplitLayout{
-			Ratio:     0.6,
-			Direction: layout.Vertical,
-		}
+		l := layout.NewPrioritySplitLayout(layout.Top)
+		l.PrimarySizeRatio = 0.6
+
 		// 101 height - 1 gutter = 100.
 		// Primary: 100 * 0.6 = 60 height.
 		// Secondary: 100 - 60 = 40 height total. 40 / 2 children = 20 height each.
@@ -150,7 +147,7 @@ func TestPrioritySplitLayout(t *testing.T) {
 	})
 
 	t.Run("View", func(t *testing.T) {
-		l := &layout.PrioritySplitLayout{Direction: layout.Horizontal}
+		l := layout.NewPrioritySplitLayout(layout.Left)
 		view := l.View(models)
 		assert.Contains(t, view, "Primary", "View should contain primary view")
 		assert.Contains(t, view, "Secondary1", "View should contain secondary view 1")
@@ -165,12 +162,13 @@ func TestStackLayout(t *testing.T) {
 	models := []tea.Model{child1, child2}
 
 	t.Run("Layout", func(t *testing.T) {
-		l := &layout.StackLayout{}
+		l := layout.NewStackLayout(0) // 0 should not break anything
 		l.SetSize(100, 50)
 		models = l.Layout(models)
 		c1 := models[0].(mockModel)
 		c2 := models[1].(mockModel)
 
+		// None should lead to no changes
 		assert.Equal(t, 100, c1.width, "Child 1 should get full width")
 		assert.Equal(t, 50, c1.height, "Child 1 should get full height")
 		assert.Equal(t, 100, c2.width, "Child 2 should get full width")
@@ -178,13 +176,13 @@ func TestStackLayout(t *testing.T) {
 	})
 
 	t.Run("View Horizontal", func(t *testing.T) {
-		l := &layout.StackLayout{StackDirection: layout.Horizontal}
+		l := &layout.StackLayout{StackDirection: layout.East}
 		view := l.View(models)
 		assert.True(t, strings.Index(view, "View2") > strings.Index(view, "View1"), "Views should be joined horizontally")
 	})
 
 	t.Run("View Vertical", func(t *testing.T) {
-		l := &layout.StackLayout{StackDirection: layout.Vertical}
+		l := &layout.StackLayout{StackDirection: layout.South}
 		view := l.View(models)
 		assert.True(t, strings.Index(view, "View2") > strings.Index(view, "View1"), "Views should be joined vertically")
 		assert.Contains(t, view, "\n", "Vertical join should contain newlines")

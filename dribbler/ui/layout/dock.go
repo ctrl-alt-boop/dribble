@@ -1,6 +1,8 @@
 package layout
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -14,9 +16,13 @@ type DockLayout struct {
 	usableX, usableY          int
 }
 
-func NewDockLayout() *DockLayout {
+func NewDockLayout(panels panelsDefinition, opts ...layoutOption) *DockLayout {
 	return &DockLayout{
 		managerBase: managerBase{
+			layoutDefinition: New(
+				panels,
+				opts...,
+			),
 			focusPassThrough: false,
 		},
 	}
@@ -36,165 +42,130 @@ func (d *DockLayout) Layout(models []tea.Model) []tea.Model {
 		return models
 	}
 
-	updatedModels := models
-	updatedDefinitions := make([]LayoutDefinition, len(d.renderDefinition.Definitions))
-	var center *LayoutDefinition
+	updatedDefinitions := make([]panelDefinition, len(d.layoutDefinition.panels))
 	fillRemainingIndex := -1
 
-	for i, definition := range d.renderDefinition.Definitions {
-		pos := definition.Position
+	for i, definition := range d.layoutDefinition.panels {
+		pos := definition.position
 		if pos == None {
 			continue
 		}
 		updatedDefinition := d.Allocate(definition)
 
-		if updatedDefinition.FillRemaining {
-			center = &updatedDefinition
+		if updatedDefinition.fillRemaining {
 			fillRemainingIndex = i
 		}
 		updatedDefinitions[i] = updatedDefinition
 	}
-	if center == nil {
-		panic("No fill remaining") // FIXME: temp panic
+	if fillRemainingIndex != -1 {
+		updatedDefinitions[fillRemainingIndex].actualWidth = d.usableWidth
+		updatedDefinitions[fillRemainingIndex].actualHeight = d.usableHeight
+		updatedDefinitions[fillRemainingIndex].actualX = d.usableX
+		updatedDefinitions[fillRemainingIndex].actualY = d.usableY
 	}
 
-	style := d.renderDefinition.FocusedStyle // TODO: Should we check and use focused and unfocused
-	if d.renderDefinition.connectCorners {
-		style = updatedDefinitions[fillRemainingIndex].Position.ConnectedCorners(d.renderDefinition.FocusedStyle, d.renderDefinition.PositionsInUse()...)
-	}
-	updatedDefinitions[fillRemainingIndex].actualWidth = d.usableWidth - style.GetHorizontalFrameSize()
-	updatedDefinitions[fillRemainingIndex].actualHeight = d.usableHeight - style.GetVerticalFrameSize()
+	d.layoutDefinition.panels = updatedDefinitions
 
-	d.renderDefinition.Definitions = updatedDefinitions
-
-	for i, def := range updatedDefinitions {
-		var model tea.Model
-		if i < len(models) {
-			model = models[i]
-			msg := tea.WindowSizeMsg{Width: def.actualWidth, Height: def.actualHeight}
-			updatedModel, _ := model.Update(msg)
-			updatedModels[i] = updatedModel
-		}
-	}
-
-	return updatedModels
+	return d.layout(models)
 }
 
-func (d *DockLayout) Allocate(definition LayoutDefinition) LayoutDefinition {
-	style := definition.Position.ConnectedCorners(d.renderDefinition.FocusedStyle, d.renderDefinition.PositionsInUse()...)
+func (d *DockLayout) Allocate(definition panelDefinition) panelDefinition {
 	updated := definition
 
-	switch definition.Position {
+	if definition.widthRatio > 0.0 {
+		definition.width = int(float64(d.Width) * definition.widthRatio)
+	}
+	if definition.heightRatio > 0.0 {
+		definition.height = int(float64(d.Height) * definition.heightRatio)
+	}
+
+	switch definition.position {
 	case Top:
-		height := definition.MinHeight
-		if height == 0 {
-			height = definition.MaxHeight
-		}
-		height = min(height, d.usableHeight)
+		height := min(definition.height, d.usableHeight)
 
 		width := d.usableWidth
 
 		updated.actualX = d.usableX
-		updated.actualY = d.usableY
-		updated.actualWidth = width - style.GetHorizontalFrameSize()
-		updated.actualHeight = height - style.GetVerticalFrameSize()
+		updated.actualY = 0
+		updated.actualWidth = width
+		updated.actualHeight = height
 
 		d.usableY += height
 		d.usableHeight -= height
+
 	case Bottom:
-		height := definition.MinHeight
-		if height == 0 {
-			height = definition.MaxHeight
-		}
-		height = min(height, d.usableHeight)
+		height := min(definition.height, d.usableHeight)
 
 		width := d.usableWidth
 
+		updated.actualWidth = width
+		updated.actualHeight = height
 		updated.actualX = d.usableX
-		updated.actualY = d.usableY + d.usableY - height
-		updated.actualWidth = width - style.GetHorizontalFrameSize()
-		updated.actualHeight = height - style.GetVerticalFrameSize()
+		updated.actualY = d.Height - updated.actualHeight
 
 		d.usableHeight -= height
+
 	case Left:
-		width := definition.MinWidth
-		if width == 0 {
-			width = definition.MaxWidth
-		}
-		width = min(width, d.usableWidth)
+		width := min(definition.width, d.usableWidth)
 
 		height := d.usableHeight
 
-		updated.actualX = d.usableX
+		updated.actualWidth = width
+		updated.actualHeight = height
+		updated.actualX = 0
 		updated.actualY = d.usableY
-		updated.actualWidth = width - style.GetHorizontalFrameSize()
-		updated.actualHeight = height - style.GetVerticalFrameSize()
 
 		d.usableX += width
 		d.usableWidth -= width
+
 	case Right:
-		width := definition.MinWidth
-		if width == 0 {
-			width = definition.MaxWidth
-		}
-		width = min(width, d.usableWidth)
+		width := min(definition.width, d.usableWidth)
 
 		height := d.usableHeight
 
-		updated.actualX = d.usableX
+		updated.actualWidth = width
+		updated.actualHeight = height
+		updated.actualX = d.Width - updated.actualWidth
 		updated.actualY = d.usableY
-		updated.actualWidth = width - style.GetHorizontalFrameSize()
-		updated.actualHeight = height - style.GetVerticalFrameSize()
 
 		d.usableWidth -= width
+
 	default:
-		updated.FillRemaining = true
+		updated.fillRemaining = true
 	}
 
 	return updated
 }
 
 func (d *DockLayout) View(models []tea.Model) string {
-	if len(models) == 0 {
-		return ""
+	if len(models) == 0 || d.Height == 0 || d.Width == 0 {
+		return lipgloss.NewStyle().Width(d.Width).Height(d.Height).Render("")
 	}
 
-	top, bottom := "", ""
-	middle := make([]string, 3)
+	compositeLines := make([]string, d.Height)
 
-	for i, model := range models {
-		definition := d.renderDefinition.Definitions[i]
-		style := definition.Position.ConnectedCorners(d.renderDefinition.FocusedStyle, d.renderDefinition.PositionsInUse()...)
-		render := style.
-			Width(definition.actualWidth - style.GetHorizontalFrameSize()).Height(definition.actualHeight - style.GetVerticalFrameSize()).
-			Render(model.View())
-		switch definition.Position {
-		case Top:
-			top = render
-		case Bottom:
-			bottom = render
-		case Left:
-			middle[0] = render
-		case Right:
-			middle[2] = render
-		default:
-			middle[1] = render
+	for i := range d.layoutDefinition.getXOrderedIndices() {
+		if i >= len(models) {
+			break
+		}
+
+		definition := d.layoutDefinition.panels[i]
+		model := models[i]
+
+		style := d.getDefinitionStyle(i)
+		if style.GetWidth() == 0 || style.GetHeight() == 0 {
+			continue
+		}
+
+		render := style.Render(model.View())
+
+		lineIndex := 0
+		for line := range strings.Lines(render) {
+			renderLine := strings.TrimRight(line, "\n")
+			compositeLines[definition.actualY+lineIndex] += renderLine
+			lineIndex++
 		}
 	}
 
-	joinedMiddle := lipgloss.JoinHorizontal(lipgloss.Left, middle...) // This is fine since no newlines is done when horizontally joining empty string
-	columns := []string{}
-	if top != "" {
-		columns = append(columns, top)
-	}
-	if joinedMiddle != "" {
-		columns = append(columns, joinedMiddle)
-	}
-	if bottom != "" {
-		columns = append(columns, bottom)
-	}
-
-	composed := lipgloss.JoinVertical(lipgloss.Top, columns...) // However, here we can't have an empty string
-
-	return composed
+	return strings.Join(compositeLines, "\n")
 }

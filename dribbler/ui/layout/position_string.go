@@ -9,16 +9,16 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[None-0]
-	_ = x[Center-1]
-	_ = x[Top-2]
+	_ = x[Top-1]
+	_ = x[Right-2]
 	_ = x[Bottom-3]
 	_ = x[Left-4]
-	_ = x[Right-5]
+	_ = x[Center-5]
 }
 
-const _Position_name = "NoneCenterTopBottomLeftRight"
+const _Position_name = "NoneTopRightBottomLeftCenter"
 
-var _Position_index = [...]uint8{0, 4, 10, 13, 19, 23, 28}
+var _Position_index = [...]uint8{0, 4, 7, 12, 18, 22, 28}
 
 func (i Position) String() string {
 	if i < 0 || i >= Position(len(_Position_index)-1) {

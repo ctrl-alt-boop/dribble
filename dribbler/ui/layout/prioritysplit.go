@@ -3,36 +3,37 @@ package layout
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ctrl-alt-boop/dribbler/ui"
 )
 
 var _ Manager = (*PrioritySplitLayout)(nil)
 
-type PrioritySplitLayout struct {
+type PrioritySplitLayout struct { // FIXME: Border junctions
 	managerBase
-	Ratio                            float64
-	Direction                        Direction
-	HorizontalGutter, VerticalGutter string
+	PrimarySizeRatio float64
+	Position         Position
 
-	// I'm not entierly sure how I want to do this, either letting the content decide or Layout decide...
-	// One option is to reset the style of Children and using the one the parent decides
-
-	primaryWidth, primaryHeight                 int
-	secondaryWidth, secondaryHeight             int
-	secondaryWidthForOne, secondaryHeightForOne int
-	stackLayout                                 *StackLayout
+	stackLayout *StackLayout
 }
 
-func NewPrioritySplitLayout(direction Direction) *PrioritySplitLayout {
+func NewPrioritySplitLayout(primaryPosition Position, opts ...layoutOption) *PrioritySplitLayout {
+	var direction Direction = 0
+	switch primaryPosition {
+	case Left, Right:
+		direction = South
+	case Top, Bottom:
+		direction = East
+	}
 	layout := &PrioritySplitLayout{
 		managerBase: managerBase{
-			focusPassThrough: false,
+			layoutDefinition: New(
+				[]panelDefinition{},
+				opts...,
+			),
+			focusPassThrough: true,
 		},
-		Ratio:            0.6,
-		Direction:        direction,
-		HorizontalGutter: ui.DefaultHorizontalGutter,
-		VerticalGutter:   ui.DefaultVerticalGutter,
-		stackLayout:      NewStackLayout(direction),
+		PrimarySizeRatio: 0.5,
+		Position:         primaryPosition,
+		stackLayout:      NewStackLayout(direction, opts...),
 	}
 
 	return layout
@@ -53,108 +54,88 @@ func (p *PrioritySplitLayout) Layout(models []tea.Model) []tea.Model {
 		return models
 	}
 
-	updatedModels := make([]tea.Model, len(models))
-
-	// if p.Ratio <= 0 || p.Ratio >= 1 {
-	// 	p.Ratio = 0.5 // Default to 50/50 split
-	// }
+	if p.PrimarySizeRatio <= 0 || p.PrimarySizeRatio >= 1 {
+		p.PrimarySizeRatio = 0.5 // Default to 50/50 split
+	}
 
 	// Calculate sizes for primary and secondary models
 
-	secondaryCount := len(models) - 1
+	primaryWidth, primaryHeight := p.Width, p.Height
+	primaryX, primaryY := 0, 0
 
-	switch p.Direction {
-	case Horizontal:
-		p.primaryWidth = p.Width
-		p.secondaryWidth = p.Width
+	secondaryWidth, secondaryHeight := p.Width, p.Height
+	secondaryX, secondaryY := 0, 0
 
-		totalUsableHeight := p.Height - 1
-		p.primaryHeight = int(float64(totalUsableHeight) * p.Ratio)
-		p.secondaryHeight = totalUsableHeight - p.primaryHeight
-		if secondaryCount > 0 {
-			p.secondaryHeightForOne = p.secondaryHeight / secondaryCount
+	switch p.Position {
+	case Left, Right:
+		totalUsableWidth := p.Width
+
+		primaryWidth = int(float64(totalUsableWidth) * p.PrimarySizeRatio)
+		secondaryWidth = totalUsableWidth - primaryWidth
+		if p.Position == Right {
+			primaryX = p.Width - primaryWidth
+		} else {
+			secondaryX = p.Width - primaryWidth
+			secondaryY = 0
 		}
-	case Vertical:
-		p.primaryHeight = p.Height
-		p.secondaryHeight = p.Height
+	case Top, Bottom:
+		totalUsableHeight := p.Height
 
-		totalUsableWidth := p.Width - 1
-		p.primaryWidth = int(float64(totalUsableWidth) * p.Ratio)
-		p.secondaryWidth = totalUsableWidth - p.primaryWidth
-		if secondaryCount > 0 {
-			p.secondaryWidthForOne = p.secondaryWidth / secondaryCount
+		primaryHeight = int(float64(totalUsableHeight) * p.PrimarySizeRatio)
+		secondaryHeight = totalUsableHeight - primaryHeight
+		if p.Position == Bottom {
+			primaryY = p.Height - primaryHeight
+		} else {
+			secondaryX = 0
+			secondaryY = p.Height - primaryHeight
 		}
 	}
 
-	updatedPrimary, _ := models[0].Update(tea.WindowSizeMsg{Width: p.primaryWidth, Height: p.primaryHeight})
-	updatedModels[0] = updatedPrimary
+	p.layoutDefinition.panels = []panelDefinition{
+		{
+			actualWidth:  primaryWidth,
+			actualHeight: primaryHeight,
+			actualX:      primaryX,
+			actualY:      primaryY,
+		},
+		{
+			actualWidth:  secondaryWidth,
+			actualHeight: secondaryHeight,
+			actualX:      secondaryX,
+			actualY:      secondaryY,
+		},
+	}
 
-	p.stackLayout.SetSize(p.secondaryWidth, p.secondaryHeight)
+	updatedModels := p.layout(models[:1])
 
+	p.stackLayout.SetSize(secondaryWidth, secondaryHeight)
 	updatedSecondaryModels := p.stackLayout.Layout(models[1:])
 
-	for i, updatedModel := range updatedSecondaryModels {
-		updatedModels[i+1] = updatedModel
-	}
+	updatedModels = append(updatedModels, updatedSecondaryModels...)
 
 	return updatedModels
 }
 
 func (p *PrioritySplitLayout) View(models []tea.Model) string {
-	return p.StackView(models)
-}
-
-func (p *PrioritySplitLayout) StackView(models []tea.Model) string {
-	if len(models) == 0 {
-		return ""
+	if len(models) == 0 || p.Height == 0 || p.Width == 0 {
+		return lipgloss.NewStyle().Width(p.Width).Height(p.Height).Render("")
 	}
+	primaryRender := p.getDefinitionStyle(0).Render(models[0].View())
 
-	secondaryModels := models[1:]
-
-	stackView := p.stackLayout.View(secondaryModels)
-
-	primaryRender := lipgloss.NewStyle().
-		Width(p.primaryWidth).Height(p.primaryHeight).
-		Render(models[0].View())
-
-	primarySeparator := p.CreatePrimarySeparator(p.Direction, p.Width, p.Height)
-	switch p.Direction {
-	case Horizontal:
-		return lipgloss.JoinVertical(0, primaryRender, primarySeparator, stackView)
-
-	case Vertical:
-		return lipgloss.JoinHorizontal(0, primaryRender, primarySeparator, stackView)
-
-	default:
-		return ""
+	if p.focusedIndex > 0 {
+		p.stackLayout.focusedIndex = p.focusedIndex - 1
 	}
-}
+	stackView := p.stackLayout.View(models[1:])
 
-// 1 argument means that size
-// 2 arguments chooses based on direction, (width, height)
-func (p *PrioritySplitLayout) CreatePrimarySeparator(direction Direction, size ...int) string {
-	if len(size) == 0 {
-		return ""
-	}
-	if len(size) == 1 {
-		size = append(size, size[0])
-	}
-
-	switch direction {
-	case Horizontal:
-		return lipgloss.PlaceHorizontal(
-			size[0],
-			lipgloss.Center,
-			p.HorizontalGutter,
-			lipgloss.WithWhitespaceChars(p.HorizontalGutter),
-		)
-	case Vertical:
-		return lipgloss.PlaceVertical(
-			size[1],
-			lipgloss.Center,
-			p.VerticalGutter,
-			lipgloss.WithWhitespaceChars(p.VerticalGutter),
-		)
+	switch p.Position {
+	case Top:
+		return lipgloss.JoinVertical(0, primaryRender, stackView)
+	case Right:
+		return lipgloss.JoinHorizontal(0, stackView, primaryRender)
+	case Bottom:
+		return lipgloss.JoinVertical(0, stackView, primaryRender)
+	case Left:
+		return lipgloss.JoinHorizontal(0, primaryRender, stackView)
 	default:
 		return ""
 	}

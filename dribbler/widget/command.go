@@ -48,7 +48,17 @@ type (
 	IntentBuilderConfirmMsg struct {
 		Intent *request.Intent
 	}
+
+	FocusMsg struct {
+		Index []int
+	}
+
+	FocusBackMsg struct{}
 )
+
+func FocusBackCmd() tea.Msg {
+	return FocusBackMsg{}
+}
 
 func WorkspaceSet() tea.Msg {
 	return WorkspaceSetMsg{}

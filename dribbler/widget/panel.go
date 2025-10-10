@@ -51,7 +51,7 @@ func NewPanel(dribbleClient *dribble.Client) *Panel {
 		mode:               ServerList,
 		spinner:            spinner.New(spinner.WithSpinner(ui.MovingBlock)),
 		selectIndexHistory: make([]int, 0),
-		showDetails:        config.Cfg.Ui.ShowDetails,
+		showDetails:        config.Cfg.Ui.ShowTargetDetails,
 	}
 }
 

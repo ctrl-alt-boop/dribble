@@ -29,8 +29,6 @@ type AppModel struct {
 	inFocus   widget.Kind
 	prevFocus widget.Kind
 
-	programSend func(msg tea.Msg)
-
 	NavigationTree [][][][]string // Temporary navigation tree servers/databases/tables/columns
 
 }

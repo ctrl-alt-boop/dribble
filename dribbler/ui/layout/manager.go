@@ -1,19 +1,19 @@
 package layout
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"fmt"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
 
 type Manager interface {
-	SetDefinition(definition RenderDefinition)
-	GetDefinition() RenderDefinition
+	GetDefinition() layoutDefinition
 
-	AddLayout(definition LayoutDefinition)
+	AddCenterPanel()
 
-	UpdateLayout(index int, opts ...LayoutOption)
-	SetLayout(index int, definition LayoutDefinition)
-	GetLayout(index int) LayoutDefinition
-
-	// If position is not set, returns empty LayoutDefinition
-	GetLayoutForPosition(position Position) LayoutDefinition
+	UpdateLayout(opts ...layoutOption)
+	UpdatePanel(index int, opts ...panelOption)
 
 	Layout(models []tea.Model) []tea.Model
 	View(models []tea.Model) string
@@ -25,57 +25,99 @@ type Manager interface {
 }
 
 type managerBase struct {
+	Width, Height int
+	X, Y          int
+
 	focusPassThrough bool
-	Width, Height    int
-	X, Y             int
-
-	renderDefinition RenderDefinition
+	layoutDefinition layoutDefinition
+	focusedIndex     int
 }
 
-func (b *managerBase) SetDefinition(definition RenderDefinition) {
-	b.renderDefinition = definition
-}
-
-func (b *managerBase) AddLayout(definition LayoutDefinition) {
-	b.renderDefinition.Definitions = append(b.renderDefinition.Definitions, definition)
-	if _, ok := b.renderDefinition.indexForPosition[definition.Position]; ok {
-		panic("Position already in use") // FIXME: temp panic
+func (b *managerBase) UpdateLayout(opts ...layoutOption) {
+	for _, opt := range opts {
+		opt(&b.layoutDefinition)
 	}
-	b.renderDefinition.indexForPosition[definition.Position] = len(b.renderDefinition.Definitions) - 1
 }
 
-func (b *managerBase) GetDefinition() RenderDefinition {
-	return b.renderDefinition
+func (b *managerBase) AddCenterPanel() {
+	b.layoutDefinition.Update(AddCenterPanel())
 }
 
-func (b *managerBase) GetLayout(index int) LayoutDefinition {
-	return b.renderDefinition.Definitions[index]
+func (b *managerBase) GetDefinition() layoutDefinition {
+	return b.layoutDefinition
+}
+
+func (b *managerBase) GetPanelDefinition(index int) panelDefinition {
+	return b.layoutDefinition.panels[index]
 }
 
 // If position is not set, returns empty LayoutDefinition
-func (b *managerBase) GetLayoutForPosition(position Position) LayoutDefinition {
-	if index, ok := b.renderDefinition.indexForPosition[position]; ok {
-		return b.renderDefinition.Definitions[index]
+func (b *managerBase) GetLayoutForPosition(position Position) panelDefinition {
+	if index, ok := b.layoutDefinition.indexForPosition[position]; ok {
+		return b.layoutDefinition.panels[index]
 	}
-	return LayoutDefinition{}
+	return panelDefinition{}
 }
 
-func (b *managerBase) SetLayout(index int, definition LayoutDefinition) {
-	b.renderDefinition.Definitions[index] = definition
+func (b *managerBase) SetLayout(index int, definition panelDefinition) {
+	b.layoutDefinition.panels[index] = definition
 }
 
-func (b *managerBase) UpdateLayout(index int, opts ...LayoutOption) {
+func (b *managerBase) UpdatePanel(index int, opts ...panelOption) {
+	if index >= len(b.layoutDefinition.panels) {
+		panic("Index out of bounds")
+	}
 	for _, opt := range opts {
-		opt(&b.renderDefinition.Definitions[index])
+		opt(&b.layoutDefinition.panels[index])
 	}
 }
 
-// GetFocusPassThrough implements Manager.
 func (b *managerBase) GetFocusPassThrough() bool {
 	return b.focusPassThrough
 }
 
-// SetFocusPassThrough implements Manager.
 func (b *managerBase) SetFocusPassThrough(v bool) {
 	b.focusPassThrough = v
+}
+
+func (b *managerBase) layout(models []tea.Model) []tea.Model {
+	if len(models) == 0 {
+		return models
+	}
+
+	updatedModels := models
+	for i, def := range b.layoutDefinition.panels {
+		var model tea.Model
+		if i < len(models) {
+			model = models[i]
+			msg := tea.WindowSizeMsg{Width: def.actualWidth, Height: def.actualHeight}
+			updatedModel, _ := model.Update(msg)
+			updatedModels[i] = updatedModel
+		}
+	}
+	b.layoutDefinition.updateBorders()
+	return updatedModels
+}
+
+func (b *managerBase) getDefinitionStyle(index int) lipgloss.Style {
+	style := b.layoutDefinition.normalStyle
+	if b.layoutDefinition.hasFocusUnfocusStyles {
+		if index == b.focusedIndex {
+			style = b.layoutDefinition.focusedStyle
+		}
+	}
+	if DebugBackgrounds {
+		style = style.Background(lipgloss.Color(fmt.Sprintf("1%d3", index)))
+	}
+	definition := b.layoutDefinition.panels[index]
+
+	border := b.layoutDefinition.getBorder(definition)
+	style = style.Border(border, definition.topBorder, definition.rightBorder, definition.bottomBorder, definition.leftBorder)
+
+	if definition.actualHeight == 0 || definition.actualWidth == 0 {
+		return style.Width(0).Height(0)
+	}
+	return style.
+		Width(definition.actualWidth - style.GetHorizontalFrameSize()).
+		Height(definition.actualHeight - style.GetVerticalFrameSize())
 }

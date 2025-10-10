@@ -3,7 +3,6 @@ package layout
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ctrl-alt-boop/dribbler/ui"
 )
 
 var _ Manager = (*UniformGridLayout)(nil)
@@ -11,21 +10,18 @@ var _ Manager = (*UniformGridLayout)(nil)
 type UniformGridLayout struct {
 	managerBase
 	Columns int
-
-	CellWidth, CellHeight int
-	// I'm not entierly sure how I want to do this, either letting the content decide or Layout decide...
-	// One option is to reset the style of Children and using the one the parent decides
-	VerticalGutter, HorizontalGutter string
 }
 
-func NewUniformGridLayout(numColumns int) *UniformGridLayout {
+func NewUniformGridLayout(numColumns int, opts ...layoutOption) *UniformGridLayout {
 	return &UniformGridLayout{
 		managerBase: managerBase{
+			layoutDefinition: New(
+				[]panelDefinition{},
+				opts...,
+			),
 			focusPassThrough: false,
 		},
-		Columns:          numColumns,
-		HorizontalGutter: ui.DefaultHorizontalGutter,
-		VerticalGutter:   ui.DefaultVerticalGutter,
+		Columns: numColumns,
 	}
 }
 
@@ -44,41 +40,60 @@ func (g *UniformGridLayout) Layout(models []tea.Model) []tea.Model {
 	}
 
 	// Calculate the usable width for each column.
-	// We subtract space for the gutters (g.Columns - 1)
-	numGuttersX := g.Columns - 1
-	totalHorizontalGutterWidth := numGuttersX * 1
-	usableWidth := g.Width - totalHorizontalGutterWidth
-	cellWidth := usableWidth / g.Columns
+	baseCellWidth := g.Width / g.Columns
+	widthRemainder := g.Width % g.Columns
 
 	// Determine the number of rows needed
 	numChildren := len(models)
 	numRows := (numChildren + g.Columns - 1) / g.Columns
 
-	numGuttersY := numRows - 1
-	totalVerticalGutterHeight := numGuttersY * 1
-	usableHeight := g.Height - totalVerticalGutterHeight
-	cellHeight := usableHeight / numRows
+	baseCellHeight := g.Height / numRows
+	heightRemainder := g.Height % numRows
 
-	// Send a WindowSizeMsg to all children to inform them of their new size
-	msg := tea.WindowSizeMsg{Width: cellWidth, Height: cellHeight}
-
-	updatedModels := make([]tea.Model, len(models))
-	for i, model := range models {
-		// Use tea.Model to send the message to the updatedModel
-		updatedModel, _ := model.Update(msg)
-
-		updatedModels[i] = updatedModel
+	widths := make([]int, g.Columns)
+	heights := make([]int, numRows)
+	for i := range widths {
+		if i < widthRemainder {
+			widths[i] = baseCellWidth + 1
+		} else {
+			widths[i] = baseCellWidth
+		}
+	}
+	for i := range heights {
+		if i < heightRemainder {
+			heights[i] = baseCellHeight + 1
+		} else {
+			heights[i] = baseCellHeight
+		}
 	}
 
-	g.CellWidth = cellWidth
-	g.CellHeight = cellHeight
+	updatedDefinitions := make([]panelDefinition, len(models))
+	currentY := 0
+	for i := range numRows {
+		currentX := 0
+		for j := range g.Columns {
+			index := i*g.Columns + j
+			if index >= numChildren {
+				break
+			}
+			updatedDefinitions[index].actualWidth = widths[j]
+			updatedDefinitions[index].actualHeight = heights[i]
+			updatedDefinitions[index].actualX = currentX
+			updatedDefinitions[index].actualY = currentY
 
-	return updatedModels
+			currentX += widths[j]
+		}
+		currentY += heights[i]
+	}
+
+	g.layoutDefinition.panels = updatedDefinitions
+
+	return g.layout(models)
 }
 
 func (g *UniformGridLayout) View(models []tea.Model) string {
-	if g.Columns <= 0 || len(models) == 0 {
-		return ""
+	if g.Columns <= 0 || len(models) == 0 || g.Height == 0 || g.Width == 0 {
+		return lipgloss.NewStyle().Width(g.Width).Height(g.Height).Render("")
 	}
 
 	var rows []string
@@ -90,27 +105,15 @@ func (g *UniformGridLayout) View(models []tea.Model) string {
 		// Get the View output for all models in the current row
 		var cellViews []string
 		for j, model := range models[i:end] {
-			style := lipgloss.NewStyle().Margin(1, 2)
 
-			if j > 0 {
-				cellViews = append(cellViews, lipgloss.PlaceVertical(
-					g.CellHeight,
-					lipgloss.Center,
-					g.VerticalGutter, lipgloss.WithWhitespaceChars(g.VerticalGutter)))
-			}
-			cellViews = append(cellViews, style.Width(g.CellWidth-style.GetHorizontalFrameSize()).Height(g.CellHeight-style.GetVerticalFrameSize()).Render(model.View()))
+			style := g.getDefinitionStyle(i + j)
+			cellViews = append(cellViews, style.Render(model.View()))
 		}
 
 		// 2. Join the cells horizontally to form the row string
 		rowString := lipgloss.JoinHorizontal(lipgloss.Top, cellViews...)
-		style := lipgloss.NewStyle()
-		if currentRow > 0 {
-			rows = append(rows, lipgloss.PlaceHorizontal(
-				g.CellWidth*g.Columns+(g.Columns-1),
-				lipgloss.Center,
-				g.HorizontalGutter, lipgloss.WithWhitespaceChars(g.HorizontalGutter)))
-		}
-		rows = append(rows, style.Render(rowString))
+
+		rows = append(rows, rowString)
 		currentRow++
 	}
 

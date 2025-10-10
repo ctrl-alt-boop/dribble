@@ -1,6 +1,9 @@
 package layout
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
 
 var _ Manager = (*SimpleLayout)(nil)
 
@@ -47,9 +50,9 @@ func (s SimpleLayout) Layout(models []tea.Model) []tea.Model {
 
 func (s *SimpleLayout) View(models []tea.Model) string {
 	if len(models) == 0 {
-		return ""
+		return lipgloss.NewStyle().Width(s.Width).Height(s.Height).Render("")
 	}
 
 	// Only render the first model
-	return models[0].View()
+	return lipgloss.NewStyle().Width(s.Width).Height(s.Height).Render(models[0].View())
 }

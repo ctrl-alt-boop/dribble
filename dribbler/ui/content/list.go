@@ -19,7 +19,7 @@ type Item struct {
 }
 
 func (l *Item) String() string {
-	return fmt.Sprint(l.Value)
+	return fmt.Sprintf("%v", l.Value)
 }
 
 type List struct {
