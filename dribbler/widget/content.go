@@ -37,6 +37,7 @@ func New(name string, manager layout.Manager, children ...tea.Model) ContentArea
 		name:          name,
 		LayoutManager: manager,
 		Children:      children,
+		Style:         lipgloss.NewStyle(),
 		FocusedChild:  -1,
 	}
 }
@@ -76,9 +77,9 @@ func (a ContentArea) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 
-		updated.LayoutManager.SetSize(msg.Width, msg.Height)
+		updated.LayoutManager.SetSize(msg.Width-a.Style.GetHorizontalFrameSize(), msg.Height-a.Style.GetVerticalFrameSize())
 
-		updatedChildren := a.LayoutManager.Layout(a.Children)
+		updatedChildren := updated.LayoutManager.Layout(a.Children)
 		updated.Children = updatedChildren
 		return updated, nil
 
@@ -87,7 +88,7 @@ func (a ContentArea) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			updated.FocusedChild = (a.FocusedChild + 1) % len(a.Children)
 			return updated, nil
 		}
-		if len(a.Children) == 0 {
+		if len(a.Children) == 0 || a.FocusedChild == -1 {
 			return updated, nil
 		}
 		focusedChild := a.Children[a.FocusedChild]

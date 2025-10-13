@@ -27,14 +27,14 @@ func (r *layoutDefinition) Update(opts ...layoutOption) {
 	}
 }
 
-func (r layoutDefinition) getXOrderedIndices() iter.Seq[int] {
+func (r layoutDefinition) getXYOrderedIndices() iter.Seq[int] {
 	orderedIndices := make([]int, len(r.panels))
 
 	for i := range orderedIndices {
 		orderedIndices[i] = i
 	}
 	slices.SortFunc(orderedIndices, func(i, j int) int {
-		return r.panels[i].actualX - r.panels[j].actualX
+		return (r.panels[i].actualX + r.panels[i].actualY) - (r.panels[j].actualX + r.panels[j].actualY)
 	})
 	return func(yield func(int) bool) {
 		for _, index := range orderedIndices {

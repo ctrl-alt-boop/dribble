@@ -1,6 +1,7 @@
 package widget
 
 import (
+	"github.com/charmbracelet/bubbles/help"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/request"
@@ -54,6 +55,10 @@ type (
 	}
 
 	FocusBackMsg struct{}
+
+	UpdateHelpMsg struct {
+		KeyMap help.KeyMap
+	}
 )
 
 func FocusBackCmd() tea.Msg {

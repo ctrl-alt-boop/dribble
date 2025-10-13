@@ -23,7 +23,7 @@ func newTestResultTable() *result.Table {
 
 func TestTable_NewTable(t *testing.T) {
 	resTable := newTestResultTable()
-	table := content.NewTable(1, "Test Table", resTable)
+	table := content.NewTable(resTable)
 
 	if table == nil {
 		t.Fatal("NewTable returned nil")
@@ -36,7 +36,7 @@ func TestTable_NewTable(t *testing.T) {
 
 func TestTable_CursorMovement(t *testing.T) {
 	resTable := newTestResultTable()
-	table := content.NewTable(1, "Test Table", resTable) // 2 rows, 3 cols
+	table := content.NewTable(resTable) // 2 rows, 3 cols
 
 	testCases := []struct {
 		name         string
@@ -72,7 +72,7 @@ func TestTable_CursorMovement(t *testing.T) {
 
 func TestTable_GetSelected(t *testing.T) {
 	resTable := newTestResultTable()
-	table := content.NewTable(1, "Test Table", resTable)
+	table := content.NewTable(resTable)
 
 	table.SetCursor(1, 1) // "Second"
 	selectedValue := table.GetSelected()
@@ -91,7 +91,7 @@ func TestTable_GetSelected(t *testing.T) {
 
 func TestTable_Update(t *testing.T) {
 	resTable := newTestResultTable()
-	table := content.NewTable(1, "Original", resTable)
+	table := content.NewTable(resTable)
 
 	// Create new data for the update
 	newCols := []*result.Column{{Name: "Status", DBType: "string"}}

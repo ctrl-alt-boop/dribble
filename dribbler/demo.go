@@ -156,11 +156,11 @@ func CreateDemoLayout() widget.ContentArea {
 }
 
 func CreateDemoDockContentAreaFull() widget.ContentArea {
-	top := content.Text{Item: content.Item{Value: "Top"}}
-	bottom := content.Text{Item: content.Item{Value: "Bottom"}}
-	left := content.Text{Item: content.Item{Value: "Left"}}
-	right := content.Text{Item: content.Item{Value: "Right"}}
-	center := content.Text{Item: content.Item{Value: "Center"}}
+	top := content.Text("Top")
+	bottom := content.Text("Bottom")
+	left := content.Text("Left")
+	right := content.Text("Right")
+	center := content.Text("Center")
 
 	dockLayout := layout.NewDockLayout(
 		layout.Panels(
@@ -181,11 +181,11 @@ func CreateDemoDockContentAreaFull() widget.ContentArea {
 }
 
 func CreateDemoDockContentAreaFullRatios() widget.ContentArea {
-	top := content.Text{Item: content.Item{Value: "Top"}}
-	bottom := content.Text{Item: content.Item{Value: "Bottom"}}
-	left := content.Text{Item: content.Item{Value: "Left"}}
-	right := content.Text{Item: content.Item{Value: "Right"}}
-	center := content.Text{Item: content.Item{Value: "Center"}}
+	top := content.Text("Top")
+	bottom := content.Text("Bottom")
+	left := content.Text("Left")
+	right := content.Text("Right")
+	center := content.Text("Center")
 
 	dockLayout := layout.NewDockLayout(
 		layout.Panels(
@@ -205,9 +205,9 @@ func CreateDemoDockContentAreaFullRatios() widget.ContentArea {
 }
 
 func CreateDemoDockContentAreaNotFull() widget.ContentArea {
-	bottom := content.Text{Item: content.Item{Value: "Bottom"}}
-	left := content.Text{Item: content.Item{Value: "Left"}}
-	center := content.Text{Item: content.Item{Value: "Center"}}
+	bottom := content.Text("Bottom")
+	left := content.Text("Left")
+	center := content.Text("Center")
 	// contentList := CreateDemoList(3)
 	dockLayout := layout.NewDockLayout(
 		layout.Panels(
@@ -227,11 +227,11 @@ func CreateDemoDockContentAreaNotFull() widget.ContentArea {
 }
 
 func CreateDemoDockContentAreaUnorderedModels() widget.ContentArea {
-	left := content.Text{Item: "Left"}
-	top := content.Text{Item: "Top"}
-	bottom := content.Text{Item: "Bottom"}
-	center := content.Text{Item: "Center"}
-	right := content.Text{Item: "Right"}
+	left := content.Text("Left")
+	top := content.Text("Top")
+	bottom := content.Text("Bottom")
+	center := content.Text("Center")
+	right := content.Text("Right")
 	// contentList := CreateDemoList(3)
 	dockLayout := layout.NewDockLayout(
 		layout.Panels(
@@ -373,7 +373,7 @@ func CreateDemo3x3GridContentArea() widget.ContentArea {
 
 func CreateDemoSimpleContentArea() widget.ContentArea {
 
-	contentArea := widget.New("Simple", layout.NewSimpleLayout(), content.Text{Item: "Simple Layout"})
+	contentArea := widget.New("Simple", layout.NewSimpleLayout(), content.Text("Simple Layout"))
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 
 	return contentArea

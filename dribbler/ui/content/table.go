@@ -135,10 +135,10 @@ func (t *Table) SetCursor(x int, y int) {
 	t.cursorY = y
 }
 
-func NewTable(id int, name string, table *result.Table) *Table {
+func NewTable(table *result.Table) *Table {
 	newTable := &Table{
-		ID:    id,
-		Name:  name,
+		ID:    0,
+		Name:  "Table",
 		Table: table,
 
 		MaxCellWidth: DefaultMaxCellWidth,

@@ -29,8 +29,8 @@ func NewDockLayout(panels panelsDefinition, opts ...layoutOption) *DockLayout {
 }
 
 func (d *DockLayout) SetSize(width, height int) {
-	d.Width = width
-	d.Height = height
+	d.Width = width - d.layoutDefinition.normalStyle.GetHorizontalFrameSize()
+	d.Height = height - d.layoutDefinition.normalStyle.GetVerticalFrameSize()
 	d.usableWidth = width
 	d.usableHeight = height
 	d.usableX = 0
@@ -85,10 +85,10 @@ func (d *DockLayout) Allocate(definition panelDefinition) panelDefinition {
 
 		width := d.usableWidth
 
-		updated.actualX = d.usableX
-		updated.actualY = 0
 		updated.actualWidth = width
 		updated.actualHeight = height
+		updated.actualX = d.usableX
+		updated.actualY = 0
 
 		d.usableY += height
 		d.usableHeight -= height
@@ -144,7 +144,7 @@ func (d *DockLayout) View(models []tea.Model) string {
 
 	compositeLines := make([]string, d.Height)
 
-	for i := range d.layoutDefinition.getXOrderedIndices() {
+	for i := range d.layoutDefinition.getXYOrderedIndices() {
 		if i >= len(models) {
 			break
 		}
@@ -162,6 +162,10 @@ func (d *DockLayout) View(models []tea.Model) string {
 		lineIndex := 0
 		for line := range strings.Lines(render) {
 			renderLine := strings.TrimRight(line, "\n")
+
+			if len(compositeLines[definition.actualY+lineIndex]) > 0 && definition.actualX == 0 {
+				renderLine = "\n" + renderLine
+			}
 			compositeLines[definition.actualY+lineIndex] += renderLine
 			lineIndex++
 		}

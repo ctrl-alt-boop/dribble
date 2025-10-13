@@ -100,7 +100,7 @@ func loadConfig() (*Config, *viper.Viper, error) {
 	// Connections
 	v.SetDefault("targets.servers", map[string]struct{}{})
 	v.SetDefault("targets.databases", map[string]struct{}{})
-	v.SetDefault("Connections.DriverDefaults", map[string]struct{}{})
+	v.SetDefault("Targets.DriverDefaults", map[string]struct{}{})
 	// v.SetDefault("Connections.Saved", map[string]struct{}{})
 
 	// Ui
@@ -115,6 +115,8 @@ func loadConfig() (*Config, *viper.Viper, error) {
 	v.SetDefault("ui.theme.colors.accent", "")
 	v.SetDefault("ui.theme.colors.text", "")
 	v.SetDefault("ui.theme.colors.background", "")
+	v.SetDefault("ui.theme.colors.borders", "")
+	v.SetDefault("ui.theme.colors.selection", "")
 
 	// 4. Enable automatic environment variable binding
 	// This will look for environment variables with the prefix
