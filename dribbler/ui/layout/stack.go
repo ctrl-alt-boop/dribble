@@ -23,6 +23,7 @@ func NewStackLayout(direction Direction, opts ...layoutOption) *StackLayout {
 				opts...,
 			),
 			focusPassThrough: false,
+			focusedIndex:     -1,
 		},
 		StackDirection: direction,
 	}

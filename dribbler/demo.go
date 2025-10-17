@@ -6,15 +6,15 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ctrl-alt-boop/dribble"
+	"github.com/ctrl-alt-boop/dribbler/component"
 	"github.com/ctrl-alt-boop/dribbler/config"
 	"github.com/ctrl-alt-boop/dribbler/ui/content"
 	"github.com/ctrl-alt-boop/dribbler/ui/layout"
-	"github.com/ctrl-alt-boop/dribbler/widget"
 )
 
 var _ tea.Model = (*DemoModel)(nil)
 
+// DemoModel is used by the demo application to showcase UI
 type DemoModel struct {
 	thing                   tea.Model
 	Width, Height           int
@@ -35,21 +35,20 @@ func (t *DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 
 		t.Width, t.Height = msg.Width, msg.Height
-		borderStyle := lipgloss.NewStyle().Border(lipgloss.NormalBorder())
-		t.InnerWidth, t.InnerHeight = msg.Width-borderStyle.GetHorizontalFrameSize(), msg.Height-borderStyle.GetVerticalFrameSize()
-		updatedThing, cmd := t.thing.Update(tea.WindowSizeMsg{Width: t.InnerWidth, Height: t.InnerHeight})
+		// borderStyle := lipgloss.NewStyle().Border(lipgloss.NormalBorder())
+		// t.InnerWidth, t.InnerHeight = msg.Width-borderStyle.GetHorizontalFrameSize(), msg.Height-borderStyle.GetVerticalFrameSize()
+		updatedThing, cmd := t.thing.Update(tea.WindowSizeMsg{Width: t.Width, Height: t.Height})
 		t.thing = updatedThing
 		if cmd != nil {
 			cmds = append(cmds, cmd)
-
 		}
 		return t, tea.Batch(cmds...)
 	case tea.KeyMsg:
 		if key.Matches(msg, config.Keys.Quit) {
 			return t, tea.Quit
 		}
-		if key.Matches(msg, config.Keys.CycleView) {
-			cmd := t.OnCycleView()
+		if key.Matches(msg, config.Keys.CycleViewNext) {
+			cmd := t.onCycleView()
 			return t, cmd
 		}
 		wsMsg := func() tea.Msg {
@@ -62,7 +61,7 @@ func (t *DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if key.Matches(msg, config.Keys.Decrease) {
 			t.ViewIndex = (t.ViewIndex - 1) % 8
 			if t.ViewIndex < 0 {
-				t.ViewIndex = len(ViewList) - 1
+				t.ViewIndex = len(viewList) - 1
 			}
 			return t, wsMsg
 		}
@@ -80,82 +79,75 @@ func (t *DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return t, tea.Batch(cmds...)
 }
 
-var ViewList = []func() widget.ContentArea{
-	CreateDemoPriorityContentAreaTop,
-	CreateDemoPriorityContentAreaRight,
-	CreateDemoPriorityContentAreaBottom,
-	CreateDemoPriorityContentAreaLeft,
+var viewList = []func() component.ContentArea{
+	createDemoTabbedContentArea,
 
-	CreateDemoStackContentAreaHorizontal,
-	CreateDemoStackContentAreaVertical,
+	createDemoDockContentAreaFull,
+	createDemoDockContentAreaFullRatios,
+	createDemoDockContentAreaUnorderedModels,
+	createDemoDockContentAreaNotFull,
 
-	CreateDemo2x2GridContentArea,
-	CreateDemo2x3GridContentArea,
-	CreateDemo3x3GridContentArea,
+	createDemoPriorityContentAreaTop,
+	createDemoPriorityContentAreaRight,
+	createDemoPriorityContentAreaBottom,
+	createDemoPriorityContentAreaLeft,
 
-	CreateDemoDockContentAreaFull,
-	CreateDemoDockContentAreaFullRatios,
-	CreateDemoDockContentAreaUnorderedModels,
-	CreateDemoDockContentAreaNotFull,
+	createDemoStackContentAreaHorizontal,
+	createDemoStackContentAreaVertical,
 
-	CreateDemoTabbedContentArea,
+	createDemo2x2GridContentArea,
+	createDemo2x3GridContentArea,
+	createDemo3x3GridContentArea,
 
-	CreateDemoSimpleContentArea,
-	CreateDemoEmptyContentArea,
+	createDemoSimpleContentArea,
+	createDemoEmptyContentArea,
 }
 
-func (t *DemoModel) OnCycleView() tea.Cmd {
-	t.ViewIndex = (t.ViewIndex + 1) % len(ViewList)
-	t.thing = ViewList[t.ViewIndex]()
+func (t *DemoModel) onCycleView() tea.Cmd {
+	t.ViewIndex = (t.ViewIndex + 1) % len(viewList)
+	t.thing = viewList[t.ViewIndex]()
 
 	return func() tea.Msg {
 		return tea.WindowSizeMsg{Width: t.Width, Height: t.Height}
 	}
 }
 
-// Unused
-func (t *DemoModel) StyledView() string {
-	style := lipgloss.NewStyle().Align(lipgloss.Center, lipgloss.Center).Border(lipgloss.NormalBorder())
-	return style.
-		Width(t.InnerWidth).
-		Height(t.InnerHeight).
-		Render(t.thing.View())
-}
-
+// View implements tea.Model.
 func (t *DemoModel) View() string {
 	return t.thing.View()
 }
 
-func CreateDemoModel(dribbleClient *dribble.Client) tea.Model {
+// CreateDemoModel is used by the demo application
+func CreateDemoModel() tea.Model {
 	// config.LoadConfig()
 	return &DemoModel{
-		thing: ViewList[0](),
+		thing: viewList[0](),
 	}
 }
 
-func CreateDemoLayout() widget.ContentArea {
-	contentList := CreateDemoList(4)
+// func createDemoLayout() widget.ContentArea {
+// 	contentList := createDemoList(4)
 
-	contentArea := widget.New(
-		"Area",
-		layout.NewDockLayout(
-			layout.Panels(
-				layout.Panel(layout.Top),
-				layout.Panel(layout.Bottom),
-			),
-			layout.WithPanelBorder(lipgloss.DoubleBorder()),
-			layout.WithStyle(
-				lipgloss.NewStyle().
-					BorderForeground(lipgloss.Color("205")).
-					Foreground(lipgloss.Color("205")),
-			),
-		),
-		contentList...,
-	)
-	return contentArea
-}
+// 	contentArea := widget.New(
+// 		"Area",
+// 		layout.NewDockLayout(
+// 			layout.Panels(
+// 				layout.Panel(layout.Top),
+// 				layout.Panel(layout.Bottom),
+// 			),
+// 			layout.WithPanelBorder(lipgloss.DoubleBorder()),
+// 			layout.WithStyle(
+// 				lipgloss.NewStyle().
+// 					BorderForeground(lipgloss.Color("205")).
+// 					Foreground(lipgloss.Color("205")),
+// 			),
+// 		),
+// 		contentList...,
+// 	)
+// 	return contentArea
+// }
 
-func CreateDemoDockContentAreaFull() widget.ContentArea {
+func createDemoDockContentAreaFull() component.ContentArea {
 	top := content.Text("Top")
 	bottom := content.Text("Bottom")
 	left := content.Text("Left")
@@ -173,14 +165,14 @@ func CreateDemoDockContentAreaFull() widget.ContentArea {
 		layout.WithStyle(lipgloss.NewStyle().Border(lipgloss.RoundedBorder())),
 	)
 
-	contentArea := widget.New("DockLayoutFull", dockLayout, top, bottom, left, right, center)
+	contentArea := component.New("DockLayoutFull", dockLayout, top, bottom, left, right, center)
 
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 
 	return contentArea
 }
 
-func CreateDemoDockContentAreaFullRatios() widget.ContentArea {
+func createDemoDockContentAreaFullRatios() component.ContentArea {
 	top := content.Text("Top")
 	bottom := content.Text("Bottom")
 	left := content.Text("Left")
@@ -198,17 +190,17 @@ func CreateDemoDockContentAreaFullRatios() widget.ContentArea {
 		layout.WithStyle(lipgloss.NewStyle().Border(lipgloss.RoundedBorder())),
 	)
 
-	contentArea := widget.New("DockLayoutFull", dockLayout, top, bottom, left, right, center)
+	contentArea := component.New("DockLayoutFull", dockLayout, top, bottom, left, right, center)
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 
 	return contentArea
 }
 
-func CreateDemoDockContentAreaNotFull() widget.ContentArea {
+func createDemoDockContentAreaNotFull() component.ContentArea {
 	bottom := content.Text("Bottom")
 	left := content.Text("Left")
 	center := content.Text("Center")
-	// contentList := CreateDemoList(3)
+	// contentList := createDemoList(3)
 	dockLayout := layout.NewDockLayout(
 		layout.Panels(
 			layout.Panel(layout.Bottom, layout.WithHeight(25)),
@@ -219,20 +211,20 @@ func CreateDemoDockContentAreaNotFull() widget.ContentArea {
 		layout.WithDefaultUnfocusedStyle(),
 	)
 
-	contentArea := widget.New("DockLayoutNotFull", dockLayout, bottom, left, center)
+	contentArea := component.New("DockLayoutNotFull", dockLayout, bottom, left, center)
 
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.ThickBorder()))
 
 	return contentArea
 }
 
-func CreateDemoDockContentAreaUnorderedModels() widget.ContentArea {
+func createDemoDockContentAreaUnorderedModels() component.ContentArea {
 	left := content.Text("Left")
 	top := content.Text("Top")
 	bottom := content.Text("Bottom")
 	center := content.Text("Center")
 	right := content.Text("Right")
-	// contentList := CreateDemoList(3)
+	// contentList := createDemoList(3)
 	dockLayout := layout.NewDockLayout(
 		layout.Panels(
 			layout.Panel(layout.Left, layout.WithWidth(10)),
@@ -246,17 +238,17 @@ func CreateDemoDockContentAreaUnorderedModels() widget.ContentArea {
 		layout.WithFocusedStyle(lipgloss.NewStyle().BorderForeground(lipgloss.Color("179")).Foreground(lipgloss.Color("179"))),
 	)
 
-	contentArea := widget.New("DockLayoutNotFull", dockLayout, left, top, center, bottom, right)
+	contentArea := component.New("DockLayoutNotFull", dockLayout, left, top, center, bottom, right)
 
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.BlockBorder()))
 
 	return contentArea
 }
 
-func CreateDemoPriorityContentAreaTop() widget.ContentArea {
-	contentList := CreateDemoList(4)
+func createDemoPriorityContentAreaTop() component.ContentArea {
+	contentList := createDemoList(4)
 
-	contentArea := widget.New("PrioritySplitTop",
+	contentArea := component.New("PrioritySplitTop",
 		layout.NewPrioritySplitLayout(
 			layout.Top,
 			layout.WithPanelBorder(lipgloss.DoubleBorder()),
@@ -268,66 +260,66 @@ func CreateDemoPriorityContentAreaTop() widget.ContentArea {
 	return contentArea
 }
 
-func CreateDemoPriorityContentAreaRight() widget.ContentArea {
-	contentList := CreateDemoList(4)
+func createDemoPriorityContentAreaRight() component.ContentArea {
+	contentList := createDemoList(4)
 
-	contentArea := widget.New("PrioritySplitRight", layout.NewPrioritySplitLayout(layout.Right), contentList...)
-
-	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.RoundedBorder()))
-
-	return contentArea
-}
-
-func CreateDemoPriorityContentAreaBottom() widget.ContentArea {
-	contentList := CreateDemoList(4)
-
-	contentArea := widget.New("PrioritySplitBottom", layout.NewPrioritySplitLayout(layout.Bottom), contentList...)
-	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
-
-	return contentArea
-}
-
-func CreateDemoPriorityContentAreaLeft() widget.ContentArea {
-	contentList := CreateDemoList(4)
-
-	contentArea := widget.New("PrioritySplitLeft", layout.NewPrioritySplitLayout(layout.Left), contentList...)
+	contentArea := component.New("PrioritySplitRight", layout.NewPrioritySplitLayout(layout.Right), contentList...)
 
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.RoundedBorder()))
 
 	return contentArea
 }
 
-func CreateDemoStackContentAreaHorizontal() widget.ContentArea {
-	contentList := CreateDemoList(3)
+func createDemoPriorityContentAreaBottom() component.ContentArea {
+	contentList := createDemoList(4)
 
-	contentArea := widget.New("StackHorizontal", layout.NewStackLayout(layout.East), contentList...)
+	contentArea := component.New("PrioritySplitBottom", layout.NewPrioritySplitLayout(layout.Bottom), contentList...)
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 
 	return contentArea
 }
 
-func CreateDemoStackContentAreaVertical() widget.ContentArea {
-	contentList := CreateDemoList(3)
+func createDemoPriorityContentAreaLeft() component.ContentArea {
+	contentList := createDemoList(4)
 
-	contentArea := widget.New("StackVertical", layout.NewStackLayout(layout.South), contentList...)
+	contentArea := component.New("PrioritySplitLeft", layout.NewPrioritySplitLayout(layout.Left), contentList...)
+
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.RoundedBorder()))
+
+	return contentArea
+}
+
+func createDemoStackContentAreaHorizontal() component.ContentArea {
+	contentList := createDemoList(3)
+
+	contentArea := component.New("StackHorizontal", layout.NewStackLayout(layout.East), contentList...)
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 
 	return contentArea
 }
 
-func CreateDemoTabbedContentArea() widget.ContentArea {
-	contentList := CreateDemoList(4)
+func createDemoStackContentAreaVertical() component.ContentArea {
+	contentList := createDemoList(3)
 
-	contentArea := widget.New("Tabbed", layout.NewTabbedLayout(layout.North), contentList...)
+	contentArea := component.New("StackVertical", layout.NewStackLayout(layout.South), contentList...)
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 
 	return contentArea
 }
 
-func CreateDemo2x2GridContentArea() widget.ContentArea {
-	contentList := CreateDemoList(4)
+func createDemoTabbedContentArea() component.ContentArea {
+	contentList := createDemoList(4)
 
-	contentArea := widget.New("2x2Grid",
+	contentArea := component.New("Tabbed", layout.NewTabbedLayout(layout.North), contentList...)
+	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
+
+	return contentArea
+}
+
+func createDemo2x2GridContentArea() component.ContentArea {
+	contentList := createDemoList(4)
+
+	contentArea := component.New("2x2Grid",
 		layout.NewUniformGridLayout(
 			2,
 			layout.WithPanelBorder(lipgloss.ASCIIBorder()),
@@ -339,10 +331,10 @@ func CreateDemo2x2GridContentArea() widget.ContentArea {
 	return contentArea
 }
 
-func CreateDemo2x3GridContentArea() widget.ContentArea {
-	contentList := CreateDemoList(6)
+func createDemo2x3GridContentArea() component.ContentArea {
+	contentList := createDemoList(6)
 
-	contentArea := widget.New("2x3Grid",
+	contentArea := component.New("2x3Grid",
 		layout.NewUniformGridLayout(
 			3,
 			layout.WithPanelBorder(lipgloss.ASCIIBorder()),
@@ -355,10 +347,10 @@ func CreateDemo2x3GridContentArea() widget.ContentArea {
 	return contentArea
 }
 
-func CreateDemo3x3GridContentArea() widget.ContentArea {
-	contentList := CreateDemoList(9)
+func createDemo3x3GridContentArea() component.ContentArea {
+	contentList := createDemoList(9)
 
-	contentArea := widget.New("3x3Grid",
+	contentArea := component.New("3x3Grid",
 		layout.NewUniformGridLayout(
 			3,
 			layout.WithPanelBorder(lipgloss.ASCIIBorder()),
@@ -371,22 +363,20 @@ func CreateDemo3x3GridContentArea() widget.ContentArea {
 	return contentArea
 }
 
-func CreateDemoSimpleContentArea() widget.ContentArea {
-
-	contentArea := widget.New("Simple", layout.NewSimpleLayout(), content.Text("Simple Layout"))
+func createDemoSimpleContentArea() component.ContentArea {
+	contentArea := component.New("Simple", layout.NewSimpleLayout(), content.Text("Simple Layout"))
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 
 	return contentArea
 }
 
-func CreateDemoEmptyContentArea() widget.ContentArea {
-
-	contentArea := widget.New("empty", layout.NewSimpleLayout())
+func createDemoEmptyContentArea() component.ContentArea {
+	contentArea := component.New("empty", layout.NewSimpleLayout())
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 	return contentArea
 }
 
-func CreateDemoList(numItems int) []tea.Model {
+func createDemoList(numItems int) []tea.Model {
 	list := make([]tea.Model, 0, numItems)
 
 	for i := range numItems {

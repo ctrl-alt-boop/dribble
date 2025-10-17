@@ -1,5 +1,7 @@
 package layout
 
+import "github.com/charmbracelet/lipgloss"
+
 type panelDefinition struct { // FIXME: unexport
 	position Position
 
@@ -7,12 +9,15 @@ type panelDefinition struct { // FIXME: unexport
 	widthRatio, heightRatio float64
 
 	fillRemaining bool
+	focusable     bool
 
 	actualWidth, actualHeight int
 	actualX, actualY          int
 
 	topLeftChar, topRightChar, bottomLeftChar, bottomRightChar string
 	topBorder, rightBorder, bottomBorder, leftBorder           bool
+
+	alignmentX, alignmentY lipgloss.Position
 }
 
 func (l panelDefinition) GetBoundingBox() BoundingBox {
@@ -24,7 +29,10 @@ func (l panelDefinition) GetBoundingBox() BoundingBox {
 
 func Panel(position Position, opts ...panelOption) panelDefinition {
 	definition := panelDefinition{
-		position: position,
+		position:   position,
+		alignmentX: 0,
+		alignmentY: 0,
+		focusable:  true,
 	}
 
 	for _, option := range opts {
@@ -66,6 +74,18 @@ func WithHeight(height int) panelOption {
 	}
 }
 
+func WithHorizontalAlignment(alignment lipgloss.Position) panelOption {
+	return func(def *panelDefinition) {
+		def.alignmentX = alignment
+	}
+}
+
+func WithVerticalAlignment(alignment lipgloss.Position) panelOption {
+	return func(def *panelDefinition) {
+		def.alignmentY = alignment
+	}
+}
+
 func WithWidthRatio(ratio float64) panelOption {
 	if ratio < 0.0 {
 		panic("ratio < 0.0")
@@ -89,5 +109,11 @@ func WithHeightRatio(ratio float64) panelOption {
 	return func(def *panelDefinition) {
 		def.height = 0
 		def.heightRatio = ratio
+	}
+}
+
+func Unfocusable() panelOption {
+	return func(def *panelDefinition) {
+		def.focusable = false
 	}
 }

@@ -36,17 +36,18 @@ type KeyMap struct {
 	Nav  key.Binding // Used as combined navigation keys for help
 	Zoom key.Binding // Used as combined +/- keys for help
 
-	CycleView key.Binding //tab
-	Details   key.Binding //i
-	New       key.Binding //n
-	NewEmpty  key.Binding //ctrl+New
+	CycleViewNext key.Binding // tab
+	CycleViewPrev key.Binding // (shift)+CycleViewNext
+	Details       key.Binding // i
+	New           key.Binding // n
+	NewEmpty      key.Binding // ctrl+New
 
 	Up     key.Binding
 	Down   key.Binding
 	Left   key.Binding
 	Right  key.Binding
-	Select key.Binding //enter
-	Back   key.Binding //esc
+	Select key.Binding // enter
+	Back   key.Binding // esc
 
 	Increase key.Binding //=
 	Decrease key.Binding //-
@@ -66,7 +67,7 @@ func (keys KeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{keys.Help},
 		{keys.Quit},
-		{keys.CycleView},
+		{keys.CycleViewNext},
 		{keys.Nav},
 		{keys.Select},
 		{keys.Back},
@@ -81,9 +82,13 @@ func createKeyMap() KeyMap {
 			key.WithKeys("nil"),
 			key.WithHelp(ArrowNav+"/"+VimNav, "navigate"),
 		),
-		CycleView: key.NewBinding(
+		CycleViewNext: key.NewBinding(
 			key.WithKeys("tab"),
 			key.WithHelp(SymbolTab, "cycle view"),
+		),
+		CycleViewPrev: key.NewBinding(
+			key.WithKeys("shift+tab"),
+			key.WithHelp("S+"+SymbolTab, "cycle view prev"),
 		),
 		Details: key.NewBinding(
 			key.WithKeys("i"),

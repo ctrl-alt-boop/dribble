@@ -6,37 +6,23 @@ import (
 	"text/template"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/ctrl-alt-boop/dribble/result"
 )
 
+var (
+	_ Selection    = (*Table)(nil)
+	_ tea.Model    = (*Table)(nil)
+	_ fmt.Stringer = (*Cell)(nil)
+)
+
 const DefaultMaxCellWidth int = 36 // Guid length, including the '-'s
-
-// type StringTable struct {
-// 	Columns []string
-// 	Rows    [][]string
-// 	Widths  []int
-// }
-
-type StringTable struct {
-	// map[Column]ColumnRows
-	Data   map[string][]string
-	Widths []int
-}
-
-func (s StringTable) String() string {
-	return ""
-}
-
-var _ Selection = (*Table)(nil)
-var _ tea.Model = (*Table)(nil)
 
 type SetTableContentMsg struct {
 	ID    int
 	Name  string
 	Table *result.Table
 }
-
-var _ fmt.Stringer = (*Cell)(nil)
 
 type Cell struct {
 	ID                   int
@@ -63,9 +49,24 @@ type Table struct {
 	cursorY int
 
 	rowTextTemplate *template.Template
+
+	NormalStyle, SelectedStyle lipgloss.Style
 }
 
-// GetSelected implements Cursored.
+// NewTable creates a new UI table from a result.Table
+func NewTable(table *result.Table) *Table {
+	newTable := &Table{
+		ID:    -1,
+		Name:  "Table",
+		Table: table,
+
+		MaxCellWidth: DefaultMaxCellWidth,
+	}
+	newTable.columnWidths = getColumnWidths(table, newTable.MaxCellWidth)
+	return newTable
+}
+
+// GetSelected implements Selection.
 func (t *Table) GetSelected() any {
 	value, err := t.Table.GetRowColumn(t.cursorY, t.cursorX)
 	if err != nil {
@@ -95,22 +96,22 @@ func (t *Table) MoveCursor(dX int, dY int) {
 }
 
 // MoveCursorDown implements Content.
-func (t *Table) MoveCursorDown(y ...int) {
+func (t *Table) MoveCursorDown(_ ...int) {
 	t.MoveCursor(0, 1)
 }
 
 // MoveCursorLeft implements Content.
-func (t *Table) MoveCursorLeft(x ...int) {
+func (t *Table) MoveCursorLeft(_ ...int) {
 	t.MoveCursor(-1, 0)
 }
 
 // MoveCursorRight implements Content.
-func (t *Table) MoveCursorRight(x ...int) {
+func (t *Table) MoveCursorRight(_ ...int) {
 	t.MoveCursor(1, 0)
 }
 
 // MoveCursorUp implements Content.
-func (t *Table) MoveCursorUp(y ...int) {
+func (t *Table) MoveCursorUp(_ ...int) {
 	t.MoveCursor(0, -1)
 }
 
@@ -133,18 +134,6 @@ func (t *Table) SetCursor(x int, y int) {
 	}
 	t.cursorX = x
 	t.cursorY = y
-}
-
-func NewTable(table *result.Table) *Table {
-	newTable := &Table{
-		ID:    0,
-		Name:  "Table",
-		Table: table,
-
-		MaxCellWidth: DefaultMaxCellWidth,
-	}
-	newTable.columnWidths = getColumnWidths(table, newTable.MaxCellWidth)
-	return newTable
 }
 
 // Init implements tea.Model.

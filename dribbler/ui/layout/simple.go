@@ -15,6 +15,7 @@ func NewSimpleLayout() *SimpleLayout {
 	return &SimpleLayout{
 		managerBase: managerBase{
 			focusPassThrough: false,
+			focusedIndex:     -1,
 		},
 	}
 }
@@ -50,9 +51,9 @@ func (s SimpleLayout) Layout(models []tea.Model) []tea.Model {
 
 func (s *SimpleLayout) View(models []tea.Model) string {
 	if len(models) == 0 {
-		return lipgloss.NewStyle().Width(s.Width).Height(s.Height).Render("")
+		return lipgloss.NewStyle().Render("")
 	}
 
 	// Only render the first model
-	return lipgloss.NewStyle().Width(s.Width).Height(s.Height).Render(models[0].View())
+	return lipgloss.NewStyle().Render(models[0].View())
 }

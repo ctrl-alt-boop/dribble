@@ -22,6 +22,11 @@ type Manager interface {
 
 	SetFocusPassThrough(v bool)
 	GetFocusPassThrough() bool
+
+	GetFocusable() []int
+	IsNoFocusAllowed() bool
+	SetFocusedIndex(index int)
+	GetFocusedIndex() int
 }
 
 type managerBase struct {
@@ -37,6 +42,28 @@ func (b *managerBase) UpdateLayout(opts ...layoutOption) {
 	for _, opt := range opts {
 		opt(&b.layoutDefinition)
 	}
+}
+
+func (b *managerBase) GetFocusable() []int {
+	focusable := []int{}
+	for i, panel := range b.layoutDefinition.panels {
+		if panel.focusable {
+			focusable = append(focusable, i)
+		}
+	}
+	return focusable
+}
+
+func (b *managerBase) IsNoFocusAllowed() bool {
+	return b.layoutDefinition.allowNoFocus
+}
+
+func (b *managerBase) SetFocusedIndex(index int) {
+	b.focusedIndex = index
+}
+
+func (b *managerBase) GetFocusedIndex() int {
+	return b.focusedIndex
 }
 
 func (b *managerBase) AddCenterPanel() {
@@ -112,7 +139,8 @@ func (b *managerBase) getDefinitionStyle(index int) lipgloss.Style {
 	definition := b.layoutDefinition.panels[index]
 
 	border := b.layoutDefinition.getBorder(definition)
-	style = style.Border(border, definition.topBorder, definition.rightBorder, definition.bottomBorder, definition.leftBorder)
+	style = style.Border(border, definition.topBorder, definition.rightBorder, definition.bottomBorder, definition.leftBorder).
+		AlignHorizontal(definition.alignmentX).AlignVertical(definition.alignmentY)
 
 	if definition.actualHeight == 0 || definition.actualWidth == 0 {
 		return style.Width(0).Height(0)

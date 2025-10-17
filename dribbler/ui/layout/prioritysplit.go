@@ -30,6 +30,7 @@ func NewPrioritySplitLayout(primaryPosition Position, opts ...layoutOption) *Pri
 				opts...,
 			),
 			focusPassThrough: true,
+			focusedIndex:     -1,
 		},
 		PrimarySizeRatio: 0.5,
 		Position:         primaryPosition,

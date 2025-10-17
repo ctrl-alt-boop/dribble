@@ -11,6 +11,7 @@ import (
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/target"
 	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/logging"
 )
 
 type (
@@ -39,7 +40,7 @@ func GetSavedConfigsSorted() []*ConnectionItem {
 		return cmp.Compare(left.Name, right.Name)
 	}
 	slices.SortFunc(items, sortFunc)
-	logger.Infof("GetSavedConfigsSorted: %+v", items)
+	logging.GlobalLogger().Infof("GetSavedConfigsSorted: %+v", items)
 	return items
 }
 
@@ -48,7 +49,7 @@ func SettingsToConnectionItems(targets []*target.Target) []*ConnectionItem {
 	for _, target := range targets {
 		listString += target.Name + "\n"
 	}
-	logger.Infof("SettingsToConnectionItems: %+v", listString)
+	logging.GlobalLogger().Infof("SettingsToConnectionItems: %+v", listString)
 	items := make([]*ConnectionItem, 0, len(targets))
 	for i, target := range targets {
 		name := target.Name

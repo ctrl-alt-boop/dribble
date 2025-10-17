@@ -5,11 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "ui test",
+            "name": "Launch",
             "type": "go",
             "request": "launch",
-            "mode": "auto",
-            "program": "cmd/ui_test/main.go",
+            "mode": "exec",
+            "program": "dribbler.exe",
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "env": {},
         }
-    ]
+    ]   
 }

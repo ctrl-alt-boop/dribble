@@ -1,4 +1,4 @@
-package widget
+package component
 
 import (
 	"github.com/charmbracelet/bubbles/key"
@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ctrl-alt-boop/dribble"
 
-	"github.com/ctrl-alt-boop/dribble/request"
 	"github.com/ctrl-alt-boop/dribble/result"
 	"github.com/ctrl-alt-boop/dribbler/config"
 	"github.com/ctrl-alt-boop/dribbler/ui"
@@ -44,7 +43,6 @@ func (d *Workspace) Init() tea.Cmd {
 
 func (d *Workspace) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, config.Keys.Up):
@@ -62,16 +60,6 @@ func (d *Workspace) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, config.Keys.Decrease):
 			d.table.DecreaseColumnSize() // FIXME: Resizing the workspace
 		}
-
-	case request.Response:
-		d.isLoading = false
-		switch msg.Status {
-		case request.SuccessExecute:
-			// args, ok := msg.Args.(dribble.TableFetchData)
-			// if ok {
-			return d, tea.Batch(d.SetTable(*msg.Body.(*result.Table)), RequestFocusChange(KindWorkspace))
-			// }
-		}
 	}
 
 	return d, nil
@@ -85,26 +73,7 @@ func (d *Workspace) SetTable(table result.Table) tea.Cmd {
 	d.table.SetTable(table)
 	d.viewport.SetXOffset(0)
 	d.viewport.SetYOffset(0)
-	return WorkspaceSet
-}
-
-func (d *Workspace) IsTableSet() bool {
-	return d.table.IsTableSet()
-}
-
-func (d *Workspace) UpdateSize(width, height int) {
-	d.Width, d.Height = width, height
-	d.ContentWidth = d.Width - ui.WorkspaceStyle.GetHorizontalFrameSize()
-	d.ContentHeight = d.Height - ui.WorkspaceStyle.GetVerticalFrameSize()
-	d.viewport.Width = d.ContentWidth
-	d.viewport.Height = d.ContentHeight
-
-	d.table.ViewportWidth = d.ContentWidth
-	d.table.ViewportHeight = d.ContentHeight
-}
-
-func (d *Workspace) ViewportWidth() int {
-	return d.table.Width
+	return nil
 }
 
 func (d *Workspace) View() string {

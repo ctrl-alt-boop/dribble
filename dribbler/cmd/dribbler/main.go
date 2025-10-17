@@ -1,3 +1,4 @@
+// Package main
 package main
 
 import (
@@ -6,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/ctrl-alt-boop/dribbler"
+	"github.com/ctrl-alt-boop/dribbler/logging"
 )
 
 func main() {
@@ -16,4 +18,6 @@ func main() {
 		fmt.Printf("Dribble error: %v\n", err)
 		os.Exit(1)
 	}
+	logging.CloseGlobalLogger()
+	os.Exit(0)
 }

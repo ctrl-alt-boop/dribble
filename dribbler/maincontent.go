@@ -3,42 +3,37 @@ package dribbler
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ctrl-alt-boop/dribbler/component"
 	"github.com/ctrl-alt-boop/dribbler/ui/content"
 	"github.com/ctrl-alt-boop/dribbler/ui/layout"
-	"github.com/ctrl-alt-boop/dribbler/widget"
 )
 
-func CreateMainContent() widget.ContentArea {
-	models := []tea.Model{
-		// widget.New(
-		// 	"bot",
-		// 	layout.NewDockLayout(
-		// 		layout.Panels(
-		// 			layout.Panel(layout.Center),
-		// 			layout.Panel(layout.Bottom, layout.WithHeight(3)),
-		// 		),
-		// 		layout.WithPanelBorder(lipgloss.NormalBorder()),
-		// 	),
-		// 	content.Text("PromptBar will be here."),
-		// 	//huh.NewInput().Prompt(">"), // prompt bar
-		// 	content.Text("HelpText will be here, i promise!"),
-		// ),
-		widget.New("SidePanel", layout.NewSimpleLayout(),
-			content.NewList([]content.Item{
-				{Value: "foo1"},
-				{Value: "bar2"},
-				{Value: "baz3"},
-			}),
-		), // Side Panel
+func (m *Model) createMainContent() component.ContentArea {
+	bottom := component.New("BottomArea",
+		layout.NewDockLayout(
+			layout.Panels(
+				layout.Panel(layout.Top, layout.WithHeight(4), layout.WithVerticalAlignment(lipgloss.Center), layout.Unfocusable()),
+				layout.Panel(layout.Center, layout.Unfocusable()),
+			),
+			layout.WithPanelBorder(lipgloss.DoubleBorder()),
+			layout.WithFocusedStyle(lipgloss.NewStyle().BorderForeground(lipgloss.Color("179")).Foreground(lipgloss.Color("179"))),
+		),
+		component.NewPromptBar(),
+		m.help,
+		// content.NewParamContainer(m.help, m.helpKeyMap),
+	)
 
-		widget.New("SidePanel", layout.NewSimpleLayout(),
+	models := []tea.Model{
+		bottom, // Bottom
+
+		component.New("SidePanel", layout.NewSimpleLayout(),
 			content.NewList([]content.Item{
 				{Value: "foo1"},
 				{Value: "bar2"},
 				{Value: "baz3"},
 			}),
 		), // Side Panel
-		widget.New("Workspace", layout.NewSimpleLayout(),
+		component.New("Workspace", layout.NewSimpleLayout(),
 			content.NewList([]content.Item{
 				{Value: "foo1"},
 				{Value: "bar2"},
@@ -46,17 +41,21 @@ func CreateMainContent() widget.ContentArea {
 			}),
 		),
 	}
+
 	dockLayout := layout.NewDockLayout(
 		layout.Panels(
-			layout.Panel(layout.Bottom, layout.WithHeight(6)),
+			layout.Panel(layout.Bottom, layout.WithHeight(6), layout.Unfocusable()),
 			layout.Panel(layout.Left, layout.WithWidthRatio(0.25)),
 			layout.Panel(layout.Center),
 		),
 		layout.WithPanelBorder(lipgloss.DoubleBorder()),
+		layout.WithFocusedStyle(lipgloss.NewStyle().Background(lipgloss.Color("179")).Foreground(lipgloss.Color("225"))),
+		layout.AllowNoFocus(),
 	)
+	// contentList := CreateDemoList(3)
 
-	layout.DebugBackgrounds = true
-	contentArea := widget.New("dribbler", dockLayout, models...)
+	// layout.DebugBackgrounds = true
+	contentArea := component.New("MainContent", dockLayout, models...)
 	contentArea.SetStyle(lipgloss.NewStyle().Border(lipgloss.NormalBorder()))
 	return contentArea
 }

@@ -24,13 +24,14 @@ func NewDockLayout(panels panelsDefinition, opts ...layoutOption) *DockLayout {
 				opts...,
 			),
 			focusPassThrough: false,
+			focusedIndex:     -1,
 		},
 	}
 }
 
 func (d *DockLayout) SetSize(width, height int) {
-	d.Width = width - d.layoutDefinition.normalStyle.GetHorizontalFrameSize()
-	d.Height = height - d.layoutDefinition.normalStyle.GetVerticalFrameSize()
+	d.Width = width
+	d.Height = height
 	d.usableWidth = width
 	d.usableHeight = height
 	d.usableX = 0
@@ -90,8 +91,8 @@ func (d *DockLayout) Allocate(definition panelDefinition) panelDefinition {
 		updated.actualX = d.usableX
 		updated.actualY = 0
 
-		d.usableY += height
-		d.usableHeight -= height
+		d.usableY += updated.actualHeight
+		d.usableHeight -= updated.actualHeight
 
 	case Bottom:
 		height := min(definition.height, d.usableHeight)
@@ -103,7 +104,7 @@ func (d *DockLayout) Allocate(definition panelDefinition) panelDefinition {
 		updated.actualX = d.usableX
 		updated.actualY = d.Height - updated.actualHeight
 
-		d.usableHeight -= height
+		d.usableHeight -= updated.actualHeight
 
 	case Left:
 		width := min(definition.width, d.usableWidth)
@@ -115,8 +116,8 @@ func (d *DockLayout) Allocate(definition panelDefinition) panelDefinition {
 		updated.actualX = 0
 		updated.actualY = d.usableY
 
-		d.usableX += width
-		d.usableWidth -= width
+		d.usableX += updated.actualWidth
+		d.usableWidth -= updated.actualWidth
 
 	case Right:
 		width := min(definition.width, d.usableWidth)
@@ -128,7 +129,7 @@ func (d *DockLayout) Allocate(definition panelDefinition) panelDefinition {
 		updated.actualX = d.Width - updated.actualWidth
 		updated.actualY = d.usableY
 
-		d.usableWidth -= width
+		d.usableWidth -= updated.actualWidth
 
 	default:
 		updated.fillRemaining = true
@@ -143,8 +144,7 @@ func (d *DockLayout) View(models []tea.Model) string {
 	}
 
 	compositeLines := make([]string, d.Height)
-
-	for i := range d.layoutDefinition.getXYOrderedIndices() {
+	for i := range d.layoutDefinition.getPositionOrderedIndices() {
 		if i >= len(models) {
 			break
 		}
@@ -159,17 +159,32 @@ func (d *DockLayout) View(models []tea.Model) string {
 
 		render := style.Render(model.View())
 
+		render = strings.TrimSpace(render)
+		lines := strings.Lines(render)
 		lineIndex := 0
-		for line := range strings.Lines(render) {
+		for line := range lines {
 			renderLine := strings.TrimRight(line, "\n")
 
-			if len(compositeLines[definition.actualY+lineIndex]) > 0 && definition.actualX == 0 {
-				renderLine = "\n" + renderLine
-			}
 			compositeLines[definition.actualY+lineIndex] += renderLine
 			lineIndex++
 		}
 	}
 
-	return strings.Join(compositeLines, "\n")
+	return lipgloss.JoinVertical(lipgloss.Left, compositeLines...)
+	// return strings.Join(compositeLines, "\n")
 }
+
+// lineIndex := 0
+// 		for line := range strings.Lines(render) {
+// 			renderLine := strings.TrimRight(line, "\n")
+
+// 			logging.GlobalLogger().Infof("\ndefinition.actualY+lineIndex: %d, lipgloss.Width(compositeLines[definition.actualY+lineIndex]): %d, lipgloss.Width(renderLine): %d, d.Width: %d\nX: %d, Y: %d\n%s + %s",
+// 				definition.actualY+lineIndex, lipgloss.Width(compositeLines[definition.actualY+lineIndex]), lipgloss.Width(renderLine), d.Width,
+// 				definition.actualX, definition.actualY,
+// 				compositeLines[definition.actualY+lineIndex], renderLine)
+// 			// if lipgloss.Width(compositeLines[definition.actualY+lineIndex])+lipgloss.Width(renderLine) >= d.Width {
+// 			// 	renderLine = renderLine
+// 			// }
+// 			compositeLines[definition.actualY+lineIndex] += renderLine
+// 			lineIndex++
+// 		}

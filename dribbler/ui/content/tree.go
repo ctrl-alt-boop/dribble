@@ -31,8 +31,10 @@ const (
 	NodeTypeCustom
 )
 
-var _ Selection = (*Tree)(nil)
-var _ tea.Model = (*Tree)(nil)
+var (
+	_ Selection = (*Tree)(nil)
+	_ tea.Model = (*Tree)(nil)
+)
 
 type Tree struct {
 	*Node
@@ -42,17 +44,19 @@ type Tree struct {
 }
 
 type Node struct {
+	Type      NodeType
 	Index     int
 	IndexPath []int
-	Type      NodeType
-	Name      string
-	Children  []*Node
-	Data      any
-	Parent    *Node
-	Expanded  bool
-	Selected  bool
 
-	// checked bool // maybe for multi selection
+	Name string
+	Data any
+
+	Children []*Node
+	Parent   *Node
+
+	Expanded bool
+	Selected bool
+	Checked  bool
 }
 
 func (n *Node) ExpandAll() {
@@ -96,9 +100,11 @@ func (n *Node) NewChild(name string, data any) *Node {
 }
 
 // const indentSybmol = "--"
-const indentSybmol = "\u258F "
-const expandedSymbol = "\u2bc6"
-const collapsedSymbol = "\u2bc7"
+const (
+	indentSybmol    = "\u258F "
+	expandedSymbol  = "\u2bc6"
+	collapsedSymbol = "\u2bc7"
+)
 
 func (n *Node) View() string {
 	var childrenStringBuilder strings.Builder

@@ -36,6 +36,12 @@ type Target struct {
 }
 
 func New(name string, dsn database.DataSourceNamer) (*Target, error) {
+	if dsn == nil {
+		return nil, errors.New("dsn cannot be nil")
+	}
+	if name == "" || name == "*" {
+		return nil, errors.New("name cannot be empty or \"*\"")
+	}
 	target := &Target{
 		Name:   name,
 		Type:   TypeDriver,
@@ -100,7 +106,6 @@ func (t *Target) simpleRequest(ctx context.Context, req database.Request) (chan 
 			Body:          requestResult,
 			Error:         err,
 		}
-
 	}()
 
 	return resultChan, nil

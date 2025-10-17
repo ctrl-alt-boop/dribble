@@ -7,8 +7,6 @@ import (
 	"github.com/ctrl-alt-boop/dribbler/logging"
 )
 
-var logger = logging.GlobalLogger()
-
 type ListTable struct {
 	table []*List
 }
@@ -56,14 +54,13 @@ func (t ListTable) View() string {
 	}
 	views := make([]string, len(t.table))
 	for i, table := range t.table[:2] {
-		logger.Info(table.View())
+		logging.GlobalLogger().Info(table.View())
 		views[i] = table.View()
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Top, views...)
 }
 
 func (t ListTable) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
 	return t, nil
 }
 

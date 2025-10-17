@@ -20,6 +20,7 @@ func NewUniformGridLayout(numColumns int, opts ...layoutOption) *UniformGridLayo
 				opts...,
 			),
 			focusPassThrough: false,
+			focusedIndex:     -1,
 		},
 		Columns: numColumns,
 	}

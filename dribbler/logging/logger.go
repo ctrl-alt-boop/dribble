@@ -8,28 +8,22 @@ import (
 	"strings"
 )
 
-const (
-	LogLevelInfo = iota
-	LogLevelWarn
-	LogLevelError
-	LogLevelPanic
-)
-
 func init() {
-	newGlobalLogger("dribble", true)
+	newGlobalLogger("dribbler", true)
 }
 
+// Log is a Logger...
 var Log *Logger
 
 func newGlobalLogger(appName string, removeExisting bool) *Logger {
 	if _, err := os.Stat("logs"); os.IsNotExist(err) {
-		os.Mkdir("logs", 0755)
+		os.Mkdir("logs", 0o755)
 	}
 	filename := fmt.Sprintf("%s.log", appName)
 	if removeExisting {
 		os.Remove("logs/" + filename)
 	}
-	logfile, err := os.OpenFile("logs/"+filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	logfile, err := os.OpenFile("logs/"+filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 	if err != nil {
 		panic(err)
 	}
@@ -38,10 +32,11 @@ func newGlobalLogger(appName string, removeExisting bool) *Logger {
 		logger: log.New(logfile, "", log.LstdFlags), //|log.Lshortfile),
 		file:   logfile,
 	}
-	Log.Infof("Global Logger: %s created...", appName)
+	Log.Opened(Log.file.Name())
 	return Log
 }
 
+// GlobalLogger returns the global logger
 func GlobalLogger() *Logger {
 	if Log == nil {
 		_, file, line, _ := runtime.Caller(1)
@@ -50,14 +45,16 @@ func GlobalLogger() *Logger {
 	return Log
 }
 
+// CloseGlobalLogger closes the global logger
 func CloseGlobalLogger() {
 	if Log == nil {
 		return
 	}
-	Log.Close()
+	Log.Close(Log.file.Name())
 	Log = nil
 }
 
+// Logger is a wrapper around the standard library's log.Logger.
 type Logger struct {
 	logger *log.Logger
 	file   *os.File
@@ -71,19 +68,22 @@ func (l *Logger) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+// NewLogger creates a new package logger.
 func NewLogger(packageName string) *Logger {
 	if _, err := os.Stat("logs"); os.IsNotExist(err) {
-		os.Mkdir("logs", 0755)
+		os.Mkdir("logs", 0o755)
 	}
 	logfile, err := os.Create("logs/" + packageName + ".log")
 	if err != nil {
 		panic(err)
 	}
-
-	return &Logger{
+	logger := &Logger{
 		logger: log.New(logfile, "", log.LstdFlags), //|log.Lshortfile),
 		file:   logfile,
 	}
+
+	logger.Opened(logger.file.Name())
+	return logger
 }
 
 func (l *Logger) formatMessage(args ...any) string {
@@ -130,6 +130,7 @@ func (l *Logger) formatMessageWithCallStack(skipFrames, numFrames int, args ...a
 	return stackInfo.String() + "\n\t" + messageContent
 }
 
+// Info log message tagged [INFO]
 func (l *Logger) Info(args ...any) {
 	l.logger.SetPrefix("[INFO]: ")
 	message := l.formatMessage(args...)
@@ -137,6 +138,7 @@ func (l *Logger) Info(args ...any) {
 	l.logger.SetPrefix("")
 }
 
+// Warn log message tagged [WARN]
 func (l *Logger) Warn(args ...any) {
 	l.logger.SetPrefix("[WARN]: ")
 	message := l.formatMessage(args...)
@@ -144,6 +146,7 @@ func (l *Logger) Warn(args ...any) {
 	l.logger.SetPrefix("")
 }
 
+// Error log message tagged [ERROR]
 func (l *Logger) Error(args ...any) {
 	l.logger.SetPrefix("[ERROR]: ")
 	message := l.formatMessage(args...)
@@ -151,6 +154,7 @@ func (l *Logger) Error(args ...any) {
 	l.logger.SetPrefix("")
 }
 
+// Fatal log message tagged [ERROR] with the logger.Fatal method
 func (l *Logger) Fatal(args ...any) {
 	l.logger.SetPrefix("[ERROR]: ")
 	message := l.formatMessage(args...)
@@ -158,6 +162,7 @@ func (l *Logger) Fatal(args ...any) {
 	l.logger.SetPrefix("")
 }
 
+// Panic log message tagged [PANIC] with the logger.Panic method
 func (l *Logger) Panic(args ...any) {
 	l.logger.SetPrefix("[PANIC]: ")
 	message := l.formatMessageWithCallStack(3, 5, args...)
@@ -172,6 +177,7 @@ func (l *Logger) Panic(args ...any) {
 	l.logger.SetPrefix("")
 }
 
+// Infof formated log message tagged [INFO]
 func (l *Logger) Infof(format string, args ...any) {
 	l.logger.SetPrefix("[INFO]: ")
 	message := l.formatMessage(fmt.Sprintf(format, args...))
@@ -179,6 +185,7 @@ func (l *Logger) Infof(format string, args ...any) {
 	l.logger.SetPrefix("")
 }
 
+// Warnf formated log message tagged [WARN]
 func (l *Logger) Warnf(format string, args ...any) {
 	l.logger.SetPrefix("[WARN]: ")
 	message := l.formatMessage(fmt.Sprintf(format, args...))
@@ -186,6 +193,7 @@ func (l *Logger) Warnf(format string, args ...any) {
 	l.logger.SetPrefix("")
 }
 
+// ErrorF formated log message tagged [ERROR]
 func (l *Logger) ErrorF(format string, args ...any) {
 	l.logger.SetPrefix("[ERROR]: ")
 	message := l.formatMessage(fmt.Sprintf(format, args...))
@@ -193,6 +201,7 @@ func (l *Logger) ErrorF(format string, args ...any) {
 	l.logger.SetPrefix("")
 }
 
+// Fatalf formated log message tagged [ERROR] with the logger.Fatal method
 func (l *Logger) Fatalf(format string, args ...any) {
 	l.logger.SetPrefix("[ERROR]: ")
 	message := l.formatMessage(fmt.Sprintf(format, args...))
@@ -200,6 +209,7 @@ func (l *Logger) Fatalf(format string, args ...any) {
 	l.logger.SetPrefix("")
 }
 
+// Panicf formated log message tagged [PANIC] with the logger.Panic method
 func (l *Logger) Panicf(format string, args ...any) {
 	l.logger.SetPrefix("[PANIC]: ")
 	message := l.formatMessageWithCallStack(3, 5, fmt.Sprintf(format, args...))
@@ -214,9 +224,16 @@ func (l *Logger) Panicf(format string, args ...any) {
 	l.logger.SetPrefix("")
 }
 
-func (l *Logger) Close() {
+// Opened logs that the logger is opened
+func (l *Logger) Opened(loggerName string) {
 	l.logger.SetPrefix("[LOGGER]: ")
-	l.logger.Println("Closing logger...")
+	l.logger.Println(loggerName, "logger opened.")
+}
+
+// Close closes the logger
+func (l *Logger) Close(loggerName string) {
+	l.logger.SetPrefix("[LOGGER]: ")
+	l.logger.Println(loggerName, "logger closed.")
 	l.logger.SetOutput(os.Stdout)
 	l.file.Close()
 }

@@ -19,6 +19,7 @@ type layoutDefinition struct {
 	hasFocusUnfocusStyles bool
 	customPanelBorder     bool
 	emptyCenter           bool
+	allowNoFocus          bool
 }
 
 func (r *layoutDefinition) Update(opts ...layoutOption) {
@@ -27,17 +28,23 @@ func (r *layoutDefinition) Update(opts ...layoutOption) {
 	}
 }
 
-func (r layoutDefinition) getXYOrderedIndices() iter.Seq[int] {
-	orderedIndices := make([]int, len(r.panels))
+func (r layoutDefinition) getPositionOrderedIndices() iter.Seq[int] {
+	indices := make([]int, len(r.panels))
 
-	for i := range orderedIndices {
-		orderedIndices[i] = i
+	for i := range indices {
+		indices[i] = i
 	}
-	slices.SortFunc(orderedIndices, func(i, j int) int {
-		return (r.panels[i].actualX + r.panels[i].actualY) - (r.panels[j].actualX + r.panels[j].actualY)
+	slices.SortFunc(indices, func(i, j int) int {
+		left := indices[i]
+		right := indices[j]
+
+		if r.panels[left].actualX != r.panels[right].actualX {
+			return r.panels[left].actualX - r.panels[right].actualX
+		}
+		return r.panels[left].actualY - r.panels[right].actualY
 	})
 	return func(yield func(int) bool) {
-		for _, index := range orderedIndices {
+		for _, index := range indices {
 			if !yield(index) {
 				break
 			}
@@ -48,8 +55,8 @@ func (r layoutDefinition) getXYOrderedIndices() iter.Seq[int] {
 func New(panels []panelDefinition, opts ...layoutOption) layoutDefinition {
 	definition := layoutDefinition{
 		panels:       make([]panelDefinition, len(panels)),
-		normalStyle:  lipgloss.NewStyle().Border(lipgloss.NormalBorder()),
-		focusedStyle: lipgloss.NewStyle().Border(lipgloss.NormalBorder()),
+		normalStyle:  lipgloss.NewStyle(),
+		focusedStyle: lipgloss.NewStyle(),
 
 		customPanelBorder: false,
 		indexForPosition:  make(map[Position]int),
@@ -66,7 +73,7 @@ func New(panels []panelDefinition, opts ...layoutOption) layoutDefinition {
 			panic("custom panel border requires all Middle... borders")
 		}
 	} else {
-		definition.panelBorder = definition.normalStyle.GetBorderStyle()
+		definition.panelBorder = lipgloss.DoubleBorder()
 	}
 
 	definition.emptyCenter = true
@@ -97,6 +104,7 @@ func WithPanelBorder(border lipgloss.Border) layoutOption {
 func WithStyle(style lipgloss.Style) layoutOption {
 	return func(renderModel *layoutDefinition) {
 		renderModel.hasFocusUnfocusStyles = false
+		style = style.UnsetBorderStyle().UnsetBorderTop().UnsetBorderRight().UnsetBorderBottom().UnsetBorderLeft()
 		renderModel.normalStyle = style
 		renderModel.focusedStyle = style
 	}
@@ -105,6 +113,7 @@ func WithStyle(style lipgloss.Style) layoutOption {
 func WithFocusedStyle(focusedStyle lipgloss.Style) layoutOption {
 	return func(renderModel *layoutDefinition) {
 		renderModel.hasFocusUnfocusStyles = true
+		focusedStyle = focusedStyle.UnsetBorderStyle().UnsetBorderTop().UnsetBorderRight().UnsetBorderBottom().UnsetBorderLeft()
 		renderModel.focusedStyle = focusedStyle
 	}
 }
@@ -126,6 +135,12 @@ func AddCenterPanel() layoutOption {
 			})
 			renderModel.emptyCenter = false
 		}
+	}
+}
+
+func AllowNoFocus() layoutOption {
+	return func(renderModel *layoutDefinition) {
+		renderModel.allowNoFocus = true
 	}
 }
 

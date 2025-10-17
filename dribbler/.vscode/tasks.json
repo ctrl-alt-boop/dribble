@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "go",
+			"label": "go: build",
+			"command": "build",
+			"args": [
+				"${workspaceFolder}\\cmd\\dribbler\\main.go"
+			],
+			"problemMatcher": [
+				"$go"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "cd ${workspaceFolder}/cmd/dribbler; go build ."
+		}
+	]
+}

@@ -28,8 +28,8 @@ type List struct {
 	cursorY int
 }
 
-func NewList(items []Item) *List {
-	return &List{
+func NewList(items []Item) List {
+	return List{
 		Items: items,
 	}
 }
