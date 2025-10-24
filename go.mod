@@ -1,6 +1,6 @@
 module github.com/ctrl-alt-boop/dribble
 
-go 1.24.2
+go 1.25.3
 
 require (
 	cloud.google.com/go/firestore v1.18.0
