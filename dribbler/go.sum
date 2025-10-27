@@ -56,8 +56,8 @@ github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443 h1:aQ3y1lwWyqYPiWZThqv
 github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443/go.mod h1:W+zGtBO5Y1IgJhy4+A9GOqVhqLpfZi+vwmdNXUehLA8=
 github.com/creack/pty v1.1.24 h1:bJrF4RRfyJnbTJqzRLHzcGaZK1NeM5kTC9jGgovnR1s=
 github.com/creack/pty v1.1.24/go.mod h1:08sCNb52WyoAwi2QDyzUCTgcvVFhUzewun7wtTfvcwE=
-github.com/ctrl-alt-boop/dribble v0.0.0-20251017133041-ad8ae286faf8 h1:zjZ/G8AgB+WDJlqr9taipGsxKGVZP+yP8FenMPQKCTw=
-github.com/ctrl-alt-boop/dribble v0.0.0-20251017133041-ad8ae286faf8/go.mod h1:Xkd1ejanZsph4hjPUF4rQPza9ta58NQvWGZ0832iqbg=
+github.com/ctrl-alt-boop/dribble v0.1.0 h1:OaauErIkKYR5EOKNUwoU5sl2XuRS4Sc/bBA05Fwnh5s=
+github.com/ctrl-alt-boop/dribble v0.1.0/go.mod h1:XDpufK2BIjUJAaCOIiYeGiy0NsSq/L4b7D/N+WGHeqk=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=

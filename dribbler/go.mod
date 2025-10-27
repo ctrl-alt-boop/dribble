@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/huh v0.8.0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/x/ansi v0.10.2
-	github.com/ctrl-alt-boop/dribble v0.0.0-20251017133041-ad8ae286faf8
+	github.com/ctrl-alt-boop/dribble v0.1.0
 	github.com/muesli/reflow v0.3.0
 	github.com/spf13/viper v1.21.0
 )
