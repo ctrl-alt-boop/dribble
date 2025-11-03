@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/ctrl-alt-boop/dribbler"
 	"github.com/ctrl-alt-boop/dribbler/logging"
 )
 
 func main() {
 	dribbler := dribbler.NewDribblerModel()
-	p := tea.NewProgram(dribbler, tea.WithAltScreen())
+	p := tea.NewProgram(dribbler)
 
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Dribble error: %v\n", err)

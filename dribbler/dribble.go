@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/request"
 	"github.com/ctrl-alt-boop/dribble/target"
@@ -39,7 +39,7 @@ func NewDribbleRequestError(err error) tea.Cmd {
 }
 
 // Target tries to get target by name from the dribble client
-func (m Model) Target(targetName string) (*DribbleRequester, error) {
+func (m Dribbler) Target(targetName string) (*DribbleRequester, error) {
 	target, ok := m.dribbleClient.Target(targetName)
 	if !ok {
 		return nil, NewTargetingError(targetName)
@@ -89,17 +89,17 @@ func (d DribbleRequester) Request(ctx context.Context, request database.Request)
 	}
 }
 
-func (m Model) handleDribbleRequestMsg(msg datastore.DribbleRequestMsg) tea.Cmd {
-	if msg.TargetName == "" {
-		return NewDribbleRequestError(NewTargetingError(msg.TargetName))
+func (m Dribbler) handleDribbleRequestMsg(msg datastore.DribbleRequestMsg) tea.Cmd {
+	if msg.TargetID == 0 {
+		return NewDribbleRequestError(NewTargetingError("0"))
 	}
 	var responseChan chan *request.Response
 	var err error
 
-	if msg.TargetName == "*" { // Target all
+	if msg.TargetID == -1 { // Target all
 		responseChan, err = m.dribbleClient.RequestForAll(msg.Context, msg.Request)
 	} else {
-		responseChan, err = m.dribbleClient.Request(msg.Context, msg.TargetName, msg.Request)
+		responseChan, err = m.dribbleClient.Request(msg.Context, fmt.Sprint(msg.TargetID), msg.Request) // FIXME: not fmt.Sprint
 	}
 
 	if err != nil {

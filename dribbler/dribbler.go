@@ -2,12 +2,10 @@
 package dribbler
 
 import (
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/ctrl-alt-boop/dribble"
-	"github.com/ctrl-alt-boop/dribbler/component"
+	"github.com/ctrl-alt-boop/dribbler/components"
 	"github.com/ctrl-alt-boop/dribbler/config"
 	"github.com/ctrl-alt-boop/dribbler/datastore"
 	"github.com/ctrl-alt-boop/dribbler/logging"
@@ -15,53 +13,35 @@ import (
 
 var logger = logging.GlobalLogger()
 
-// Model is the main model for the Dribbler bubbletea application
-type Model struct {
+// Dribbler is the main model for the Dribbler bubbletea application
+type Dribbler struct {
 	Width, Height int
 
-	MainContent tea.Model
-
-	showHelp     bool
-	showFullHelp bool
-	help         component.Help
-	helpKeyMap   help.KeyMap
-
-	popup tea.Model
-
-	borderStyle lipgloss.Style
+	MainContent *MainContentModel
 
 	dribbleClient *dribble.Client
 }
 
 // NewDribblerModel creates a default Dribbler bubbletea model
-func NewDribblerModel() Model {
-	m := Model{
+func NewDribblerModel() Dribbler {
+	m := Dribbler{
 		dribbleClient: dribble.NewClient(),
-		borderStyle:   lipgloss.NewStyle().Border(lipgloss.NormalBorder()),
-		popup:         nil,
-		help:          component.NewHelp(),
-		// help: help.Model{
-		// 	ShortSeparator: " • ",
-		// 	FullSeparator:  "    ",
-		// 	Ellipsis:       "…",
-		// },
-		helpKeyMap: config.Keys,
 	}
 
-	m.MainContent = m.createMainContent()
+	m.MainContent = &MainContentModel{}
 
 	return m
 }
 
 // Init implements tea.Model.
-func (m Model) Init() tea.Cmd {
+func (m Dribbler) Init() tea.Cmd {
 	// config.LoadConfig()
 
 	return m.MainContent.Init()
 }
 
 // Update implements tea.Model.
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Dribbler) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	updated := m
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
@@ -76,7 +56,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if key.Matches(msg, config.Keys.Quit) {
 			return updated, tea.Quit
 		} else if key.Matches(msg, config.Keys.Help) {
-			updated.showFullHelp = !updated.showFullHelp
 		}
 
 	case tea.WindowSizeMsg: // Handle application window resize
@@ -90,8 +69,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Handle general dribbler message
 	switch msg := msg.(type) {
-	case component.UpdateHelpMsg:
-		updated.helpKeyMap = msg.KeyMap
+	case components.UpdateHelpMsg:
+
 		return updated, nil
 	case datastore.DribbleRequestMsg:
 		cmd := m.handleDribbleRequestMsg(msg)
@@ -100,36 +79,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Handle popup
-	if m.popup != nil {
-		m.popup, cmd = m.popup.Update(msg)
-		if cmd != nil {
-			cmds = append(cmds, cmd)
-		}
-	} else { // Handle focused
-		updated.MainContent, cmd = updated.MainContent.Update(msg)
-		if cmd != nil {
-			cmds = append(cmds, cmd)
-		}
-	}
+	updated.MainContent, cmd = updated.MainContent.Update(msg)
 
 	return updated, tea.Batch(cmds...)
 }
 
 // View implements tea.Model.
-func (m Model) View() string {
+func (m Dribbler) View() tea.View {
 	contentView := m.MainContent.View()
-	// var helpView string
-	// if m.showHelp {
-	// 	helpView = lipgloss.NewStyle().Width(m.InnerWidth).Border(lipgloss.NormalBorder(), true, false, false).Render(m.help.View(m.helpKeyMap))
-	// }
-
-	// view := lipgloss.JoinVertical(lipgloss.Left, contentView, helpView)
+	contentView.WindowTitle = "Dribbler"
+	contentView.AltScreen = true
 
 	return contentView
-}
-
-// PopupView creates the view string used when a popup is present
-func (m Model) PopupView(view string) string {
-	return ""
 }

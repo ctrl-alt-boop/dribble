@@ -10,8 +10,8 @@ import (
 type (
 	// DribbleRequestMsg should be used by widgets to command the main Model to request from the dribble api
 	DribbleRequestMsg struct {
-		TargetName string // "*" will temporarily mean all targets
-		Request    database.Request
-		Context    context.Context
+		TargetID int // -1 will temporarily mean all targets
+		Request  database.Request
+		Context  context.Context
 	}
 )
