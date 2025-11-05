@@ -4,7 +4,7 @@ import (
 	"github.com/charmbracelet/lipgloss/v2"
 
 	"github.com/ctrl-alt-boop/dribble/result"
-	"github.com/ctrl-alt-boop/dribbler/util"
+	"github.com/ctrl-alt-boop/dribbler/internal/core/util"
 )
 
 const defaultCellWidth = 36 // Guid length, including the '-'s

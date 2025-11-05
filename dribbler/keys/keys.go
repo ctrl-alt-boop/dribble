@@ -1,4 +1,4 @@
-package config
+package keys
 
 import (
 	"github.com/charmbracelet/bubbles/v2/key"
@@ -73,7 +73,7 @@ func (keys KeyMap) FullHelp() [][]key.Binding {
 	}
 }
 
-var Keys = createKeyMap()
+var Map = createKeyMap()
 
 func createKeyMap() KeyMap {
 	return KeyMap{

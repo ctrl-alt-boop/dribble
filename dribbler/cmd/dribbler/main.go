@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	dribbler := dribbler.NewDribblerModel()
+	dribbler := dribbler.NewModel()
 	p := tea.NewProgram(dribbler)
 
 	if _, err := p.Run(); err != nil {

@@ -5,7 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribble/request"
-	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/keys"
 )
 
 type (
@@ -74,7 +74,7 @@ func RedirectFocusCmd(id int) tea.Cmd {
 }
 
 // UpdateHelpCmd is a small helper method for creating a cmd to update the help bar
-func (f GotFocusMsg) UpdateHelpCmd(keys config.KeyMap) tea.Cmd {
+func (f GotFocusMsg) UpdateHelpCmd(keys keys.KeyMap) tea.Cmd {
 	return func() tea.Msg {
 		return UpdateHelpMsg{KeyMap: keys}
 	}

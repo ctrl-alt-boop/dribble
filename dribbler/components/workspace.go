@@ -7,9 +7,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/ctrl-alt-boop/dribble"
+	"github.com/ctrl-alt-boop/dribbler/keys"
 
 	"github.com/ctrl-alt-boop/dribble/result"
-	"github.com/ctrl-alt-boop/dribbler/config"
 )
 
 type Workspace struct {
@@ -43,19 +43,19 @@ func (d *Workspace) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, config.Keys.Up):
+		case key.Matches(msg, keys.Map.Up):
 			d.table.MoveCursorUp()
-		case key.Matches(msg, config.Keys.Down):
+		case key.Matches(msg, keys.Map.Down):
 			d.table.MoveCursorDown()
-		case key.Matches(msg, config.Keys.Left):
+		case key.Matches(msg, keys.Map.Left):
 			d.table.MoveCursorLeft()
-		case key.Matches(msg, config.Keys.Right):
+		case key.Matches(msg, keys.Map.Right):
 			d.table.MoveCursorRight()
-		case key.Matches(msg, config.Keys.Select):
+		case key.Matches(msg, keys.Map.Select):
 			return d, d.SelectCell
-		case key.Matches(msg, config.Keys.Increase):
+		case key.Matches(msg, keys.Map.Increase):
 			d.table.IncreaseColumnSize() // FIXME: Resizing the workspace
-		case key.Matches(msg, config.Keys.Decrease):
+		case key.Matches(msg, keys.Map.Decrease):
 			d.table.DecreaseColumnSize() // FIXME: Resizing the workspace
 		}
 	}

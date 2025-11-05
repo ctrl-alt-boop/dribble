@@ -35,6 +35,8 @@ func (d *DockLayoutComposer) Compose(width, height int) *panel.Composition {
 	d.usableHeight = height
 	d.usableX = 0
 	d.usableY = 0
+	d.usableNegX = 0
+	d.usableNegY = 0
 
 	panelStates := make([]*panel.State, len(d.definitions))
 	fillRemainingIndex := -1
@@ -64,6 +66,8 @@ func (d *DockLayoutComposer) Compose(width, height int) *panel.Composition {
 	return d.BuildComposition(panelStates...)
 }
 
+const frameThickness = 2
+
 // Allocate calculates each panels size and position.
 func (d *DockLayoutComposer) Allocate(width, height int, definition panel.Definition) *panel.State {
 	state := &panel.State{}
@@ -80,57 +84,72 @@ func (d *DockLayoutComposer) Allocate(width, height int, definition panel.Defini
 	}
 
 	switch definition.Position {
+	// In the struct definition, add constants for border size:
+	// (or ensure this is available via a constant/field)
+
+	// --- Inside Allocate ---
+
 	case panel.Top:
 		panelHeight := min(state.Height, d.usableHeight)
-
 		panelWidth := d.usableWidth
 
 		state.Width = panelWidth
 		state.Height = panelHeight
 		state.X = d.usableX
-		state.Y = 0
+		state.Y = d.usableY
 
 		d.usableY += state.Height
+		d.usableY -= frameThickness / 2
+
 		d.usableHeight -= state.Height
-
-	case panel.Bottom:
-		panelHeight := min(state.Height, d.usableHeight)
-
-		panelWidth := d.usableWidth
-
-		state.Width = panelWidth
-		state.Height = panelHeight
-		state.X = d.usableX
-		state.Y = height - state.Height - d.usableNegY
-		d.usableNegY += state.Height
-		d.usableHeight -= state.Height
+		d.usableHeight += frameThickness / 2
 
 	case panel.Left:
 		panelWidth := min(state.Width, d.usableWidth)
-
 		panelHeight := d.usableHeight
 
 		state.Width = panelWidth
 		state.Height = panelHeight
-		state.X = 0
+		state.X = d.usableX
 		state.Y = d.usableY
 
 		d.usableX += state.Width
+		d.usableX -= frameThickness / 2
+
 		d.usableWidth -= state.Width
+		d.usableWidth += frameThickness / 2
+
+	case panel.Bottom:
+		panelHeight := min(state.Height, d.usableHeight)
+		panelWidth := d.usableWidth
+
+		state.Width = panelWidth
+		state.Height = panelHeight
+		state.X = d.usableX
+
+		state.Y = height - panelHeight - d.usableNegY
+
+		d.usableNegY += panelHeight
+		d.usableNegY -= frameThickness / 2
+
+		d.usableHeight -= panelHeight
+		d.usableHeight += frameThickness / 2
 
 	case panel.Right:
 		panelWidth := min(state.Width, d.usableWidth)
-
 		panelHeight := d.usableHeight
 
 		state.Width = panelWidth
 		state.Height = panelHeight
-		state.X = width - state.Width - d.usableNegX
 		state.Y = d.usableY
 
+		state.X = width - state.Width - d.usableNegX
+
 		d.usableNegX += state.Width
+		d.usableNegX -= frameThickness / 2
 
 		d.usableWidth -= state.Width
+		d.usableWidth += frameThickness / 2
 
 	default:
 		state.FillRemaining = true

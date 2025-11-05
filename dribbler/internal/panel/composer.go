@@ -2,6 +2,7 @@ package panel
 
 import (
 	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/ctrl-alt-boop/dribbler/logging"
 )
 
 type Composer interface {
@@ -64,6 +65,8 @@ func (b *ComposerBase) BuildComposition(panelStates ...*State) *Composition {
 	layers := make([]*lipgloss.Layer, len(panelStates))
 
 	for i, state := range panelStates {
+		logging.GlobalLogger().Infof("state: x: %d, y: %d, width: %d, height: %d", state.X, state.Y, state.Width, state.Height)
+		logging.GlobalLogger().Infof("boundingbox: %+v", GetBoundingBox(state))
 		layer := lipgloss.NewLayer("").
 			Width(state.Width).Height(state.Height).
 			X(state.X).Y(state.Y)
@@ -73,12 +76,16 @@ func (b *ComposerBase) BuildComposition(panelStates ...*State) *Composition {
 	return &Composition{
 		Layers:      layers,
 		PreRendered: []*lipgloss.Layer{},
+		states:      panelStates,
 	}
 }
 
 type Composition struct {
 	Layers      []*lipgloss.Layer
 	PreRendered []*lipgloss.Layer
+	states      []*State
+
+	Width, Height int
 
 	X, Y int
 }

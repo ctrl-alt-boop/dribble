@@ -6,8 +6,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/ctrl-alt-boop/dribble"
 	"github.com/ctrl-alt-boop/dribbler/components"
-	"github.com/ctrl-alt-boop/dribbler/config"
 	"github.com/ctrl-alt-boop/dribbler/datastore"
+	"github.com/ctrl-alt-boop/dribbler/keys"
 	"github.com/ctrl-alt-boop/dribbler/logging"
 )
 
@@ -53,9 +53,9 @@ func (m Dribbler) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		logger.Error(msg)
 
 	case tea.KeyMsg: // Handle application wide key presses
-		if key.Matches(msg, config.Keys.Quit) {
+		if key.Matches(msg, keys.Map.Quit) {
 			return updated, tea.Quit
-		} else if key.Matches(msg, config.Keys.Help) {
+		} else if key.Matches(msg, keys.Map.Help) {
 		}
 
 	case tea.WindowSizeMsg: // Handle application window resize

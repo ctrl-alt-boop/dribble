@@ -28,33 +28,35 @@ type State struct {
 
 	// IsFocused     bool
 	FillRemaining bool
-
-	TopLeftChar, TopRightChar, BottomLeftChar, BottomRightChar string
-	TopBorder, RightBorder, BottomBorder, LeftBorder           bool
 }
 
-type Panel interface {
+type Model interface {
 	ID() string
 	Name() string
 	Init() tea.Cmd
-	Update(msg tea.Msg) (Panel, tea.Cmd)
-	Render() string
+	Update(msg tea.Msg) (Model, tea.Cmd)
+	Render() *lipgloss.Layer
 	IsFocused() bool
 	SetFocused(bool)
+	SetBorderStyle(panelBorder lipgloss.Border)
 }
 
-type Model struct {
+type model struct {
 	content any
 
 	id        string
 	name      string
 	isFocused bool
 
-	Definition Definition
+	Definition                                                 Definition
+	TopLeftChar, TopRightChar, BottomLeftChar, BottomRightChar string
+	TopBorder, RightBorder, BottomBorder, LeftBorder           bool
+
+	borderStyle lipgloss.Border
 }
 
-func NewPanel(content any, opts ...PanelOption) *Model {
-	panel := &Model{
+func NewPanel(content any, opts ...PanelOption) *model {
+	panel := &model{
 		content: content,
 	}
 
@@ -65,52 +67,58 @@ func NewPanel(content any, opts ...PanelOption) *Model {
 	return panel
 }
 
-type PanelOption func(*Model)
+type PanelOption func(*model)
 
 func WithID(id string) PanelOption {
-	return func(p *Model) {
+	return func(p *model) {
 		p.id = id
 	}
 }
 
 func WithName(name string) PanelOption {
-	return func(p *Model) {
+	return func(p *model) {
 		p.name = name
 	}
 }
 
-func (p *Model) ID() string {
-	return p.id
+func (m *model) ID() string {
+	return m.id
 }
 
-func (p *Model) Name() string {
-	return p.name
+func (m *model) Name() string {
+	return m.name
 }
 
-func (p *Model) Init() tea.Cmd { return nil }
+func (m *model) Init() tea.Cmd { return nil }
 
-func (p *Model) Update(msg tea.Msg) (Panel, tea.Cmd) {
-	updated := p
+func (m *model) Update(msg tea.Msg) (Model, tea.Cmd) {
+	updated := m
 
 	return updated, nil
 }
 
-func (p *Model) IsFocused() bool {
-	return p.isFocused
+func (m *model) IsFocused() bool {
+	return m.isFocused
 }
 
-func (p *Model) SetFocused(f bool) {
-	p.isFocused = f
+func (m *model) SetFocused(f bool) {
+	m.isFocused = f
 }
 
-func (p Model) Render() string {
-	switch content := p.content.(type) {
+func (m *model) SetBorderStyle(panelBorder lipgloss.Border) {
+	m.borderStyle = panelBorder
+}
+
+func (m model) Render() *lipgloss.Layer {
+	switch content := m.content.(type) {
 	case string:
-		return content
+		return lipgloss.NewLayer(content)
 	case interface{ Render() string }:
+		return lipgloss.NewLayer(content.Render())
+	case Model:
 		return content.Render()
 	}
-	return fmt.Sprintf("%s", p.content)
+	return lipgloss.NewLayer(fmt.Sprintf("%s", m.content))
 }
 
 func GetBoundingBox(panel *State) BoundingBox {
@@ -135,6 +143,8 @@ type ManagerPanel struct {
 	isFocused bool
 
 	Definition Definition
+
+	borderStyle lipgloss.Border
 }
 
 // ID implements Panel.
@@ -153,8 +163,8 @@ func NewManagerPanel(manager *Manager, opts ...PanelOption) *ManagerPanel {
 	}
 }
 
-func (p *ManagerPanel) Render() string {
-	return p.Manager.Render()
+func (p *ManagerPanel) Render() *lipgloss.Layer {
+	return lipgloss.NewLayer(p.Manager.Render())
 }
 
 func (p *ManagerPanel) View() tea.View {
@@ -165,13 +175,17 @@ func (p *ManagerPanel) Init() tea.Cmd {
 	return nil
 }
 
-func (p *ManagerPanel) Update(msg tea.Msg) (Panel, tea.Cmd) {
+func (p *ManagerPanel) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	updated := p
 
 	updated.Manager, cmd = updated.Manager.Update(msg)
 
 	return updated, cmd
+}
+
+func (p *ManagerPanel) SetBorderStyle(panelBorder lipgloss.Border) {
+	p.borderStyle = panelBorder
 }
 
 // IsFocused implements Panel.

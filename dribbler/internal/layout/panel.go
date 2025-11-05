@@ -37,8 +37,8 @@ func WithPosition(position panel.Position) panelOption {
 
 func WithInnerSize(width, height int) panelOption {
 	return func(def *panel.Definition) {
-		def.Width = width + FrameSize
-		def.Height = height + FrameSize
+		def.Width = width + frameThickness
+		def.Height = height + frameThickness
 		def.WidthRatio = 0.0
 		def.HeightRatio = 0.0
 	}
@@ -53,18 +53,16 @@ func WithSize(width, height int) panelOption {
 	}
 }
 
-const FrameSize = 2
-
 func WithInnerWidth(width int) panelOption {
 	return func(def *panel.Definition) {
-		def.Width = width + FrameSize
+		def.Width = width + frameThickness
 		def.WidthRatio = 0.0
 	}
 }
 
 func WithInnerHeight(height int) panelOption {
 	return func(def *panel.Definition) {
-		def.Height = height + FrameSize
+		def.Height = height + frameThickness
 		def.HeightRatio = 0.0
 	}
 }

@@ -3,7 +3,7 @@ package components
 import (
 	"github.com/charmbracelet/bubbles/v2/help"
 	tea "github.com/charmbracelet/bubbletea/v2"
-	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/keys"
 
 	"github.com/charmbracelet/lipgloss/v2"
 )
@@ -17,7 +17,7 @@ type Help struct {
 	AlwaysUpdate
 
 	help help.Model
-	Keys config.KeyMap
+	Keys keys.KeyMap
 }
 
 // Init implements tea.Model.
@@ -31,7 +31,7 @@ func (h Help) Init() tea.Cmd {
 func NewHelp() Help {
 	return Help{
 		help: help.New(),
-		Keys: config.Keys,
+		Keys: keys.Map,
 	}
 }
 

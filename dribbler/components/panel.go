@@ -10,6 +10,7 @@ import (
 
 	"github.com/ctrl-alt-boop/dribble/database"
 	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/keys"
 )
 
 var (
@@ -65,25 +66,25 @@ func (p Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return updated, nil
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, config.Keys.Up):
+		case key.Matches(msg, keys.Map.Up):
 			// updated.list.MoveCursorUp()
 
-		case key.Matches(msg, config.Keys.Down):
+		case key.Matches(msg, keys.Map.Down):
 			// updated.list.MoveCursorDown()
 
-		case key.Matches(msg, config.Keys.Select):
+		case key.Matches(msg, keys.Map.Select):
 			// return p, p.OnSelect()
 
-		case key.Matches(msg, config.Keys.Back):
+		case key.Matches(msg, keys.Map.Back):
 			return updated, nil
 
-		case key.Matches(msg, config.Keys.Details):
+		case key.Matches(msg, keys.Map.Details):
 			updated.showDetails = !p.showDetails
 			// return p, p.OnShowTableDetails()
 
-		case key.Matches(msg, config.Keys.New):
+		case key.Matches(msg, keys.Map.New):
 
-		case key.Matches(msg, config.Keys.NewEmpty):
+		case key.Matches(msg, keys.Map.NewEmpty):
 			return updated, func() tea.Msg {
 				return OpenIntentBuilderMsg{Method: database.Read, Table: ""}
 			}

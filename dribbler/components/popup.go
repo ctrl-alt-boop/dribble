@@ -3,7 +3,7 @@ package components
 import (
 	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
-	"github.com/ctrl-alt-boop/dribbler/config"
+	"github.com/ctrl-alt-boop/dribbler/keys"
 )
 
 type (
@@ -21,7 +21,7 @@ func (p *Popup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, config.Keys.Back):
+		case key.Matches(msg, keys.Map.Back):
 			return p, func() tea.Msg {
 				return PopupCloseMsg{}
 			}
@@ -36,15 +36,15 @@ func (p *Popup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // 	switch msg := msg.(type) {
 // 	case tea.KeyMsg:
 // 		switch {
-// 		case key.Matches(msg, config.Keys.Back, config.Keys.Quit, config.Keys.Select):
+// 		case key.Matches(msg, keys.Keys.Back, keys.Keys.Quit, keys.Keys.Select):
 // 			return t, t.CancelCmd
-// 		case key.Matches(msg, config.Keys.Up):
+// 		case key.Matches(msg, keys.Keys.Up):
 // 			t.SetYOffset(t.YOffset - scrollSpeed)
-// 		case key.Matches(msg, config.Keys.Down):
+// 		case key.Matches(msg, keys.Keys.Down):
 // 			t.SetYOffset(t.YOffset + scrollSpeed)
-// 		case key.Matches(msg, config.Keys.Left): // Maybe someday, since the XOffset is confusingly xOffset...
+// 		case key.Matches(msg, keys.Keys.Left): // Maybe someday, since the XOffset is confusingly xOffset...
 // 			// t.XOffset = t.XOffset + scrollSpeed
-// 		case key.Matches(msg, config.Keys.Right): // Maybe someday
+// 		case key.Matches(msg, keys.Keys.Right): // Maybe someday
 // 			// t.XOffset = t.XOffset + scrollSpeed
 // 		}
 // 	}
@@ -121,7 +121,7 @@ func (p *Popup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // 	}
 
 // 	keyMsg, ok := msg.(tea.KeyMsg)
-// 	if ok && key.Matches(keyMsg, config.Keys.Back) {
+// 	if ok && key.Matches(keyMsg, keys.Keys.Back) {
 // 		return c, c.CancelCmd
 // 	}
 
