@@ -3,21 +3,21 @@ package request
 import (
 	"fmt"
 
-	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/datasource"
 )
 
 var (
-	_ database.Request = (*ReadDatabaseSchema)(nil)
-	_ database.Request = (*ReadTableSchema)(nil)
-	_ database.Request = (*ReadColumnSchema)(nil)
-	_ database.Request = (*ReadDatabaseProperties)(nil)
-	_ database.Request = (*ReadTableProperties)(nil)
-	_ database.Request = (*ReadColumnProperties)(nil)
-	_ database.Request = (*ReadDatabaseNames)(nil)
-	_ database.Request = (*ReadTableNames)(nil)
-	_ database.Request = (*ReadColumnNames)(nil)
-	_ database.Request = (*ReadCount)(nil)
-	_ database.Request = (*ReadAllCounts)(nil)
+	_ datasource.Request = (*ReadDatabaseSchema)(nil)
+	_ datasource.Request = (*ReadTableSchema)(nil)
+	_ datasource.Request = (*ReadColumnSchema)(nil)
+	_ datasource.Request = (*ReadDatabaseProperties)(nil)
+	_ datasource.Request = (*ReadTableProperties)(nil)
+	_ datasource.Request = (*ReadColumnProperties)(nil)
+	_ datasource.Request = (*ReadDatabaseNames)(nil)
+	_ datasource.Request = (*ReadTableNames)(nil)
+	_ datasource.Request = (*ReadColumnNames)(nil)
+	_ datasource.Request = (*ReadCount)(nil)
+	_ datasource.Request = (*ReadAllCounts)(nil)
 )
 
 type prefab struct {
@@ -206,14 +206,14 @@ func NewReadAllCounts(databaseName string, tableNames []string) ReadAllCounts {
 	}
 }
 
-func (p prefab) ResponseOnSuccess() database.Response {
+func (p prefab) ResponseOnSuccess() datasource.Response {
 	if p.successStatus == StatusUnknown {
 		panic(fmt.Sprintf("prefab request of type %T created without using its constructor", p))
 	}
 	return Response{Status: p.successStatus}
 }
 
-func (p prefab) ResponseOnError() database.Response {
+func (p prefab) ResponseOnError() datasource.Response {
 	if p.successStatus == StatusUnknown {
 		panic(fmt.Sprintf("prefab request of type %T created without using its constructor", p))
 	}

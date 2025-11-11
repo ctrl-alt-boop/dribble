@@ -1,7 +1,7 @@
 package sql
 
 import (
-	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/datasource"
 	"github.com/ctrl-alt-boop/dribble/request"
 )
 
@@ -162,7 +162,7 @@ func (s *SelectBuilder) Offset(offset int) *SelectBuilder {
 	return s
 }
 
-func (s *SelectBuilder) ToRequest() database.Request {
+func (s *SelectBuilder) ToRequest() datasource.Request {
 	operation := &SelectQuery{
 		AsDistinct:    s.asDistinct,
 		IsCount:       s.isCount,
@@ -178,7 +178,7 @@ func (s *SelectBuilder) ToRequest() database.Request {
 		OffsetClause:  s.offsetClause,
 	}
 	return &request.Intent{
-		Type:      database.Read,
+		Type:      datasource.Read,
 		Operation: operation,
 		Args:      s.params,
 	}

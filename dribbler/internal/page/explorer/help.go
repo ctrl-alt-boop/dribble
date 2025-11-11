@@ -1,63 +1,64 @@
 package explorer
 
 import (
-	"github.com/charmbracelet/bubbles/v2/help"
-	"github.com/charmbracelet/bubbles/v2/key"
-	tea "github.com/charmbracelet/bubbletea/v2"
-	"github.com/charmbracelet/lipgloss/v2"
+	"charm.land/bubbles/v2/help"
+	tea "charm.land/bubbletea/v2"
+	lipgloss "charm.land/lipgloss/v2"
 )
 
 const helpPanelID string = string(ExplorerPageID) + ".help"
 
-type helpKeyMap struct {
-	keys []key.Binding
-}
-
-func (k helpKeyMap) ShortHelp() []key.Binding {
-	return k.keys
-}
-
-func (k helpKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{k.keys}
-}
-
-type helpPanel struct {
+type cheatsheet struct {
 	help help.Model
 
 	width int
 
-	keyMaps      []helpKeyMap
-	focusedPanel int
+	keymaps map[string]help.KeyMap
+	current string
+
+	style lipgloss.Style
 }
 
-func newHelpBar() *helpPanel {
-	return &helpPanel{
-		keyMaps: []helpKeyMap{
-			{},
-		},
+func (h *cheatsheet) registerKeymap(id string, keymap help.KeyMap) {
+	h.keymaps[id] = keymap
+}
+
+func newCheatsheet() *cheatsheet {
+	return &cheatsheet{
+		keymaps: map[string]help.KeyMap{},
 	}
 }
 
-func (h *helpPanel) SetInnerWidth(width int) {
+func (h *cheatsheet) SetWidth(width int) {
 	h.width = width
 }
 
-func (h *helpPanel) Init() tea.Cmd {
+func (h *cheatsheet) Init() tea.Cmd {
 	h.help = help.New()
 
 	return nil
 }
 
-func (h *helpPanel) Update(msg tea.Msg) (*helpPanel, tea.Cmd) {
+func (h *cheatsheet) Update(msg tea.Msg) (*cheatsheet, tea.Cmd) {
+	switch msg := msg.(type) {
+	case focusChangedMsg:
+		h.current = string(msg)
+	}
 	return h, nil
 }
 
-func (h *helpPanel) Render() *lipgloss.Layer {
+func (h *cheatsheet) Render() *lipgloss.Layer {
 	h.help.Width = h.width
 
-	box := lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder(), true).
-		Width(h.width).Height(3)
+	style := lipgloss.NewStyle().
+		Padding(0, 3).
+		Faint(true).
+		Width(h.width).Height(1)
 
-	return lipgloss.NewLayer(box.Render(h.help.View(h.keyMaps[h.focusedPanel])))
+	keymap, ok := h.keymaps[h.current]
+	if ok {
+		return lipgloss.NewLayer(style.Render(h.help.View(keymap)))
+	}
+
+	return lipgloss.NewLayer(style.Render(h.help.View(h.keymaps[string(ExplorerPageID)])))
 }

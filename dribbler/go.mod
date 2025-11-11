@@ -5,13 +5,13 @@ go 1.25.3
 require github.com/ctrl-alt-boop/dribble v0.1.0
 
 require (
-	github.com/charmbracelet/bubbles/v2 v2.0.0-beta.1
-	github.com/charmbracelet/bubbletea/v2 v2.0.0-beta.5
-	github.com/charmbracelet/lipgloss/v2 v2.0.0-beta.3
+	charm.land/bubbles/v2 v2.0.0-beta.1.0.20251104200223-da0b892d1759
+	charm.land/bubbletea/v2 v2.0.0-rc.1
+	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251104200114-3aae28661422
 )
 
 require (
-	github.com/charmbracelet/ultraviolet v0.0.0-20251103104523-426d0f30df4f // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20251105212737-dca72bd06dd9 // indirect
 	github.com/charmbracelet/x/ansi v0.10.3 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
@@ -35,7 +35,6 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/charmbracelet/colorprofile v0.3.3 // indirect
-	github.com/charmbracelet/x/cellbuf v0.0.13 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect

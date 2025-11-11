@@ -7,7 +7,7 @@ import (
 	"maps"
 	"strings"
 
-	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/datasource"
 	"github.com/ctrl-alt-boop/dribble/request"
 	"github.com/ctrl-alt-boop/dribble/target"
 )
@@ -103,11 +103,9 @@ func (c *Client) UpdateTarget(ctx context.Context, targetName string, opts ...ta
 	c.targets[targetName].Update(ctx, opts...)
 
 	if err := c.targets[targetName].Open(ctx); err != nil {
-
 		return ErrUpdateTarget(targetName, err)
 	}
 	if err := c.targets[targetName].Ping(ctx); err != nil {
-
 		return ErrUpdateTarget(targetName, err)
 	}
 
@@ -144,7 +142,7 @@ func (c *Client) CloseTargets(ctx context.Context, targets ...string) error {
 
 type ResponseHandler func(*request.Response)
 
-func (c *Client) Request(ctx context.Context, targetName string, request database.Request) (chan *request.Response, error) {
+func (c *Client) Request(ctx context.Context, targetName string, request datasource.Request) (chan *request.Response, error) {
 	requestTarget, ok := c.targets[targetName]
 	if !ok || requestTarget == nil {
 		return nil, ErrTargetNotFound(targetName)
@@ -153,7 +151,7 @@ func (c *Client) Request(ctx context.Context, targetName string, request databas
 }
 
 // Non-Blocking
-func (c *Client) RequestWithHandler(ctx context.Context, handler ResponseHandler, targetName string, req database.Request) error {
+func (c *Client) RequestWithHandler(ctx context.Context, handler ResponseHandler, targetName string, req datasource.Request) error {
 	requestTarget, ok := c.targets[targetName]
 	if !ok {
 		return ErrTargetNotFound(targetName)
@@ -163,7 +161,7 @@ func (c *Client) RequestWithHandler(ctx context.Context, handler ResponseHandler
 }
 
 // no targets = NoOp
-func (c *Client) RequestForAll(ctx context.Context, req database.Request) (chan *request.Response, error) {
+func (c *Client) RequestForAll(ctx context.Context, req datasource.Request) (chan *request.Response, error) {
 	if len(c.targets) == 0 {
 		return nil, nil
 	}
@@ -183,7 +181,7 @@ func (c *Client) RequestForAll(ctx context.Context, req database.Request) (chan 
 }
 
 // Blocking
-func (c *Client) PerformWithHandler(ctx context.Context, handler ResponseHandler, targetName string, req database.Request) error {
+func (c *Client) PerformWithHandler(ctx context.Context, handler ResponseHandler, targetName string, req datasource.Request) error {
 	requestTarget, ok := c.targets[targetName]
 	if !ok {
 		return ErrTargetNotFound(targetName)
@@ -193,7 +191,7 @@ func (c *Client) PerformWithHandler(ctx context.Context, handler ResponseHandler
 }
 
 // no targets = NoOp
-func (c *Client) PerformForAll(ctx context.Context, handler ResponseHandler, req database.Request) error {
+func (c *Client) PerformForAll(ctx context.Context, handler ResponseHandler, req datasource.Request) error {
 	if len(c.targets) == 0 {
 		return nil
 	}

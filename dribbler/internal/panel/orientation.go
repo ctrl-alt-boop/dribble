@@ -1,7 +1,7 @@
 package panel
 
 import (
-	"github.com/charmbracelet/lipgloss/v2"
+	lipgloss "charm.land/lipgloss/v2"
 )
 
 //go:generate stringer -type=Direction

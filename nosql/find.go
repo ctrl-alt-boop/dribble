@@ -1,7 +1,7 @@
 package nosql
 
 import (
-	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/datasource"
 	"github.com/ctrl-alt-boop/dribble/request"
 )
 
@@ -45,7 +45,7 @@ func (n *FindBuilder) Offset(offset int) *FindBuilder {
 	return n
 }
 
-func (n *FindBuilder) ToIntent() database.Request { // TODO: Ofcourse this needs implementation for the other operation types
+func (n *FindBuilder) ToIntent() datasource.Request { // TODO: Ofcourse this needs implementation for the other operation types
 	intent := &FindQuery{
 		Collection:   n.collection,
 		Conditions:   n.conditions,
@@ -54,7 +54,7 @@ func (n *FindBuilder) ToIntent() database.Request { // TODO: Ofcourse this needs
 		OffsetClause: n.offsetClause,
 	}
 	return &request.Intent{
-		Type:      database.Read,
+		Type:      datasource.Read,
 		Operation: intent,
 		Args:      n.args,
 	}

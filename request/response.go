@@ -3,11 +3,13 @@ package request
 import (
 	"fmt"
 
-	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/datasource"
 )
 
-var _ database.Response = (*Response)(nil)
-var _ database.Response = (*ChainResponse)(nil)
+var (
+	_ datasource.Response = (*Response)(nil)
+	_ datasource.Response = (*ChainResponse)(nil)
+)
 
 type (
 	Response struct {

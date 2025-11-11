@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/datasource"
 )
 
 type (
@@ -24,7 +24,7 @@ type (
 		columns []*Column
 		rows    []*Row
 
-		Resolver database.SQLDialect
+		Resolver datasource.SQLDialect
 	}
 )
 

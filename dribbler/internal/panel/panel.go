@@ -3,8 +3,8 @@ package panel
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea/v2"
-	"github.com/charmbracelet/lipgloss/v2"
+	tea "charm.land/bubbletea/v2"
+	lipgloss "charm.land/lipgloss/v2"
 )
 
 type DefinitionList []Definition
@@ -35,7 +35,7 @@ type Model interface {
 	Name() string
 	Init() tea.Cmd
 	Update(msg tea.Msg) (Model, tea.Cmd)
-	Render() *lipgloss.Layer
+	Canvas() *lipgloss.Canvas
 	IsFocused() bool
 	SetFocused(bool)
 	SetBorderStyle(panelBorder lipgloss.Border)
@@ -109,16 +109,16 @@ func (m *model) SetBorderStyle(panelBorder lipgloss.Border) {
 	m.borderStyle = panelBorder
 }
 
-func (m model) Render() *lipgloss.Layer {
+func (m model) Canvas() *lipgloss.Canvas {
 	switch content := m.content.(type) {
 	case string:
-		return lipgloss.NewLayer(content)
+		return lipgloss.NewCanvas(lipgloss.NewLayer(content))
 	case interface{ Render() string }:
-		return lipgloss.NewLayer(content.Render())
+		return lipgloss.NewCanvas(lipgloss.NewLayer(content.Render()))
 	case Model:
-		return content.Render()
+		return content.Canvas()
 	}
-	return lipgloss.NewLayer(fmt.Sprintf("%s", m.content))
+	return lipgloss.NewCanvas(lipgloss.NewLayer(fmt.Sprintf("%s", m.content)))
 }
 
 func GetBoundingBox(panel *State) BoundingBox {
@@ -134,65 +134,4 @@ func GetAllBoundingBoxes(panels ...*State) []BoundingBox {
 		boundingBoxes = append(boundingBoxes, GetBoundingBox(panel))
 	}
 	return boundingBoxes
-}
-
-type ManagerPanel struct {
-	*Manager
-	id        string
-	name      string
-	isFocused bool
-
-	Definition Definition
-
-	borderStyle lipgloss.Border
-}
-
-// ID implements Panel.
-func (p *ManagerPanel) ID() string {
-	return p.id
-}
-
-// Name implements Panel.
-func (p *ManagerPanel) Name() string {
-	return p.name
-}
-
-func NewManagerPanel(manager *Manager, opts ...PanelOption) *ManagerPanel {
-	return &ManagerPanel{
-		Manager: manager,
-	}
-}
-
-func (p *ManagerPanel) Render() *lipgloss.Layer {
-	return lipgloss.NewLayer(p.Manager.Render())
-}
-
-func (p *ManagerPanel) View() tea.View {
-	return tea.NewView(p.Render())
-}
-
-func (p *ManagerPanel) Init() tea.Cmd {
-	return nil
-}
-
-func (p *ManagerPanel) Update(msg tea.Msg) (Model, tea.Cmd) {
-	var cmd tea.Cmd
-	updated := p
-
-	updated.Manager, cmd = updated.Manager.Update(msg)
-
-	return updated, cmd
-}
-
-func (p *ManagerPanel) SetBorderStyle(panelBorder lipgloss.Border) {
-	p.borderStyle = panelBorder
-}
-
-// IsFocused implements Panel.
-func (p *ManagerPanel) IsFocused() bool {
-	return p.isFocused
-}
-
-func (p *ManagerPanel) SetFocused(f bool) {
-	p.isFocused = f
 }

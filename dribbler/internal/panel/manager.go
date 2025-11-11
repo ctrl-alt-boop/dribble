@@ -1,9 +1,9 @@
 package panel
 
 import (
-	"github.com/charmbracelet/bubbles/v2/key"
-	tea "github.com/charmbracelet/bubbletea/v2"
-	"github.com/charmbracelet/lipgloss/v2"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+	lipgloss "charm.land/lipgloss/v2"
 	"github.com/ctrl-alt-boop/dribbler/internal/core/util"
 	"github.com/ctrl-alt-boop/dribbler/keys"
 	"github.com/ctrl-alt-boop/dribbler/logging"
@@ -93,7 +93,7 @@ func (p Manager) Render() string {
 			Width(p.composition.Layers[i].GetWidth()).
 			Height(p.composition.Layers[i].GetHeight()).
 			BorderStyle(panelBorder).
-			Render(panl.Render().Content())
+			Render(panl.Canvas().Render())
 
 		layer := p.composition.Layers[i].
 			SetContent(panelRender).

@@ -1,33 +1,35 @@
 package request
 
 import (
-	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/datasource"
 )
 
-var _ database.Request = (*Intent)(nil)
+var _ datasource.Request = (*Intent)(nil)
 
-var _ database.Request = (*BatchRequest)(nil)
-var _ database.Request = (*ChainRequest)(nil)
+var (
+	_ datasource.Request = (*BatchRequest)(nil)
+	_ datasource.Request = (*ChainRequest)(nil)
+)
 
 type (
 	Intent struct { // TODO: finalize this
-		Type database.RequestType
+		Type datasource.RequestType
 
 		Operation any
 
 		Args []any
 	}
 
-	BatchRequest []database.Request
+	BatchRequest []datasource.Request
 
-	ChainRequest []database.Request
+	ChainRequest []datasource.Request
 )
 
-func Batch(requests ...database.Request) BatchRequest {
+func Batch(requests ...datasource.Request) BatchRequest {
 	return requests
 }
 
-func Chain(requests ...database.Request) ChainRequest {
+func Chain(requests ...datasource.Request) ChainRequest {
 	return requests
 }
 
@@ -37,21 +39,21 @@ func (i Intent) IsPrefab() bool {
 }
 
 // ResponseOnError implements database.Request.
-func (i Intent) ResponseOnError() database.Response {
+func (i Intent) ResponseOnError() datasource.Response {
 	switch i.Type {
-	case database.Create:
+	case datasource.Create:
 		return Response{
 			Status: ErrorCreate,
 		}
-	case database.Read:
+	case datasource.Read:
 		return Response{
 			Status: ErrorRead,
 		}
-	case database.Update:
+	case datasource.Update:
 		return Response{
 			Status: ErrorUpdate,
 		}
-	case database.Delete:
+	case datasource.Delete:
 		return Response{
 			Status: ErrorDelete,
 		}
@@ -61,21 +63,21 @@ func (i Intent) ResponseOnError() database.Response {
 }
 
 // ResponseOnSuccess implements database.Request.
-func (i Intent) ResponseOnSuccess() database.Response {
+func (i Intent) ResponseOnSuccess() datasource.Response {
 	switch i.Type {
-	case database.Create:
+	case datasource.Create:
 		return Response{
 			Status: SuccessCreate,
 		}
-	case database.Read:
+	case datasource.Read:
 		return Response{
 			Status: SuccessRead,
 		}
-	case database.Update:
+	case datasource.Update:
 		return Response{
 			Status: SuccessUpdate,
 		}
-	case database.Delete:
+	case datasource.Delete:
 		return Response{
 			Status: SuccessDelete,
 		}
@@ -90,14 +92,14 @@ func (c ChainRequest) IsPrefab() bool {
 }
 
 // ResponseOnError implements database.Request.
-func (c ChainRequest) ResponseOnError() database.Response {
+func (c ChainRequest) ResponseOnError() datasource.Response {
 	return Response{
 		Status: ErrorChainExecute,
 	}
 }
 
 // ResponseOnSuccess implements database.Request.
-func (c ChainRequest) ResponseOnSuccess() database.Response {
+func (c ChainRequest) ResponseOnSuccess() datasource.Response {
 	return Response{
 		Status: SuccessChainExecute,
 	}
@@ -109,14 +111,14 @@ func (b BatchRequest) IsPrefab() bool {
 }
 
 // ResponseOnError implements database.Request.
-func (b BatchRequest) ResponseOnError() database.Response {
+func (b BatchRequest) ResponseOnError() datasource.Response {
 	return Response{
 		Status: ErrorBatchExecute,
 	}
 }
 
 // ResponseOnSuccess implements database.Request.
-func (b BatchRequest) ResponseOnSuccess() database.Response {
+func (b BatchRequest) ResponseOnSuccess() datasource.Response {
 	return Response{
 		Status: SuccessBatchExecute,
 	}

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/ctrl-alt-boop/dribble/database"
+	"github.com/ctrl-alt-boop/dribble/datasource"
 	"github.com/ctrl-alt-boop/dribble/request"
 )
 
@@ -13,23 +13,23 @@ var (
 	ErrMultipleStatements = errors.New("multiple statements in query")
 )
 
-func FromString(query string, args ...any) (database.Request, error) {
+func FromString(query string, args ...any) (datasource.Request, error) {
 	if strings.ContainsAny(query, ";") {
 		return nil, ErrMultipleStatements
 	}
 
 	query = strings.TrimSpace(query)
-	operationType := database.NoOp
+	operationType := datasource.NoOp
 
 	switch {
 	case strings.HasPrefix(query, "SELECT"):
-		operationType = database.Read
+		operationType = datasource.Read
 	case strings.HasPrefix(query, "INSERT"):
-		operationType = database.Create
+		operationType = datasource.Create
 	case strings.HasPrefix(query, "UPDATE"):
-		operationType = database.Update
+		operationType = datasource.Update
 	case strings.HasPrefix(query, "DELETE"):
-		operationType = database.Delete
+		operationType = datasource.Delete
 	default:
 		return nil, ErrUnknownOperation
 	}
@@ -41,12 +41,12 @@ func FromString(query string, args ...any) (database.Request, error) {
 	}, nil
 }
 
-type ConnectionProperties struct {
-	Addr     string
-	Port     int
-	DBName   string
-	Username string
-	Password string
+// type ConnectionProperties struct {
+// 	Addr     string
+// 	Port     int
+// 	DBName   string
+// 	Username string
+// 	Password string
 
-	Extra map[string]string
-}
+// 	Extra map[string]string
+// }

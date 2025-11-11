@@ -7,12 +7,13 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ctrl-alt-boop/dribble/database"
-	"github.com/ctrl-alt-boop/dribble/internal/datasource"
+	"github.com/ctrl-alt-boop/dribble/datasource"
+	"github.com/ctrl-alt-boop/dribble/internal/adapters"
 	"github.com/ctrl-alt-boop/dribble/request"
 )
 
 //go:generate stringer -type=Type -output=target_type_string.go
+
 type Type int
 
 const (
@@ -29,13 +30,13 @@ type Target struct {
 	nextRequestID atomic.Int64
 	Name          string
 	Type          Type
-	DSN           database.DataSourceNamer
-	DBType        database.Type
+	DSN           datasource.Namer
+	DBType        datasource.Type
 
-	dataSource database.Database
+	dataSource datasource.DataSource
 }
 
-func New(name string, dsn database.DataSourceNamer) (*Target, error) {
+func New(name string, dsn datasource.Namer) (*Target, error) {
 	if dsn == nil {
 		return nil, errors.New("dsn cannot be nil")
 	}
@@ -49,11 +50,11 @@ func New(name string, dsn database.DataSourceNamer) (*Target, error) {
 		DBType: dsn.Type(),
 	}
 
-	executor, err := datasource.Create(dsn)
+	factory, err := adapters.Create(dsn.SourceType())
 	if err != nil {
 		return nil, err
 	}
-	target.dataSource = executor
+	target.dataSource = factory(dsn)
 
 	return target, nil
 }
@@ -74,7 +75,7 @@ func (t *Target) Close(ctx context.Context) error {
 	return t.dataSource.Close(ctx)
 }
 
-func (t *Target) Request(ctx context.Context, req database.Request) (chan *request.Response, error) {
+func (t *Target) Request(ctx context.Context, req datasource.Request) (chan *request.Response, error) {
 	switch r := req.(type) {
 	case request.ChainRequest:
 		return t.chainedRequest(ctx, r)
@@ -85,7 +86,7 @@ func (t *Target) Request(ctx context.Context, req database.Request) (chan *reque
 	}
 }
 
-func (t *Target) simpleRequest(ctx context.Context, req database.Request) (chan *request.Response, error) {
+func (t *Target) simpleRequest(ctx context.Context, req datasource.Request) (chan *request.Response, error) {
 	requestID := t.nextRequestID.Add(1)
 	resultChan := make(chan *request.Response, 1)
 
@@ -93,7 +94,7 @@ func (t *Target) simpleRequest(ctx context.Context, req database.Request) (chan 
 		defer close(resultChan)
 
 		requestResult, err := t.dataSource.Request(ctx, req)
-		var resp database.Response
+		var resp datasource.Response
 		if err != nil {
 			resp = req.ResponseOnError()
 		} else {
@@ -132,7 +133,7 @@ func (t *Target) chainedRequest(ctx context.Context, requestChain request.ChainR
 		}()
 		for i, req := range requestChain {
 			requestResult, err := t.dataSource.Request(ctx, req)
-			var resp database.Response
+			var resp datasource.Response
 			if err != nil {
 				resp = req.ResponseOnError()
 			} else {
@@ -172,11 +173,11 @@ func (t *Target) batchRequest(ctx context.Context, requestBatch request.BatchReq
 		wg.Add(numRequests)
 
 		for _, req := range requestBatch {
-			go func(r database.Request) {
+			go func(r datasource.Request) {
 				defer wg.Done()
 				requestID := t.nextRequestID.Add(1)
 				requestResult, err := t.dataSource.Request(ctx, r)
-				var resp database.Response
+				var resp datasource.Response
 				if err != nil {
 					resp = r.ResponseOnError()
 				} else {
@@ -199,7 +200,7 @@ func (t *Target) batchRequest(ctx context.Context, requestBatch request.BatchReq
 // Blocking
 // PerformWithHandler sends requests and processes responses synchronously using a handler.
 // It blocks until all responses are received and handled or the context is cancelled.
-func (t *Target) PerformWithHandler(ctx context.Context, handler func(*request.Response), req database.Request) error {
+func (t *Target) PerformWithHandler(ctx context.Context, handler func(*request.Response), req datasource.Request) error {
 	resultChan, err := t.Request(ctx, req)
 	if err != nil {
 		return err
@@ -226,7 +227,7 @@ func (t *Target) PerformWithHandler(ctx context.Context, handler func(*request.R
 
 // Non-Blocking
 // RequestWithHandler sends requests and processes responses asynchronously using a handler.
-func (t *Target) RequestWithHandler(ctx context.Context, handler func(*request.Response), req database.Request) error {
+func (t *Target) RequestWithHandler(ctx context.Context, handler func(*request.Response), req datasource.Request) error {
 	resultChan, err := t.Request(ctx, req)
 	if err != nil {
 		return err
@@ -262,7 +263,7 @@ func (t *Target) Update(ctx context.Context, opts ...TargetOption) error {
 
 type TargetOption func(context.Context, *Target) error
 
-func WithDataSource(dsn database.DataSourceNamer) TargetOption {
+func WithDataSource(dsn datasource.Namer) TargetOption {
 	return func(ctx context.Context, t *Target) error {
 		if dsn == nil {
 			return errors.New("dsn cannot be nil")
@@ -275,11 +276,11 @@ func WithDataSource(dsn database.DataSourceNamer) TargetOption {
 
 		t.DSN = dsn
 		t.DBType = dsn.Type()
-		executor, err := datasource.Create(dsn)
+		factory, err := adapters.Create(dsn.SourceType())
 		if err != nil {
 			return err
 		}
-		t.dataSource = executor
+		t.dataSource = factory(dsn)
 		return nil
 	}
 }

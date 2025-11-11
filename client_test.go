@@ -8,9 +8,7 @@ import (
 	"time"
 
 	"github.com/ctrl-alt-boop/dribble"
-	"github.com/ctrl-alt-boop/dribble/dsn/mysql"
-	"github.com/ctrl-alt-boop/dribble/dsn/postgres"
-	"github.com/ctrl-alt-boop/dribble/dsn/sqlite3"
+	"github.com/ctrl-alt-boop/dribble/dsn"
 	"github.com/ctrl-alt-boop/dribble/request"
 	"github.com/ctrl-alt-boop/dribble/sql"
 	"github.com/ctrl-alt-boop/dribble/target"
@@ -34,13 +32,13 @@ func TestClient(t *testing.T) {
 	valmaticsUsr := os.Getenv("DB_VALMATICS_USER")
 	valmaticsPwd := os.Getenv("DB_VALMATICS_PWD")
 
-	postgresTarget, err := target.New("postgres", postgres.NewDSN(
-		postgres.WithAddr("localhost"),
-		postgres.WithPort(5432),
-		postgres.WithDBName("valmatics"),
-		postgres.WithUsername(valmaticsUsr),
-		postgres.WithPassword(valmaticsPwd),
-		postgres.WithSSLMode(postgres.SSLModeDisable),
+	postgresTarget, err := target.New("postgres", dsn.PostgresDSN(
+		dsn.PostgresAddr("localhost"),
+		dsn.PostgresPort(5432),
+		dsn.PostgresDBName("valmatics"),
+		dsn.PostgresUsername(valmaticsUsr),
+		dsn.PostgresPassword(valmaticsPwd),
+		dsn.PostgresSSLMode(dsn.SSLModeDisable),
 	))
 	if err != nil {
 		t.Fatal(err)
@@ -69,11 +67,11 @@ func TestClient(t *testing.T) {
 
 	mysqlTarget, err := target.New(
 		"mysql",
-		mysql.NewDSN(
-			mysql.WithAddr("localhost"),
-			mysql.WithPort(3306),
-			mysql.WithUsername("mysql_user"),
-			mysql.WithPassword("mysql_user"),
+		dsn.MySQLDSN(
+			dsn.MySQLAddr("localhost"),
+			dsn.MySQLPort(3306),
+			dsn.MySQLUsername("mysql_user"),
+			dsn.MySQLPassword("mysql_user"),
 		))
 	if err != nil {
 		t.Fatal(err)
@@ -147,9 +145,9 @@ func TestPrefab(t *testing.T) {
 
 	sqlite3Target, err := target.New(
 		"sqlite3",
-		sqlite3.NewDSN(
+		dsn.SQLite3DSN(
 			"dribble_test.db",
-			sqlite3.ReadOnly(),
+			dsn.SQLite3ReadOnly(),
 		))
 	if err != nil {
 		t.Fatal(err)
@@ -179,7 +177,7 @@ func TestPrefab(t *testing.T) {
 
 func TestNewClient(t *testing.T) {
 	client := dribble.NewClient()
-	sqlite3Target, err := target.New("sqlite_test", sqlite3.NewDSN("dribble_test.db"))
+	sqlite3Target, err := target.New("sqlite_test", dsn.SQLite3DSN("dribble_test.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,13 +204,13 @@ func TestNewClient(t *testing.T) {
 
 func TestGetCount(t *testing.T) {
 	client := dribble.NewClient()
-	postgresTarget, err := target.New("postgres", postgres.NewDSN(
-		postgres.WithAddr("localhost"),
-		postgres.WithPort(5432),
-		postgres.WithDBName("valmatics"),
-		postgres.WithUsername("valmatics"),
-		postgres.WithPassword("valmatics"),
-		postgres.WithSSLMode(postgres.SSLModeDisable),
+	postgresTarget, err := target.New("postgres", dsn.PostgresDSN(
+		dsn.PostgresAddr("localhost"),
+		dsn.PostgresPort(5432),
+		dsn.PostgresDBName("valmatics"),
+		dsn.PostgresUsername("valmatics"),
+		dsn.PostgresPassword("valmatics"),
+		dsn.PostgresSSLMode(dsn.SSLModeDisable),
 	))
 	if err != nil {
 		t.Fatal(err)
