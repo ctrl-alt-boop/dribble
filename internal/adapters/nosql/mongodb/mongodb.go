@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var _ datasource.NoSQLClient = (*MongoDB)(nil)
+var _ datasource.NoSQLAdapter = (*MongoDB)(nil)
 
 type MongoDB struct {
 	client *mongo.Client
@@ -72,7 +72,7 @@ func (m *MongoDB) Close(ctx context.Context) error {
 }
 
 // Client implements database.NoSQL.
-func (m *MongoDB) Client() datasource.NoSQLClient {
+func (m *MongoDB) Client() datasource.NoSQLAdapter {
 	return m
 }
 

@@ -1,8 +1,6 @@
 package explorer
 
 import (
-	"fmt"
-
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
@@ -16,7 +14,7 @@ type workspace struct {
 	width, height           int
 	innerWidth, innerHeight int
 
-	tabs       []string // type?
+	tabs       Tabs
 	currentTab int
 
 	style lipgloss.Style
@@ -32,7 +30,7 @@ func (w *workspace) SetSize(width, height int) {
 func newWorkspace() *workspace {
 	return &workspace{
 		keybinds:   DefaultWorkspaceKeyBindings(),
-		tabs:       []string{},
+		tabs:       Tabs{},
 		currentTab: 0,
 	}
 }
@@ -48,26 +46,25 @@ func (w *workspace) Update(msg tea.Msg) (*workspace, tea.Cmd) {
 		switch {
 		case key.Matches(msg, w.keybinds.NextTab):
 			w.currentTab++
-			if w.currentTab >= len(w.tabs) {
+			if w.currentTab >= w.tabs.Len() {
 				w.currentTab = 0
 			}
 		case key.Matches(msg, w.keybinds.PrevTab):
 			w.currentTab--
 			if w.currentTab < 0 {
-				w.currentTab = len(w.tabs) - 1
+				w.currentTab = w.tabs.Len() - 1
 			}
 		}
 
 	case dribbleapi.DribbleResponseMsg:
 		logging.GlobalLogger().Infof("workspace.DribbleResponseMsg: %s", msg)
-		w.AddTab(fmt.Sprintf("%T: %v", msg.Response, msg.Response))
+		// w.AddTab(typeResString(msg))
 	}
 	return w, nil
 }
 
-func (w *workspace) AddTab(tab string) {
-	w.tabs = append(w.tabs, tab)
-	w.currentTab = len(w.tabs) - 1
+func (w *workspace) AddTab(tab Tab) {
+	w.tabs.Add(tab)
 }
 
 func (w *workspace) SetStyle(style lipgloss.Style) {
@@ -75,13 +72,14 @@ func (w *workspace) SetStyle(style lipgloss.Style) {
 }
 
 func (w *workspace) Render() *lipgloss.Layer {
-	box := w.style.
-		Width(w.width).Height(w.height)
+	// box := w.style.
+	// 	Width(w.width).Height(w.height)
 
-	tab := ""
-	if w.currentTab < len(w.tabs) {
-		tab = w.tabs[w.currentTab]
-	}
-	logging.GlobalLogger().Infof("workspace.tab %v, tabs: %v", tab, w.tabs)
-	return lipgloss.NewLayer(box.Render(tab))
+	logging.GlobalLogger().Infof("workspace.tab %v, tabs: %v", w.tabs)
+	// content, tabs := w.tabs.Render()
+
+	// workspaceRender := lipgloss.JoinVertical(lipgloss.Left, content, tabs)
+
+	// return lipgloss.NewLayer(w.tabs.Render())
+	return lipgloss.NewLayer("")
 }

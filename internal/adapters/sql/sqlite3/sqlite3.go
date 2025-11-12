@@ -13,27 +13,25 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const SourceType datasource.SourceType = "sqlite3"
+const (
+	name                             = "SQLite3"
+	dialect                          = "sqlite3"
+	SourceType datasource.SourceType = "sqlite3"
+)
 
 func init() {
 	datasource.Register(datasource.Adapter{
-		Name: "SQLite3",
+		Name: name,
 		Type: SourceType,
 		Properties: map[string]string{
-			"dialect": "sqlite3",
+			"dialect": dialect,
 		},
 		Capabilities: []datasource.Capability{},
 		Metadata: datasource.Metadata{
 			SourceType:  datasource.SourceTypeSQL,
 			StorageType: datasource.IsFile,
 		},
-		FactoryFunc: func(dsn datasource.Namer) datasource.DataSource {
-			return &SQLite3{
-				Base: sql.Base{
-					DSN: dsn,
-				},
-			}
-		},
+		FactoryFunc: New,
 	})
 }
 
@@ -43,14 +41,22 @@ type SQLite3 struct {
 	sql.Base
 }
 
-// Name implements datasource.DataSource.
-func (s *SQLite3) Name() string {
-	return "SQLite3"
+func New(dsn datasource.Namer) datasource.DataSource {
+	s := &SQLite3{
+		Base: sql.NewBase(dsn),
+	}
+	s.Self = s
+	return s
 }
 
-// GoName implements datasource.DataSource.
-func (s *SQLite3) GoName() string {
-	return "sqlite3"
+// Name implements datasource.DataSource.
+func (s *SQLite3) Name() string {
+	return name
+}
+
+// DriverName implements datasource.DataSource.
+func (s *SQLite3) DriverName() string {
+	return dialect
 }
 
 // ModelType implements datasource.DataSource.

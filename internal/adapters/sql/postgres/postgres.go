@@ -6,7 +6,6 @@ import (
 
 	"github.com/ctrl-alt-boop/dribble/datasource"
 
-	"github.com/ctrl-alt-boop/dribble/internal/adapters"
 	"github.com/ctrl-alt-boop/dribble/internal/adapters/sql"
 	"github.com/ctrl-alt-boop/dribble/request"
 	"github.com/google/uuid"
@@ -30,16 +29,7 @@ func init() {
 			SourceType:  datasource.SourceTypeSQL,
 			StorageType: datasource.IsDatabase,
 		},
-		FactoryFunc: func(dsn datasource.Namer) datasource.DataSource {
-			p := &Postgres{
-				Base: sql.Base{
-					DSN:          dsn,
-					BaseDatabase: adapters.BaseDatabase{},
-				},
-			}
-			p.Self = p
-			return p
-		},
+		FactoryFunc: New,
 	})
 }
 
@@ -49,6 +39,14 @@ type Postgres struct {
 	sql.Base
 }
 
+func New(dsn datasource.Namer) datasource.DataSource {
+	p := &Postgres{
+		Base: sql.NewBase(dsn),
+	}
+	p.Self = p
+	return p
+}
+
 // Name implements datasource.DataSource.
 func (p *Postgres) Name() string {
 	return "PostgreSQL"
@@ -56,6 +54,11 @@ func (p *Postgres) Name() string {
 
 // GoName implements datasource.DataSource.
 func (p *Postgres) GoName() string {
+	return "postgres"
+}
+
+// DriverName implements datasource.DataSource.
+func (p *Postgres) DriverName() string {
 	return "postgres"
 }
 

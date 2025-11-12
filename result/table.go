@@ -24,7 +24,7 @@ type (
 		columns []*Column
 		rows    []*Row
 
-		Resolver datasource.SQLDialect
+		Resolver datasource.SQLAdapter
 	}
 )
 

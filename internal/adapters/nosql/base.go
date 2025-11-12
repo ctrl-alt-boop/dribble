@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/ctrl-alt-boop/dribble/datasource"
-	"github.com/ctrl-alt-boop/dribble/internal/adapters"
 	"github.com/ctrl-alt-boop/dribble/request"
 )
 
@@ -16,10 +15,9 @@ var SupportedModels = map[datasource.SourceType]func(datasource.Namer) datasourc
 func init() {}
 
 type Base struct {
-	adapters.BaseDatabase
 	DSN  datasource.Namer
 	Self datasource.NoSQL
-	DB   datasource.NoSQLClient
+	DB   datasource.NoSQLAdapter
 }
 
 // Type implements datasource.Database.
@@ -49,7 +47,7 @@ func (b *Base) IsClosed() bool {
 }
 
 // Client implements datasource.NoSQL.
-func (b *Base) Client() datasource.NoSQLClient {
+func (b *Base) Client() datasource.NoSQLAdapter {
 	return b.DB
 }
 

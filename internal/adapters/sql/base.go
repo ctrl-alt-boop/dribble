@@ -14,25 +14,37 @@ import (
 	"github.com/ctrl-alt-boop/dribble/result"
 )
 
-type SQLExecutor interface {
-	datasource.Executor
+type SQLModel interface {
+	datasource.Model
 	GetTemplate(datasource.RequestType) string
 	GetPrefab(datasource.Request) (string, []any, error)
+	DriverName() string
 }
 
 type Base struct {
-	adapters.BaseDatabase
-	Self SQLExecutor
-	DB   *sql.DB
-	DSN  datasource.Namer
+	adapters.Database
+
+	Self  SQLModel
+	DB    *sql.DB
+	Namer datasource.Namer
+}
+
+func NewBase(dsn datasource.Namer) Base {
+	return Base{
+		Namer: dsn,
+	}
+}
+
+func (b *Base) Path() []string {
+	return append(b.Database.Path(), "SQL")
 }
 
 func (b *Base) Open(ctx context.Context) error {
-	connectionString := b.DSN.DSN()
+	connectionString := b.Namer.DSN()
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	db, err := sql.Open(b.Self.GoName(), connectionString)
+	db, err := sql.Open(b.Self.DriverName(), connectionString)
 	if err != nil {
 		return err
 	}

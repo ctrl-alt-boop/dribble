@@ -26,13 +26,7 @@ func init() {
 			SourceType:  datasource.SourceTypeSQL,
 			StorageType: datasource.IsDatabase,
 		},
-		FactoryFunc: func(dsn datasource.Namer) datasource.DataSource {
-			return &MySQL{
-				Base: sql.Base{
-					DSN: dsn,
-				},
-			}
-		},
+		FactoryFunc: New,
 	})
 }
 
@@ -42,13 +36,21 @@ type MySQL struct {
 	sql.Base
 }
 
+func New(dsn datasource.Namer) datasource.DataSource {
+	m := &MySQL{
+		Base: sql.NewBase(dsn),
+	}
+	m.Self = m
+	return m
+}
+
 // Name implements datasource.DataSource.
 func (m *MySQL) Name() string {
 	return "MySQL"
 }
 
-// GoName implements datasource.DataSource.
-func (m *MySQL) GoName() string {
+// DriverName implements datasource.DataSource.
+func (m *MySQL) DriverName() string {
 	return "mysql"
 }
 

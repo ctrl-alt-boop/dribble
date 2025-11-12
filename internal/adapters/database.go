@@ -9,13 +9,13 @@ import (
 func init() {
 }
 
-type BaseDatabase struct{}
+type Database struct{}
 
-func (d *BaseDatabase) Path() []string {
+func (d *Database) Path() []string {
 	return []string{"Database"}
 }
 
-func (d *BaseDatabase) DataSourceType() datasource.SourceType {
+func (d *Database) DataSourceType() datasource.SourceType {
 	return datasource.SourceType("Database")
 }
 
