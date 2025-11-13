@@ -15,6 +15,15 @@ const (
 	defaultHelpHeight        = 1
 )
 
+func getTabStyle(width int, current bool) lipgloss.Style {
+	border := lipgloss.NormalBorder()
+	if current {
+		border.Bottom = " "
+		return unstyled.AlignHorizontal(lipgloss.Center).Bold(true).BorderStyle(border).Width(width)
+	}
+	return unstyled.AlignHorizontal(lipgloss.Center).BorderStyle(border).Width(width)
+}
+
 type rect struct {
 	x, y          int
 	width, height int

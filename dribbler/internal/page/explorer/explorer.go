@@ -182,9 +182,9 @@ func (e *ExplorerPage) Render() *lipgloss.Canvas {
 			layer = e.sidebar.Render()
 		case workspaceID:
 			if e.focused == workspaceID {
-				e.workspace.SetStyle(e.focusedStyle)
+				e.workspace.SetStyle(unstyled.Inherit(e.focusedStyle))
 			} else {
-				e.workspace.SetStyle(e.normalStyle)
+				e.workspace.SetStyle(unstyled.Inherit(e.normalStyle))
 			}
 			layer = e.workspace.Render()
 		case commandlineID:

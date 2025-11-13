@@ -11,11 +11,9 @@ import (
 const workspaceID string = string(ExplorerPageID) + ".workspace"
 
 type workspace struct {
-	width, height           int
-	innerWidth, innerHeight int
+	width, height int
 
-	tabs       Tabs
-	currentTab int
+	tabs *Tabs
 
 	style lipgloss.Style
 
@@ -24,18 +22,35 @@ type workspace struct {
 
 func (w *workspace) SetSize(width, height int) {
 	w.width, w.height = width, height
-	w.innerWidth, w.innerHeight = width-w.style.GetHorizontalFrameSize(), height-w.style.GetVerticalFrameSize()
 }
 
 func newWorkspace() *workspace {
 	return &workspace{
-		keybinds:   DefaultWorkspaceKeyBindings(),
-		tabs:       Tabs{},
-		currentTab: 0,
+		keybinds: DefaultWorkspaceKeyBindings(),
+		tabs:     NewTabs(),
 	}
 }
 
 func (w *workspace) Init() tea.Cmd {
+	logging.GlobalLogger().Infof("workspace.Init")
+
+	w.tabs.Add(&StringTab{
+		name:    "Tabu oneo",
+		content: "This is one mighty fine tab\nKABOOM!",
+	})
+	w.tabs.Add(&StringTab{
+		name:    "Tabu twoo",
+		content: "This is the second mighty fine tab\nKABOOM CHakalaka!",
+	})
+	w.tabs.Add(&StringTab{
+		name:    "Tabu threeo",
+		content: "This is third mighty fine tab\nKABOOMISHOOKABOOM!",
+	})
+	w.tabs.Add(&StringTab{
+		name:    "Tabu fouro",
+		content: "This is fourth mighty fine tab\nKABOOMBABOOM!",
+	})
+
 	return nil
 }
 
@@ -45,15 +60,10 @@ func (w *workspace) Update(msg tea.Msg) (*workspace, tea.Cmd) {
 		logging.GlobalLogger().Infof("workspace.KeyPressMsg: %s", msg)
 		switch {
 		case key.Matches(msg, w.keybinds.NextTab):
-			w.currentTab++
-			if w.currentTab >= w.tabs.Len() {
-				w.currentTab = 0
-			}
+			w.tabs.Move(1)
+
 		case key.Matches(msg, w.keybinds.PrevTab):
-			w.currentTab--
-			if w.currentTab < 0 {
-				w.currentTab = w.tabs.Len() - 1
-			}
+			w.tabs.Move(-1)
 		}
 
 	case dribbleapi.DribbleResponseMsg:
@@ -72,14 +82,11 @@ func (w *workspace) SetStyle(style lipgloss.Style) {
 }
 
 func (w *workspace) Render() *lipgloss.Layer {
-	// box := w.style.
-	// 	Width(w.width).Height(w.height)
+	current, bar := w.tabs.Render()
 
-	logging.GlobalLogger().Infof("workspace.tab %v, tabs: %v", w.tabs)
-	// content, tabs := w.tabs.Render()
+	view := lipgloss.JoinVertical(lipgloss.Left, bar, current)
+	style := w.style.
+		Width(w.width).Height(w.height)
 
-	// workspaceRender := lipgloss.JoinVertical(lipgloss.Left, content, tabs)
-
-	// return lipgloss.NewLayer(w.tabs.Render())
-	return lipgloss.NewLayer("")
+	return lipgloss.NewLayer(style.Render(view))
 }
